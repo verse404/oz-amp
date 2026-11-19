@@ -1,0 +1,209 @@
+import React, { useState } from 'react';
+import { FileText, PlusCircle, Sparkles, X } from 'lucide-react';
+import type { ConcertEvent } from '../types/gig';
+import { formatAudRange, formatAuTimestamp, formatConcertDate } from '../utils/formatters';
+
+interface SmartImportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  csrfToken: string;
+  onImportConcerts: (concerts: ConcertEvent[], autoRemind: boolean) => void;
+}
+
+const SAMPLE_ANNOUNCEMENT = `Tame Impala — Deadbeat Australian Arena Tour 2027
+Presented by Frontier Touring & Chugg Entertainment
+Tickets from A$139.90 - A$219.90 via Ticketek
+
+Friday 16 April 2027 — Rod Laver Arena, Melbourne VIC
+Wednesday 21 April 2027 — Qudos Bank Arena, Sydney NSW
+
+Telstra Plus Pre-Sale: Mon 23 Nov 2026 11:00am AEDT
+Frontier Members Pre-Sale: Wed 25 Nov 2026 1:00pm AEDT
+General Public On-Sale: Fri 27 Nov 2026 12:00pm AEDT`;
+
+export const SmartImportModal: React.FC<SmartImportModalProps> = ({
+  isOpen,
+  onClose,
+  csrfToken,
+  onImportConcerts,
+}) => {
+  const [rawText, setRawText] = useState('');
+  const [preview, setPreview] = useState<ConcertEvent[] | null>(null);
+  const [autoRemind, setAutoRemind] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleParse = async (textToParse: string) => {
+    setErrorMsg(null);
+    setLoading(true);
+    try {
+      const res = await fetch('/api/parse-announcement', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+        },
+        body: JSON.stringify({ text: textToParse }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error || 'Could not parse tour announcement.');
+        setPreview(null);
+      } else {
+        setPreview(data.concerts || []);
+      }
+    } catch {
+      setErrorMsg('Unable to reach local parser API.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmImport = () => {
+    if (!preview || preview.length === 0) return;
+    onImportConcerts(preview, autoRemind);
+    setRawText('');
+    setPreview(null);
+    onClose();
+  };
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="smart-import-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="center-modal">
+        <header className="modal-header">
+          <div>
+            <span className="eyebrow-kicker">Frontier · Live Nation · Ticketek · Instagram</span>
+            <h2 id="smart-import-title" className="modal-title">
+              Paste Tour or Pre-Sale Announcement
+            </h2>
+          </div>
+          <button
+            type="button"
+            id="close-import-modal-btn"
+            className="icon-btn"
+            onClick={onClose}
+            aria-label="Close announcement importer"
+          >
+            <X size={18} />
+          </button>
+        </header>
+
+        <div className="modal-body">
+          <p className="panel-subtext">
+            Paste any Australian tour press release, Frontier Touring email, or social caption. We
+            automatically extract Sydney &amp; Melbourne venues, dates, AUD pricing, and Telstra /
+            Frontier / General On-Sale windows.
+          </p>
+
+          <div className="sample-bar">
+            <button
+              type="button"
+              id="load-sample-tour-btn"
+              className="btn-outline-sm"
+              onClick={() => {
+                setRawText(SAMPLE_ANNOUNCEMENT);
+                void handleParse(SAMPLE_ANNOUNCEMENT);
+              }}
+            >
+              <Sparkles size={14} />
+              <span>Try Sample Frontier / Telstra Tour Drop</span>
+            </button>
+          </div>
+
+          <textarea
+            id="announcement-textarea"
+            className="announcement-textarea"
+            rows={7}
+            value={rawText}
+            onChange={(e) => setRawText(e.target.value)}
+            placeholder="Paste tour dates, Sydney/Melbourne venues, and pre-sale times here..."
+          />
+
+          {errorMsg && <p className="inline-error">{errorMsg}</p>}
+
+          <div className="modal-action-row">
+            <button
+              type="button"
+              id="parse-announcement-btn"
+              className="btn-primary"
+              disabled={loading || rawText.trim().length < 10}
+              onClick={() => void handleParse(rawText)}
+            >
+              <FileText size={16} />
+              <span>{loading ? 'Extracting Dates…' : 'Extract Sydney & Melbourne Dates'}</span>
+            </button>
+          </div>
+
+          {preview && preview.length > 0 && (
+            <div className="preview-box">
+              <div className="preview-header">
+                <h3 className="panel-heading">
+                  Extracted {preview.length} Tour Stop{preview.length === 1 ? '' : 's'}
+                </h3>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={autoRemind}
+                    onChange={(e) => setAutoRemind(e.target.checked)}
+                  />
+                  <span>Auto-set 15m Queue Reminders for all extracted pre-sales</span>
+                </label>
+              </div>
+
+              <ul className="preview-list">
+                {preview.map((c) => {
+                  const formattedDate = formatConcertDate(c.dateIso, c.timeZone);
+                  return (
+                    <li key={c.id} className="preview-card">
+                      <div>
+                        <span className={`city-pill city-pill--${c.city}`}>
+                          {c.city === 'sydney' ? 'Sydney · NSW' : 'Melbourne · VIC'}
+                        </span>
+                        <strong className="preview-artist">
+                          {c.artist} — {c.venueName}
+                        </strong>
+                        <p className="preview-meta">
+                          {formattedDate.fullLabel} · {formatAudRange(c.priceMinAud, c.priceMaxAud)}{' '}
+                          · {c.agency}
+                        </p>
+                        {c.ticketDrops.length > 0 && (
+                          <ul className="preview-drops">
+                            {c.ticketDrops.map((d) => (
+                              <li key={d.id}>
+                                <strong>{d.kind}:</strong> {formatAuTimestamp(d.opensAtIso, c.city)}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <button
+                type="button"
+                id="confirm-import-btn"
+                className="btn-primary full-width"
+                onClick={handleConfirmImport}
+              >
+                <PlusCircle size={16} />
+                <span>Add to My Gig Guide{autoRemind ? ' & Arm Reminders' : ''}</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

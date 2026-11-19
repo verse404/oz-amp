@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.local
+server/cache/live-catalog.json
+start-cloudtop.sh
+*.log
+.DS_Store

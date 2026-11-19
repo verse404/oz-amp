@@ -1,0 +1,21 @@
+# Render.com Blueprint — Sleep-Friendly Free Tier Deployment
+services:
+  - type: web
+    name: oz-amp
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVE_STATIC
+        value: "1"
+      - key: PUBLIC_READONLY_MODE
+        value: "1"
+      - key: CONTAINER_RUNTIME
+        value: "1"
+      - key: GITHUB_CRON_MANAGED
+        value: "1"
+      - key: CACHE_TTL_HOURS
+        value: "24"
