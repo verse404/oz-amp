@@ -157,7 +157,7 @@ export const CORE_WORLD_FESTIVALS: WorldFestivalItem[] = [
     imageUrl:
       'https://upload.wikimedia.org/wikipedia/commons/d/d5/FujiGreenStage.jpg',
     officialUrl: 'https://en.fujirockfestival.com/',
-    ticketsUrl: 'https://en.fujirockfestival.com/ticket/',
+    ticketsUrl: 'https://en.fujirockfestival.com/',
     lineupAnnounced: false,
     lineupHighlights: [],
     stagesOrCamps: [
@@ -564,7 +564,7 @@ export const DISCOVERABLE_WORLD_FESTIVALS: WorldFestivalItem[] = [
     imageUrl:
       'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/SummerSonicMarineStage-Zeddperforming-from_a_distance-Aug16-2015.jpg/960px-SummerSonicMarineStage-Zeddperforming-from_a_distance-Aug16-2015.jpg',
     officialUrl: 'https://www.clockenflap.com/',
-    ticketsUrl: 'https://www.clockenflap.com/tickets',
+    ticketsUrl: 'https://www.clockenflap.com/',
     lineupAnnounced: true,
     lineupHighlights: ['Jack White', 'Central Cee', 'Air', 'St. Vincent', 'Jamie xx', 'Glass Beams'],
     stagesOrCamps: ['Harbourflap Stage', 'Orbit Stage', 'Park Stage', 'Electriq'],

@@ -256,6 +256,28 @@ export async function syncLiveCatalog() {
 
   mergedConcerts.sort((a, b) => a.dateIso.localeCompare(b.dateIso));
 
+  // Automatically filter out concerts whose final AU date has elapsed and promote elapsed presales to 'on-sale'
+  const todayAu = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Australia/Melbourne',
+  }).format(new Date());
+  const nowMs = Date.now();
+  const activeConcerts = mergedConcerts
+    .filter((c) => {
+      const allDates = [c.dateIso, ...(c.additionalDates || [])].sort();
+      return allDates[allDates.length - 1] >= todayAu;
+    })
+    .map((c) => {
+      if (c.status === 'presale-soon' || c.status === 'presale-live') {
+        const futureDrops = (c.ticketDrops || []).filter(
+          (d) => new Date(d.opensAtIso).getTime() > nowMs,
+        );
+        if (futureDrops.length === 0) {
+          return { ...c, status: 'on-sale' };
+        }
+      }
+      return c;
+    });
+
   const payload = {
     syncedAtIso: new Date().toISOString(),
     liveSyncSource:
@@ -266,7 +288,7 @@ export async function syncLiveCatalog() {
           : 'Verified Sydney & Melbourne 2026–2027 Concert Slate',
     ticketmasterConfigured: Boolean(cfg.ticketmasterApiKey),
     venues: VENUES,
-    concerts: mergedConcerts,
+    concerts: activeConcerts,
     tourNews: rssNews.length > 0 ? [...rssNews.slice(0, 6), ...SEED_TOUR_NEWS].slice(0, 8) : SEED_TOUR_NEWS,
     musicFestivals: MUSIC_FESTIVALS_DIRECTORY,
     festivals: FESTIVAL_ADVISOR_DATA,

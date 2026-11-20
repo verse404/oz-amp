@@ -41,15 +41,17 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
 
   const remindedIds = useMemo(() => new Set(reminders.map((r) => r.concertId)), [reminders]);
 
-  const filteredStops = useMemo(
-    () =>
-      APAC_SHORT_FLIGHT_STOPS.filter((stop) => {
-        if (hubFilter !== 'All Hubs' && stop.city !== hubFilter) return false;
-        if (onlyAsiaExclusive && stop.auStatus === 'au-confirmed') return false;
-        return true;
-      }),
-    [hubFilter, onlyAsiaExclusive],
-  );
+  const filteredStops = useMemo(() => {
+    const todayAu = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Australia/Melbourne',
+    }).format(new Date());
+    return APAC_SHORT_FLIGHT_STOPS.filter((stop) => {
+      if (stop.dateIso < todayAu) return false;
+      if (hubFilter !== 'All Hubs' && stop.city !== hubFilter) return false;
+      if (onlyAsiaExclusive && stop.auStatus === 'au-confirmed') return false;
+      return true;
+    });
+  }, [hubFilter, onlyAsiaExclusive]);
 
   return (
     <section className="feature-section apac-radar-section" aria-labelledby="apac-radar-heading">

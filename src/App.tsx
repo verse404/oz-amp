@@ -426,7 +426,27 @@ export const App: React.FC = () => {
   }, [savedWorldFestivals]);
 
   const allConcerts = useMemo(() => {
-    const combined = [...customConcerts, ...catalog.concerts];
+    const todayAu = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Australia/Melbourne',
+    }).format(new Date(nowMs));
+
+    const combined = [...customConcerts, ...catalog.concerts]
+      .filter((c) => {
+        const allDates = [c.dateIso, ...(c.additionalDates || [])].sort();
+        return allDates[allDates.length - 1] >= todayAu;
+      })
+      .map((c) => {
+        if (c.status === 'presale-soon' || c.status === 'presale-live') {
+          const hasFutureDrop = c.ticketDrops.some(
+            (d) => new Date(d.opensAtIso).getTime() > nowMs,
+          );
+          if (!hasFutureDrop) {
+            return { ...c, status: 'on-sale' as const };
+          }
+        }
+        return c;
+      });
+
     combined.sort((a, b) => {
       const dateCmp = a.dateIso.localeCompare(b.dateIso);
       if (dateCmp !== 0) return dateCmp;
@@ -434,7 +454,7 @@ export const App: React.FC = () => {
       return a.city === 'melbourne' ? -1 : 1;
     });
     return combined;
-  }, [customConcerts, catalog.concerts]);
+  }, [customConcerts, catalog.concerts, nowMs]);
 
   // Evaluate monitored singers locally + via BFF `/api/artists/monitor-check` and trigger announcement alerts!
   const evaluateSingerAnnouncements = useCallback(
@@ -609,7 +629,6 @@ export const App: React.FC = () => {
   // Re-evaluate singer matches whenever concerts or monitored singers change
   useEffect(() => {
     evaluateSingerAnnouncements(monitoredSingers, allConcerts, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allConcerts.length, monitoredSingers.length]);
 
   // Automatically reconcile any previously armed reminders in localStorage with verified drop/concert URLs

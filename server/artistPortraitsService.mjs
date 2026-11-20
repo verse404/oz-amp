@@ -320,6 +320,12 @@ async function hydrateAllKnownArtists() {
 
   // Prune accidental non-artist prose keys from earlier runs
   const bogusKeys = [
+    'a - c',
+    'd - f',
+    'g - j',
+    'k - m',
+    'n - s',
+    't - z & others',
     'chinese artists',
     'single-stage amphitheatre lineup',
     'byo bush campout',
