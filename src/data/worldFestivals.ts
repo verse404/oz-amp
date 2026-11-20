@@ -43,6 +43,11 @@ export const CORE_WORLD_FESTIVALS: WorldFestivalItem[] = [
     nextSessionIso: '2027-01-16T06:00:00+11:00',
     description:
       'Iconic two-weekend desert music and monumental installation gathering in the Coachella Valley, headlined in 2027 by Dua Lipa, Tame Impala, SZA, and Daddy Yankee.',
+    allInBudgetAud: '~A$3,650–$4,900 all-in',
+    budgetBreakdown:
+      'Pass ~A$920 + Return MEL/SYD→LAX ~A$1,550 + Car Camping or Palm Springs Hotel Share & Any Line Shuttle ~A$1,250',
+    visaAndCampingTip:
+      'AU Passports: US ESTA (US$21, apply 72h+ prior). Book Car Camping or an Official Any Line Shuttle Pass — rideshare queues at 1:00 AM exceed 2 hours.',
     isCore: true,
   },
   {
@@ -81,6 +86,11 @@ export const CORE_WORLD_FESTIVALS: WorldFestivalItem[] = [
     nextSessionIso: '2026-12-06T01:00:00+11:00',
     description:
       'The world’s flagship electronic music pilgrimage across 16+ bespoke storybook stages in De Schorre park. Mandatory account pre-registration opens in December ahead of January Global Journey & Worldwide Ticket Sales.',
+    allInBudgetAud: '~A$3,450–$4,650 all-in',
+    budgetBreakdown:
+      'Full Madness + DreamVille ~A$820 + Return MEL/SYD→BRU ~A$2,150 + Pearl Wristband Top-Up & Eurostar/Transfers ~A$500',
+    visaAndCampingTip:
+      'AU Passports: 90-day Schengen entry (check EU ETIAS launch before July 2027). Global Journey Train/Hotel packages from Amsterdam or Paris give the highest ticket success rate!',
     isCore: true,
   },
   {
@@ -119,6 +129,11 @@ export const CORE_WORLD_FESTIVALS: WorldFestivalItem[] = [
     nextSessionIso: '2027-03-25T06:00:00+11:00',
     description:
       'Temporary desert metropolis dedicated to radical self-expression, decommodification, monumental interactive playa art, sunrise art-car sound systems, and the 2027 "Spellbound" theme.',
+    allInBudgetAud: '~A$4,200–$5,800 all-in',
+    budgetBreakdown:
+      'Ticket + Burner Express/Vehicle ~A$1,100 + Return MEL/SYD→SFO/RNO ~A$1,750 + Camp Dues, 1.5 gal/day Water, Bike & Dust Gear ~A$1,400',
+    visaAndCampingTip:
+      'AU Passports: US ESTA required. Zero cash/commerce on playa — Burner Express Bus from Reno/SFO includes optional pre-purchased water allotments & skips Exodus gate traffic.',
     isCore: true,
   },
   {
@@ -157,6 +172,11 @@ export const CORE_WORLD_FESTIVALS: WorldFestivalItem[] = [
     nextSessionIso: '2027-02-05T14:00:00+11:00',
     description:
       'Japan’s cleanest, most atmospheric mountain forest festival — woodland boardwalks, river crossings, misty mountain stages, late-night Red Marquee electronic sets, and effortless Shinkansen access from Tokyo.',
+    allInBudgetAud: '~A$2,450–$3,350 all-in',
+    budgetBreakdown:
+      '3-Day Pass + Camp Site ~A$610 + Return MEL/SYD→TYO ~A$1,150 + Joetsu Shinkansen, Tent/Echigo-Yuzawa Ryokan & Food ~A$750',
+    visaAndCampingTip:
+      'AU Passports: 90-day visa-free (complete Visit Japan Web QR). Pack a proper waterproof poncho/Gore-Tex shell & trail boots (umbrellas are banned inside Fuji Rock stages!).',
     isCore: true,
   },
   {
@@ -199,6 +219,11 @@ export const CORE_WORLD_FESTIVALS: WorldFestivalItem[] = [
     nextSessionIso: '2026-12-03T16:00:00+07:00',
     description:
       '96 hours of non-stop live music, spatial 360° sound architecture, bamboo pavilions, chef’s tables, and sunrise Quarry selectors in rural Thailand — an easy nonstop hop from Melbourne or Sydney.',
+    allInBudgetAud: '~A$2,150–$3,100 all-in',
+    budgetBreakdown:
+      '5-Day Pass ~A$780 + Nonstop Return MEL/SYD→BKK ~A$820 + Boutique Bell Tent or Pattaya/Jomtien Hotel & Private Van ~A$650',
+    visaAndCampingTip:
+      'AU Passports: 60-day visa-exempt entry + Thailand Digital Arrival Card. Bring a reusable cup (mandatory zero-single-use-cup policy in The Fields) & light breathable linen.',
     isCore: true,
   },
   {
@@ -237,6 +262,11 @@ export const CORE_WORLD_FESTIVALS: WorldFestivalItem[] = [
     nextSessionIso: '2027-04-15T19:00:00+10:00',
     description:
       'Held only once every two years on the shores of Idanha-a-Nova lake under the July full moon. Zero corporate sponsors — celebrating 30 years of psychedelic electronic culture, visionary art, and regenerative living.',
+    allInBudgetAud: '~A$3,150–$4,200 all-in',
+    budgetBreakdown:
+      '7-Day Pass (Camping Included) ~A$520 + Return MEL/SYD→LIS/MAD ~A$2,050 + Official Boom Bus & Cardboard Tent/Camp Gear ~A$620',
+    visaAndCampingTip:
+      'AU Passports: 90-day Schengen entry (check ETIAS). Only buy resale passes via the official Boom Resale Platform (strictly name-linked IDs) & book the Boom Bus straight from Lisbon/Madrid airport.',
     isCore: true,
   },
 ];

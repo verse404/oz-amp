@@ -18,7 +18,9 @@ A standalone web application for discovering bands, singers, festivals, and live
    - Switch your `Home` base between **Sydney** and **Melbourne** to spot interstate-only exclusives, arm pre-presale free-cancel hotel reminders, check strict outdoor noise curfews (`22:00` Opera House Forecourt, `22:30` Music Bowl) & last trains, and stamp collectible thermal ticket stubs with section sightline notes.
 
 5. **My Singer Sessions (`#/my-sessions`) & World Festivals (`#/world-festivals`)**:
-   - Dedicated 275-singer watchlist session tracker plus a global music festival hub (**Coachella**, **Tomorrowland**, **Burning Man**, **Fuji Rock**, **Wonderfruit**, **Boom Festival**, and live worldwide festival discovery).
+   - Dedicated 275-singer watchlist session tracker plus a global music festival hub (**Coachella**, **Tomorrowland**, **Burning Man**, **Fuji Rock**, **Wonderfruit**, **Boom Festival**, all-in AUD trip budgets, entry/camping logistics, and live worldwide festival discovery).
+6. **Nearby Asia-Pacific Short-Flight Radar & Venue Sightline Guides**:
+   - Tracks nonstop short-flight stops in **Tokyo**, **Singapore**, **Bangkok**, **Hong Kong**, and **Auckland** for watchlist singers, 1-click **Spotify / Apple Music / Setlist.fm** previews, Melbourne & Sydney venue sightline/restricted-view/bag guides, installable **PWA phone mode**, cross-device `.json` profile sync, and background **7:30 AM AEDT** mobile push alerts via GitHub Actions.
 
 ---
 

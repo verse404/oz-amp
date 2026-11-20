@@ -21,10 +21,22 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Snapshot previous catalog before sync
+        run: |
+          if [ -f server/cache/live-catalog.json ]; then
+            cp server/cache/live-catalog.json /tmp/oz-amp-prev-catalog.json
+          fi
+
       - name: Sync Sydney & Melbourne Concerts
         env:
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
         run: node ./server/syncCatalog.mjs
+
+      - name: Evaluate 275-Singer Watchlist & World Festivals Push Digest
+        env:
+          PREV_CATALOG_FILE: /tmp/oz-amp-prev-catalog.json
+          REMINDER_WEBHOOK_URL: ${{ secrets.REMINDER_WEBHOOK_URL }}
+        run: node ./server/dailyDigestAlert.mjs
 
       - name: Commit refreshed concert snapshot if changed
         run: |

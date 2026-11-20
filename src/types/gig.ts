@@ -55,6 +55,9 @@ export interface VenueInfo {
   transitHint: string;
   lastTransitTip?: string;
   hotelAreaTip?: string;
+  bestSectionTip?: string;
+  restrictedViewWarning?: string;
+  cloakAndMerchTip?: string;
   mapsQuery: string;
 }
 
@@ -272,8 +275,30 @@ export interface WorldFestivalItem {
   nextSessionLabel: string;
   nextSessionIso: string;
   description: string;
+  allInBudgetAud?: string;
+  budgetBreakdown?: string;
+  visaAndCampingTip?: string;
   isCore?: boolean;
   isCustomAdded?: boolean;
+}
+
+export interface ApacTourStop {
+  id: string;
+  artist: string;
+  tourTitle: string;
+  city: 'Tokyo' | 'Bangkok' | 'Singapore' | 'Hong Kong' | 'Auckland';
+  country: string;
+  countryCode: string;
+  venueName: string;
+  dateIso: string;
+  dateLabel: string;
+  melFlightDuration: string;
+  sydFlightDuration: string;
+  auStatus: 'asia-only' | 'nz-short-hop' | 'au-signal' | 'au-confirmed';
+  auStatusLabel: string;
+  portalLabel: string;
+  ticketUrl: string;
+  note: string;
 }
 
 export type LeadMinutes = 15 | 60 | 1440;

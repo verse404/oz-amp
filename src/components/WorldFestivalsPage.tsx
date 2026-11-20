@@ -9,18 +9,23 @@ import {
   Compass,
   ExternalLink,
   Globe,
+  Headphones,
+  ListMusic,
   Loader2,
   MapPin,
   Plane,
   Plus,
   RotateCcw,
   Search,
+  ShieldCheck,
   Sparkles,
   Star,
   Ticket,
   Trash2,
+  Wallet,
 } from 'lucide-react';
 import type {
+  ApacTourStop,
   CityId,
   MonitoredSinger,
   ReminderRule,
@@ -41,6 +46,52 @@ import {
   sanitizeExternalHttpsUrl,
 } from '../utils/formatters';
 import { ArtistAvatar } from './ArtistAvatar';
+import { ApacRadarSection } from './ApacRadarSection';
+import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
+
+function resolveTripPlanner(fest: WorldFestivalItem): {
+  allInBudgetAud: string;
+  budgetBreakdown: string;
+  visaAndCampingTip: string;
+} {
+  if (fest.allInBudgetAud && fest.budgetBreakdown && fest.visaAndCampingTip) {
+    return {
+      allInBudgetAud: fest.allInBudgetAud,
+      budgetBreakdown: fest.budgetBreakdown,
+      visaAndCampingTip: fest.visaAndCampingTip,
+    };
+  }
+  if (fest.region === 'Asia') {
+    return {
+      allInBudgetAud: '~A$1,950–$2,950 all-in',
+      budgetBreakdown: `${fest.passPriceApprox} + Return nonstop/1-stop MEL/SYD flight ~A$850–$1,150 + Hotel/Transfers ~A$650`,
+      visaAndCampingTip:
+        'AU Passports: Visa-free / visa-exempt across major Asian music hubs (check local digital arrival card 72h prior).',
+    };
+  }
+  if (fest.region === 'North America') {
+    return {
+      allInBudgetAud: '~A$3,400–$4,800 all-in',
+      budgetBreakdown: `${fest.passPriceApprox} + Return MEL/SYD trans-Pacific flight ~A$1,550–$1,850 + Camping/Hotel & Shuttle ~A$1,150`,
+      visaAndCampingTip:
+        'AU Passports: Apply for US ESTA (or Canadian eTA) at least 72h prior; lock free-cancellation lodging near official shuttle lines.',
+    };
+  }
+  if (fest.region === 'Europe') {
+    return {
+      allInBudgetAud: '~A$3,100–$4,450 all-in',
+      budgetBreakdown: `${fest.passPriceApprox} + Return 1-stop MEL/SYD→EU flight ~A$1,950–$2,250 + Camping/City Stay & Rail ~A$650`,
+      visaAndCampingTip:
+        'AU Passports: 90-day visa-free Schengen/UK entry (check EU ETIAS / UK ETA requirements before departure).',
+    };
+  }
+  return {
+    allInBudgetAud: '~A$2,800–$4,200 all-in',
+    budgetBreakdown: `${fest.passPriceApprox} + Return international flights from MEL/SYD + Accommodation & ground transfers`,
+    visaAndCampingTip:
+      'Check AU Smartraveller entry rules & official festival shuttle/camping allocations early.',
+  };
+}
 
 interface WorldFestivalsPageProps {
   savedExtraFestivals: WorldFestivalItem[];
@@ -51,6 +102,7 @@ interface WorldFestivalsPageProps {
   onToggleMonitorArtist: (artistName: string) => void;
   reminders: ReminderRule[];
   onToggleFestivalReminder: (festival: WorldFestivalItem) => void;
+  onToggleApacReminder: (stop: ApacTourStop) => void;
   onBulkArmFestivalReminders: (newRules: ReminderRule[]) => void;
   onOpenReminderDrawer: () => void;
   cityFilter: 'all' | CityId;
@@ -160,6 +212,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
   onToggleMonitorArtist,
   reminders,
   onToggleFestivalReminder,
+  onToggleApacReminder,
   onBulkArmFestivalReminders,
   onOpenReminderDrawer,
   cityFilter,
@@ -801,6 +854,27 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                       )}
                     </div>
 
+                    {/* All-In AUD Trip Budget & Visa / Camping Logistics Planner */}
+                    {(() => {
+                      const planner = resolveTripPlanner(fest);
+                      return (
+                        <div className="world-budget-box">
+                          <div className="world-budget-top">
+                            <span className="world-budget-kicker">
+                              <Wallet size={13} />
+                              <span>ESTIMATED ALL-IN TRIP BUDGET (AUD)</span>
+                            </span>
+                            <strong className="world-budget-total">{planner.allInBudgetAud}</strong>
+                          </div>
+                          <p className="world-budget-sub">{planner.budgetBreakdown}</p>
+                          <div className="world-visa-line">
+                            <ShieldCheck size={13} className="resale-icon" />
+                            <span>{planner.visaAndCampingTip}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Lineup Highlights & Iconic Stages */}
                     <div className="world-lineup-stage-box">
                       {fest.lineupAnnounced && fest.lineupHighlights.length > 0 ? (
@@ -831,6 +905,31 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                               );
                             })}
                           </div>
+                          {(() => {
+                            const leadPreview = buildArtistPreviewLinks(fest.lineupHighlights[0]);
+                            return (
+                              <div className="music-preview-strip">
+                                <a
+                                  href={leadPreview.spotify}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="preview-chip"
+                                >
+                                  <Headphones size={12} />
+                                  <span>Headliner Spotify</span>
+                                </a>
+                                <a
+                                  href={leadPreview.setlistFm}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="preview-chip preview-chip--setlist"
+                                >
+                                  <ListMusic size={12} />
+                                  <span>Headliner Setlist.fm</span>
+                                </a>
+                              </div>
+                            );
+                          })()}
                         </div>
                       ) : null}
 
@@ -945,7 +1044,14 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         )}
       </section>
 
-      {/* SECTION 02: SEARCH & DISCOVER POTENTIAL NEW WORLD FESTIVALS */}
+      {/* SHORT-FLIGHT ASIA-PACIFIC TOUR STOP RADAR */}
+      <ApacRadarSection
+        cityFilter={cityFilter}
+        reminders={reminders}
+        onToggleApacReminder={onToggleApacReminder}
+      />
+
+      {/* SECTION 03: SEARCH & DISCOVER POTENTIAL NEW WORLD FESTIVALS */}
       <section
         id="discover-world-festivals"
         className="feature-section world-discovery-section"
@@ -954,7 +1060,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         <div className="section-header-row">
           <div>
             <span className="eyebrow-kicker">
-              02 · GLOBAL FESTIVAL RADAR · CURATED CATALOG + LIVE WORLDWIDE SEARCH
+              03 · GLOBAL FESTIVAL RADAR · CURATED CATALOG + LIVE WORLDWIDE SEARCH
             </span>
             <h2 id="discover-world-heading" className="section-heading">
               Search &amp; Add Potential New Festivals

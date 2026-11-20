@@ -1,0 +1,226 @@
+import React, { useMemo, useState } from 'react';
+import {
+  BellPlus,
+  Calendar,
+  Check,
+  ExternalLink,
+  Headphones,
+  ListMusic,
+  MapPin,
+  Plane,
+  Sparkles,
+} from 'lucide-react';
+import type { ApacTourStop, CityId, ReminderRule } from '../types/gig';
+import { APAC_PROMOTER_PORTALS, APAC_SHORT_FLIGHT_STOPS } from '../data/apacTourRadar';
+import { sanitizeExternalHttpsUrl } from '../utils/formatters';
+import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
+import { ArtistAvatar } from './ArtistAvatar';
+
+interface ApacRadarSectionProps {
+  cityFilter: 'all' | CityId;
+  reminders: ReminderRule[];
+  onToggleApacReminder: (stop: ApacTourStop) => void;
+}
+
+const APAC_CITIES: Array<'All Hubs' | ApacTourStop['city']> = [
+  'All Hubs',
+  'Tokyo',
+  'Singapore',
+  'Bangkok',
+  'Hong Kong',
+  'Auckland',
+];
+
+export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
+  cityFilter,
+  reminders,
+  onToggleApacReminder,
+}) => {
+  const [hubFilter, setHubFilter] = useState<'All Hubs' | ApacTourStop['city']>('All Hubs');
+  const [onlyAsiaExclusive, setOnlyAsiaExclusive] = useState(false);
+
+  const remindedIds = useMemo(() => new Set(reminders.map((r) => r.concertId)), [reminders]);
+
+  const filteredStops = useMemo(
+    () =>
+      APAC_SHORT_FLIGHT_STOPS.filter((stop) => {
+        if (hubFilter !== 'All Hubs' && stop.city !== hubFilter) return false;
+        if (onlyAsiaExclusive && stop.auStatus === 'au-confirmed') return false;
+        return true;
+      }),
+    [hubFilter, onlyAsiaExclusive],
+  );
+
+  return (
+    <section className="feature-section apac-radar-section" aria-labelledby="apac-radar-heading">
+      <div className="section-header-row">
+        <div>
+          <span className="eyebrow-kicker">
+            SHORT-FLIGHT ASIA-PACIFIC RADAR · TOKYO · SINGAPORE · BANGKOK · HONG KONG · AUCKLAND
+          </span>
+          <h2 id="apac-radar-heading" className="section-heading">
+            Nearby Asia-Pacific Tour Stops ({filteredStops.length})
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          className={`genre-pill ${onlyAsiaExclusive ? 'is-selected' : ''}`}
+          onClick={() => setOnlyAsiaExclusive((v) => !v)}
+        >
+          <Sparkles size={13} />
+          <span>{onlyAsiaExclusive ? 'Showing Skipping-AU Only' : 'Filter: Skipping AU So Far'}</span>
+        </button>
+      </div>
+
+      <p className="section-subcopy">
+        Watchlist singers often announce <strong>Tokyo, Singapore, Bangkok, Hong Kong, or Auckland</strong>{' '}
+        dates weeks before Australia—or skip VIC/NSW altogether. Catch easy nonstop weekend gig hops
+        from{' '}
+        <strong>
+          {cityFilter === 'sydney'
+            ? 'Sydney (SYD)'
+            : cityFilter === 'melbourne'
+              ? 'Melbourne (MEL)'
+              : 'Melbourne & Sydney'}
+        </strong>
+        .
+      </p>
+
+      <div className="apac-hub-bar">
+        <div className="genre-scroll-row" role="group" aria-label="Filter by Asia-Pacific hub city">
+          {APAC_CITIES.map((hub) => (
+            <button
+              key={hub}
+              type="button"
+              className={`genre-pill ${hubFilter === hub ? 'is-selected' : ''}`}
+              onClick={() => setHubFilter(hub)}
+            >
+              {hub}
+            </button>
+          ))}
+        </div>
+
+        <div className="apac-portals-row">
+          {APAC_PROMOTER_PORTALS.map((portal) => (
+            <a
+              key={portal.label}
+              href={portal.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="platform-mini-link"
+            >
+              <span>{portal.label}</span>
+              <ExternalLink size={11} />
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div className="apac-grid">
+        {filteredStops.map((stop) => {
+          const isArmed = remindedIds.has(stop.id);
+          const preview = buildArtistPreviewLinks(stop.artist);
+          const safeUrl = sanitizeExternalHttpsUrl(stop.ticketUrl, stop.artist);
+
+          return (
+            <article key={stop.id} className={`apac-card ${isArmed ? 'is-armed' : ''}`}>
+              <div className="apac-card-top">
+                <span className="world-country-pill">{stop.countryCode}</span>
+                <span className={`apac-signal-pill apac-signal-pill--${stop.auStatus}`}>
+                  {stop.auStatusLabel}
+                </span>
+              </div>
+
+              <div className="drop-artist-row">
+                <ArtistAvatar name={stop.artist} size="md" />
+                <div className="drop-artist-meta">
+                  <strong className="apac-artist-name">{stop.artist}</strong>
+                  <span className="apac-tour-sub">{stop.tourTitle}</span>
+                </div>
+              </div>
+
+              <div className="apac-logistics">
+                <div className="apac-meta-line">
+                  <Calendar size={13} />
+                  <strong>{stop.dateLabel}</strong>
+                </div>
+                <div className="apac-meta-line">
+                  <MapPin size={13} />
+                  <span>
+                    {stop.venueName}, {stop.city}
+                  </span>
+                </div>
+                {(cityFilter === 'melbourne' || cityFilter === 'all') && (
+                  <div className="apac-meta-line apac-flight-line">
+                    <Plane size={13} />
+                    <span>{stop.melFlightDuration}</span>
+                  </div>
+                )}
+                {(cityFilter === 'sydney' || cityFilter === 'all') && (
+                  <div className="apac-meta-line apac-flight-line">
+                    <Plane size={13} />
+                    <span>{stop.sydFlightDuration}</span>
+                  </div>
+                )}
+              </div>
+
+              <p className="apac-note">{stop.note}</p>
+
+              <div className="music-preview-strip">
+                <a
+                  href={preview.spotify}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="preview-chip"
+                >
+                  <Headphones size={12} />
+                  <span>Spotify</span>
+                </a>
+                <a
+                  href={preview.appleMusic}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="preview-chip"
+                >
+                  <Headphones size={12} />
+                  <span>Apple Music</span>
+                </a>
+                <a
+                  href={preview.setlistFm}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="preview-chip preview-chip--setlist"
+                >
+                  <ListMusic size={12} />
+                  <span>Setlist.fm</span>
+                </a>
+              </div>
+
+              <div className="apac-card-footer">
+                <button
+                  type="button"
+                  className={isArmed ? 'btn-armed-sm' : 'btn-outline-sm'}
+                  onClick={() => onToggleApacReminder(stop)}
+                >
+                  {isArmed ? <Check size={14} /> : <BellPlus size={14} />}
+                  <span>{isArmed ? 'Trip Alert Armed' : 'Remind Trip'}</span>
+                </button>
+
+                <a
+                  href={safeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary-sm"
+                >
+                  <span>{stop.portalLabel}</span>
+                  <ExternalLink size={13} />
+                </a>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+};

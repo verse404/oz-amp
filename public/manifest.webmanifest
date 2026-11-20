@@ -1,0 +1,36 @@
+{
+  "name": "OZ Amp — Concert, Singer & World Festival Guide",
+  "short_name": "OZ Amp",
+  "description": "Melbourne & Sydney live concerts, 275-singer session reminders, Asia-Pacific short-flight gig radar, and iconic World Music Festivals.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#161311",
+  "theme_color": "#161311",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Melbourne & Sydney Gigs",
+      "short_name": "All Gigs",
+      "url": "/#/guide"
+    },
+    {
+      "name": "My Singer Sessions",
+      "short_name": "My Singers",
+      "url": "/#/my-sessions"
+    },
+    {
+      "name": "World Festivals",
+      "short_name": "World Fests",
+      "url": "/#/world-festivals"
+    }
+  ]
+}

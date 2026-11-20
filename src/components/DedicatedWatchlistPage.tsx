@@ -9,6 +9,8 @@ import {
   Check,
   Clock,
   ExternalLink,
+  Headphones,
+  ListMusic,
   MapPin,
   Radio,
   Search,
@@ -18,6 +20,7 @@ import {
   Upload,
 } from 'lucide-react';
 import type {
+  ApacTourStop,
   CityId,
   ConcertEvent,
   LeadMinutes,
@@ -46,7 +49,9 @@ import {
   sanitizeExternalHttpsUrl,
 } from '../utils/formatters';
 import { computeResaleGuard } from '../utils/auMarketTools';
+import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
 import { ArtistAvatar, ConcertMediaBanner } from './ArtistAvatar';
+import { ApacRadarSection } from './ApacRadarSection';
 
 interface DedicatedWatchlistPageProps {
   concerts: ConcertEvent[];
@@ -68,6 +73,7 @@ interface DedicatedWatchlistPageProps {
     },
   ) => void;
   onBulkArmReminders: (newRules: ReminderRule[]) => void;
+  onToggleApacReminder: (stop: ApacTourStop) => void;
   onOpenReminderDrawer: () => void;
   onBackToMainGuide: () => void;
   onShowToast: (msg: string) => void;
@@ -123,6 +129,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
   onChangeCityFilter,
   onAddOrToggleReminder,
   onBulkArmReminders,
+  onToggleApacReminder,
   onOpenReminderDrawer,
   onBackToMainGuide,
   onShowToast,
@@ -874,6 +881,41 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
 
                   <p className="gig-editorial-note">{concert.editorialNote}</p>
 
+                  {(() => {
+                    const preview = buildArtistPreviewLinks(concert.artist);
+                    return (
+                      <div className="music-preview-strip">
+                        <a
+                          href={preview.spotify}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="preview-chip"
+                        >
+                          <Headphones size={12} />
+                          <span>Spotify</span>
+                        </a>
+                        <a
+                          href={preview.appleMusic}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="preview-chip"
+                        >
+                          <Headphones size={12} />
+                          <span>Apple Music</span>
+                        </a>
+                        <a
+                          href={preview.setlistFm}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="preview-chip preview-chip--setlist"
+                        >
+                          <ListMusic size={12} />
+                          <span>Setlist.fm</span>
+                        </a>
+                      </div>
+                    );
+                  })()}
+
                   {/* Dedicated Session & Show-Night Reminder Buttons */}
                   <div className="watchlist-session-pill-bar">
                     <button
@@ -959,7 +1001,14 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
         )}
       </section>
 
-      {/* SECTION 3: FULL 275+ UPLOADED SINGERS ROSTER (A-Z + CHINESE ARTISTS) */}
+      {/* NEARBY ASIA-PACIFIC SHORT-FLIGHT GIG RADAR FOR YOUR SINGERS */}
+      <ApacRadarSection
+        cityFilter={cityFilter}
+        reminders={reminders}
+        onToggleApacReminder={onToggleApacReminder}
+      />
+
+      {/* SECTION 4: FULL 275+ UPLOADED SINGERS ROSTER (A-Z + CHINESE ARTISTS) */}
       <section className="feature-section" aria-labelledby="watchlist-roster-heading">
         <div className="section-header-row">
           <div>
@@ -1198,6 +1247,22 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       className="platform-mini-link"
                     >
                       Tixel <ExternalLink size={10} />
+                    </a>
+                    <a
+                      href={`https://open.spotify.com/search/${qEnc}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="platform-mini-link"
+                    >
+                      Spotify <ExternalLink size={10} />
+                    </a>
+                    <a
+                      href={`https://www.setlist.fm/search?query=${qEnc}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="platform-mini-link"
+                    >
+                      Setlist.fm <ExternalLink size={10} />
                     </a>
                   </div>
                 </article>

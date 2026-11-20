@@ -8,6 +8,7 @@
     "dev": "vite",
     "bff": "node ./server/index.mjs",
     "sync": "node ./server/syncCatalog.mjs",
+    "digest": "node ./server/dailyDigestAlert.mjs",
     "start": "SERVE_STATIC=1 PUBLIC_READONLY_MODE=1 node ./server/index.mjs",
     "build": "tsc -b && vite build",
     "test": "node --test ./tests/*.test.mjs",

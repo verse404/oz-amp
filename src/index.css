@@ -3849,3 +3849,355 @@ body {
     height: 185px;
   }
 }
+
+
+/* ── ALL-8 UPGRADE PACK: MUSIC PREVIEWS, AUD BUDGET, APAC RADAR, VENUE TIPS & SYNC ── */
+
+.music-preview-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  flex-wrap: wrap;
+}
+
+.preview-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.2rem 0.56rem;
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hairline);
+  color: var(--fg-secondary);
+  text-decoration: none;
+  transition: border-color 0.14s ease, color 0.14s ease;
+}
+
+.preview-chip:hover {
+  color: var(--fg-primary);
+  border-color: var(--accent-primary);
+}
+
+.preview-chip--setlist {
+  color: var(--accent-amber);
+  border-color: color-mix(in srgb, var(--accent-amber) 35%, var(--border-hairline));
+}
+
+/* World Festival All-In AUD Budget & Entry/Camping Box */
+.world-budget-box {
+  background: color-mix(in srgb, var(--accent-amber) 7%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 32%, var(--border-hairline));
+  border-radius: 10px;
+  padding: 0.68rem 0.82rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.34rem;
+}
+
+.world-budget-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.world-budget-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--accent-amber);
+}
+
+.world-budget-total {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--fg-primary);
+}
+
+.world-budget-sub {
+  margin: 0;
+  font-size: 0.77rem;
+  line-height: 1.4;
+  color: var(--fg-secondary);
+}
+
+.world-visa-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.38rem;
+  padding-top: 0.3rem;
+  border-top: 1px dashed var(--border-hairline);
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--fg-primary);
+}
+
+/* Nearby Asia-Pacific Short-Flight Gig Radar */
+.apac-hub-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.apac-portals-row {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  flex-wrap: wrap;
+}
+
+.apac-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.apac-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hairline);
+  border-radius: 13px;
+  padding: 1rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.68rem;
+  transition: border-color 0.16s ease, transform 0.16s ease;
+}
+
+.apac-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.apac-card.is-armed {
+  border-color: var(--accent-sage);
+}
+
+.apac-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.apac-signal-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.67rem;
+  font-weight: 600;
+  padding: 0.16rem 0.5rem;
+  border-radius: 5px;
+  background: var(--bg-surface);
+  color: var(--accent-amber);
+  border: 1px solid var(--border-hairline);
+}
+
+.apac-signal-pill--asia-only,
+.apac-signal-pill--nz-short-hop {
+  color: var(--accent-primary);
+  border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-hairline));
+}
+
+.apac-signal-pill--au-confirmed {
+  color: var(--accent-sage);
+}
+
+.apac-artist-name {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.12rem;
+  line-height: 1.2;
+}
+
+.apac-tour-sub {
+  font-size: 0.77rem;
+  color: var(--fg-muted);
+}
+
+.apac-logistics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--fg-primary);
+}
+
+.apac-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.apac-flight-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.73rem;
+  color: var(--accent-amber);
+}
+
+.apac-note {
+  margin: 0;
+  font-size: 0.79rem;
+  line-height: 1.42;
+  color: var(--fg-secondary);
+}
+
+.apac-card-footer {
+  margin-top: auto;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--border-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* Upgraded Melbourne & Sydney Venue Sightline & Bag/Merch Insider Cards */
+.venue-directory-grid.is-expanded-guide {
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 0.95rem;
+}
+
+.venue-guide-card {
+  text-align: left;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem 1.05rem;
+}
+
+.venue-guide-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.venue-insider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.65rem 0.72rem;
+  border-radius: 9px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  font-size: 0.78rem;
+  line-height: 1.42;
+  color: var(--fg-secondary);
+}
+
+.venue-insider-row {
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr);
+  align-items: start;
+  gap: 0.45rem;
+}
+
+.insider-icon {
+  margin-top: 0.16rem;
+}
+
+.insider-icon--best {
+  color: var(--accent-sage);
+}
+
+.insider-icon--warn {
+  color: var(--accent-amber);
+}
+
+.insider-icon--merch {
+  color: var(--accent-primary);
+}
+
+.venue-guide-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Cross-Device Backup & Cloud Push Setup Modal */
+.sync-modal-panel {
+  max-width: 660px;
+  width: min(94vw, 660px);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sync-modal-tabs {
+  align-self: flex-start;
+  flex-wrap: wrap;
+}
+
+.sync-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.sync-helper-copy {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.48;
+  color: var(--fg-secondary);
+}
+
+.sync-export-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.sync-paste-box textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 9px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--fg-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  resize: vertical;
+}
+
+.sync-error-msg {
+  margin: 0.35rem 0 0;
+  font-size: 0.79rem;
+  color: var(--accent-crimson);
+}
+
+.cloud-guide-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hairline);
+  border-radius: 12px;
+  padding: 0.95rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.cloud-guide-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+  color: var(--fg-primary);
+}
+
+.cloud-secrets-list {
+  margin: 0;
+  padding-inline-start: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  font-size: 0.81rem;
+  line-height: 1.45;
+  color: var(--fg-secondary);
+}

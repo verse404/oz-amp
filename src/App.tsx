@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  AlertTriangle,
   Award,
   Bell,
   BellPlus,
@@ -7,8 +8,11 @@ import {
   Check,
   Clock,
   ExternalLink,
+  Eye,
   FilePlus2,
+  Headphones,
   Hotel,
+  ListMusic,
   MapPin,
   Moon,
   Plane,
@@ -16,6 +20,8 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  ShoppingBag,
+  Smartphone,
   Sparkles,
   Star,
   Sun,
@@ -23,6 +29,7 @@ import {
   Train,
 } from 'lucide-react';
 import type {
+  ApacTourStop,
   CatalogPayload,
   CityId,
   ConcertEvent,
@@ -61,9 +68,12 @@ import { MusicFestivalsSection } from './components/MusicFestivalsSection';
 import { StubArchiveSection } from './components/StubArchiveSection';
 import { DedicatedWatchlistPage } from './components/DedicatedWatchlistPage';
 import { WorldFestivalsPage } from './components/WorldFestivalsPage';
+import { BackupSyncModal } from './components/BackupSyncModal';
 import { ArtistAvatar, ConcertMediaBanner } from './components/ArtistAvatar';
 import { UPLOADED_WATCHLIST_SINGERS } from './data/userSingerList';
 import { CORE_WORLD_FESTIVALS } from './data/worldFestivals';
+import { VENUE_INSIDER_TIPS } from './data/venueInsiderTips';
+import { buildArtistPreviewLinks } from './utils/musicPreviewLinks';
 
 type CityFilter = 'all' | CityId;
 type StatusFilter =
@@ -296,6 +306,8 @@ export const App: React.FC = () => {
   });
   const [isReminderDrawerOpen, setIsReminderDrawerOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [showVenueTips, setShowVenueTips] = useState(true);
   const [activePopoverId, setActivePopoverId] = useState<string | null>(null);
   const [showAllDrops, setShowAllDrops] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1145,6 +1157,35 @@ export const App: React.FC = () => {
     [allConcerts],
   );
 
+  const handleToggleApacReminder = (stop: ApacTourStop) => {
+    const ruleId = `${stop.id}::apac-trip::1440`;
+    setReminders((prev) => {
+      const exists = prev.some((r) => r.id === ruleId || r.concertId === stop.id);
+      if (exists) {
+        showToast(`Removed Asia-Pacific trip alert for ${stop.artist} (${stop.city}).`);
+        return prev.filter((r) => r.id !== ruleId && r.concertId !== stop.id);
+      }
+      playReminderChime();
+      showToast(`Armed short-flight gig alert: ${stop.artist} in ${stop.city} (${stop.dateLabel}).`);
+      const nextRule: ReminderRule = {
+        id: ruleId,
+        concertId: stop.id,
+        artist: `${stop.artist} (${stop.city})`,
+        venueName: `${stop.venueName}, ${stop.city}`,
+        city: homeCity,
+        regionBadge: stop.countryCode,
+        targetType: 'show-day',
+        targetLabel: `${stop.tourTitle} (${stop.dateLabel})`,
+        targetIso: `${stop.dateIso}T10:00:00+11:00`,
+        leadMinutes: 1440,
+        ticketUrl: sanitizeExternalHttpsUrl(stop.ticketUrl, stop.artist),
+        firedOffsets: [],
+        createdAtIso: new Date().toISOString(),
+      };
+      return [nextRule, ...prev];
+    });
+  };
+
   const downloadSingleShowIcs = (concert: ConcertEvent) => {
     const start = new Date(buildConcertDoorsIso(concert));
     const end = new Date(start.getTime() + 3.5 * 3600 * 1000);
@@ -1270,6 +1311,17 @@ export const App: React.FC = () => {
 
             <button
               type="button"
+              id="open-sync-modal-btn"
+              className="btn-outline-sm"
+              onClick={() => setIsSyncModalOpen(true)}
+              title="Sync profile across laptop & phone or set up background push alerts"
+            >
+              <Smartphone size={15} />
+              <span>Sync / App</span>
+            </button>
+
+            <button
+              type="button"
               id="open-reminders-btn"
               className="btn-primary-sm"
               onClick={() => setIsReminderDrawerOpen(true)}
@@ -1359,6 +1411,7 @@ export const App: React.FC = () => {
                 `Armed ${newRules.length} world festival registration & ticket reminder${newRules.length === 1 ? '' : 's'}!`,
               );
             }}
+            onToggleApacReminder={handleToggleApacReminder}
             onOpenReminderDrawer={() => setIsReminderDrawerOpen(true)}
             cityFilter={cityFilter}
             onChangeCityFilter={(next) => {
@@ -1388,6 +1441,7 @@ export const App: React.FC = () => {
                 `Armed ${newRules.length} session & concert reminder${newRules.length === 1 ? '' : 's'} for your uploaded singer list!`,
               );
             }}
+            onToggleApacReminder={handleToggleApacReminder}
             onOpenReminderDrawer={() => setIsReminderDrawerOpen(true)}
             onBackToMainGuide={() => switchPage('guide')}
             onShowToast={showToast}
@@ -2009,6 +2063,42 @@ export const App: React.FC = () => {
 
                   <p className="gig-editorial-note">{concert.editorialNote}</p>
 
+                  {/* 1-Click Spotify / Apple Music / Setlist.fm Preview Strip */}
+                  {(() => {
+                    const preview = buildArtistPreviewLinks(concert.artist);
+                    return (
+                      <div className="music-preview-strip">
+                        <a
+                          href={preview.spotify}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="preview-chip"
+                        >
+                          <Headphones size={12} />
+                          <span>Spotify</span>
+                        </a>
+                        <a
+                          href={preview.appleMusic}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="preview-chip"
+                        >
+                          <Headphones size={12} />
+                          <span>Apple Music</span>
+                        </a>
+                        <a
+                          href={preview.setlistFm}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="preview-chip preview-chip--setlist"
+                        >
+                          <ListMusic size={12} />
+                          <span>Setlist.fm</span>
+                        </a>
+                      </div>
+                    );
+                  })()}
+
                   {/* Inline Pre-Sale Schedule */}
                   {concert.ticketDrops.length > 0 && (
                     <div className="card-drops-box">
@@ -2179,48 +2269,96 @@ export const App: React.FC = () => {
           onRemoveStub={(id) => setStubs((prev) => prev.filter((s) => s.id !== id))}
         />
 
-        {/* Sydney & Melbourne Venue Directory */}
+        {/* Sydney & Melbourne Venue Directory + Sightline, Restricted-View & Bag/Merch Insider Guide */}
         <section className="venues-directory" aria-labelledby="venues-heading">
           <div className="section-header-row">
             <div>
               <span className="eyebrow-kicker">
-                03 · {availableVenues.length} Tracked Stages · Curfews &amp; Last Trains
+                03 · {availableVenues.length} Tracked Stages · Sightlines, Curfews &amp; Bag Rules
               </span>
               <h2 id="venues-heading" className="section-heading">
                 {cityFilter === 'melbourne'
-                  ? 'Melbourne Venue Directory'
+                  ? 'Melbourne Venue & Sightline Guide'
                   : cityFilter === 'sydney'
-                    ? 'Sydney Venue Directory'
-                    : 'Melbourne & Sydney Venue Directory'}
+                    ? 'Sydney Venue & Sightline Guide'
+                    : 'Melbourne & Sydney Venue & Sightline Guide'}
               </h2>
             </div>
+
+            <button
+              type="button"
+              className="btn-outline-sm"
+              onClick={() => setShowVenueTips((cur) => !cur)}
+            >
+              <Eye size={14} />
+              <span>{showVenueTips ? 'Compact Venue Grid' : 'Show Sightline & Bag Tips'}</span>
+            </button>
           </div>
-          <div className="venue-directory-grid">
+          <div className={`venue-directory-grid ${showVenueTips ? 'is-expanded-guide' : ''}`}>
             {availableVenues.map((v) => {
               const count = allConcerts.filter((c) => c.venueId === v.id).length;
               const isSelected = venueFilter === v.id;
+              const insider = VENUE_INSIDER_TIPS[v.id];
               return (
-                <button
+                <article
                   key={v.id}
-                  type="button"
-                  className={`venue-tile ${isSelected ? 'is-selected' : ''}`}
-                  onClick={() => {
-                    setVenueFilter((cur) => (cur === v.id ? 'all' : v.id));
-                    document.getElementById('gigs')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
+                  className={`venue-tile venue-guide-card ${isSelected ? 'is-selected' : ''}`}
                 >
                   <div className="venue-tile-top">
                     <span className={`city-pill city-pill--${v.city}`}>{v.state}</span>
                     <span className="venue-cap">
-                      Cap. {new Intl.NumberFormat('en-AU').format(v.capacity)}
+                      Cap. {new Intl.NumberFormat('en-AU').format(v.capacity)} · Curfew{' '}
+                      {v.curfewLocal || '23:00'}
                     </span>
                   </div>
-                  <strong className="venue-tile-name">{v.name}</strong>
-                  <span className="venue-tile-suburb">
-                    {v.suburb} · Curfew {v.curfewLocal || '23:00'} ({count}{' '}
-                    {count === 1 ? 'show' : 'shows'})
-                  </span>
-                </button>
+
+                  <div className="venue-guide-head">
+                    <strong className="venue-tile-name">{v.name}</strong>
+                    <span className="venue-tile-suburb">
+                      {v.suburb} · {v.transitHint}
+                    </span>
+                  </div>
+
+                  {showVenueTips && insider && (
+                    <div className="venue-insider-list">
+                      <div className="venue-insider-row">
+                        <Eye size={13} className="insider-icon insider-icon--best" />
+                        <span>
+                          <strong>Best Sightline:</strong> {insider.bestSectionTip}
+                        </span>
+                      </div>
+                      <div className="venue-insider-row">
+                        <AlertTriangle size={13} className="insider-icon insider-icon--warn" />
+                        <span>
+                          <strong>Watch Out:</strong> {insider.restrictedViewWarning}
+                        </span>
+                      </div>
+                      <div className="venue-insider-row">
+                        <ShoppingBag size={13} className="insider-icon insider-icon--merch" />
+                        <span>
+                          <strong>Bags &amp; Merch:</strong> {insider.cloakAndMerchTip}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="venue-guide-footer">
+                    <button
+                      type="button"
+                      className={isSelected ? 'btn-armed-sm' : 'btn-subtle-sm'}
+                      onClick={() => {
+                        setVenueFilter((cur) => (cur === v.id ? 'all' : v.id));
+                        document.getElementById('gigs')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      <span>
+                        {isSelected
+                          ? `✓ Filtering ${count} Show${count === 1 ? '' : 's'}`
+                          : `Filter ${count} Show${count === 1 ? '' : 's'} Here`}
+                      </span>
+                    </button>
+                  </div>
+                </article>
               );
             })}
           </div>
@@ -2312,6 +2450,34 @@ export const App: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         csrfToken={csrfToken}
         onImportConcerts={handleImportConcerts}
+      />
+
+      <BackupSyncModal
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        theme={theme}
+        cityFilter={cityFilter}
+        reminders={reminders}
+        stubs={stubs}
+        monitoredSingers={monitoredSingers}
+        savedWorldFestivals={savedWorldFestivals}
+        customConcerts={customConcerts}
+        onRestoreBackup={(backup) => {
+          setTheme(backup.theme);
+          setCityFilter(backup.cityFilter);
+          setReminders(backup.reminders);
+          setStubs(backup.stubs);
+          if (backup.monitoredSingers.length > 0) {
+            setMonitoredSingers(backup.monitoredSingers);
+          }
+          setSavedWorldFestivals(backup.savedWorldFestivals);
+          setCustomConcerts(backup.customConcerts);
+          playReminderChime();
+          showToast(
+            `Restored OZ Amp profile (${backup.reminders.length} reminders, ${backup.stubs.length} stubs)!`,
+          );
+        }}
+        onShowToast={showToast}
       />
     </div>
   );

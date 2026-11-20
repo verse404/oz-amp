@@ -59,6 +59,7 @@ const STATIC_MIME_TYPES = {
   '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
 };
 
 const SPA_SECURITY_HEADERS = {

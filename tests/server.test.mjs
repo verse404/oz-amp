@@ -9,6 +9,13 @@ import {
   VENUES,
 } from '../server/seedCatalog.mjs';
 import { createAppServer } from '../server/index.mjs';
+import { runDailyDigest } from '../server/dailyDigestAlert.mjs';
+
+test('runDailyDigest scans 275-singer watchlist & World Festivals safely without webhook', async () => {
+  const res = await runDailyDigest();
+  assert.equal(typeof res.highlightsCount, 'number');
+  assert.equal(res.sent, false);
+});
 
 test('SEED_CONCERTS and all ticketDrops never link to generic homepages or defunct search URLs', () => {
   const genericHomes = new Set([
