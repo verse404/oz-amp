@@ -1,5 +1,5 @@
 {
-  "syncedAtIso": "2026-11-21T01:41:51.176Z",
+  "syncedAtIso": "2026-11-22T00:36:34.606Z",
   "liveSyncSource": "Verified Sydney & Melbourne Slate + Live AU Tour Press (14 dispatches)",
   "ticketmasterConfigured": false,
   "venues": [
@@ -410,43 +410,6 @@
     }
   ],
   "concerts": [
-    {
-      "id": "robyn-syd-2026",
-      "artist": "Robyn",
-      "supportActs": [],
-      "tourTitle": "The Sexistential Tour",
-      "city": "sydney",
-      "venueId": "syd-qudos",
-      "venueName": "Qudos Bank Arena",
-      "suburb": "Sydney Olympic Park",
-      "venueTier": "arena",
-      "dateIso": "2026-11-21",
-      "doorsTimeLocal": "18:30",
-      "setTimeLocal": "20:45",
-      "timeZone": "Australia/Sydney",
-      "genres": [
-        "Pop",
-        "Electronic"
-      ],
-      "promoter": "Handsome Tours",
-      "agency": "Ticketek",
-      "status": "selling-fast",
-      "priceMinAud": 139.9,
-      "priceMaxAud": 249.9,
-      "ticketUrl": "https://premier.ticketek.com.au/Shows/Show.aspx?sh=WIEVHBEM26",
-      "resaleUrl": "https://tixel.com/au/discover/tickets?q=Robyn",
-      "ticketDrops": [
-        {
-          "id": "robyn-syd-final",
-          "kind": "General On-Sale",
-          "label": "T-48h Final GA Floor & Lower Bowl Production Release",
-          "opensAtIso": "2026-11-19T12:00:00+11:00",
-          "codeHint": "Final promoter hold release 48h prior to doors",
-          "bookingUrl": "https://premier.ticketek.com.au/Shows/Show.aspx?sh=WIEVHBEM26"
-        }
-      ],
-      "editorialNote": "Sydney-only Australian arena exclusive from the Swedish synth-pop icon."
-    },
     {
       "id": "robyn-mel-2026",
       "artist": "Robyn",
