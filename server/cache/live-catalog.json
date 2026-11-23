@@ -1,6 +1,6 @@
 {
-  "syncedAtIso": "2026-11-22T00:36:34.606Z",
-  "liveSyncSource": "Verified Sydney & Melbourne Slate + Live AU Tour Press (14 dispatches)",
+  "syncedAtIso": "2026-11-23T01:04:26.979Z",
+  "liveSyncSource": "Verified Sydney & Melbourne Slate + Live AU Tour Press (13 dispatches)",
   "ticketmasterConfigured": false,
   "venues": [
     {
@@ -5166,6 +5166,28 @@
   "tourNews": [
     {
       "id": "rss-aHR0cHM6Ly9tdXNp",
+      "headline": "Billy Idol Announces 2027 Australian Tour With Huge Red Hot Summer Shows",
+      "source": "Music Feeds AU",
+      "publishedAtIso": "2026-11-22T23:40:27.000Z",
+      "url": "https://musicfeeds.com.au/news/billy-idol-announces-2027-australian-tour-with-huge-red-hot-summer-shows/",
+      "citiesMentioned": [
+        "sydney",
+        "melbourne"
+      ]
+    },
+    {
+      "id": "rss-aHR0cHM6Ly9tdXNp",
+      "headline": "Australian Music Legend Molly Meldrum Dies Aged 83",
+      "source": "Music Feeds AU",
+      "publishedAtIso": "2026-11-22T23:25:35.000Z",
+      "url": "https://musicfeeds.com.au/news/australian-music-legend-molly-meldrum-dies-aged-83/",
+      "citiesMentioned": [
+        "sydney",
+        "melbourne"
+      ]
+    },
+    {
+      "id": "rss-aHR0cHM6Ly9tdXNp",
       "headline": "Thornhill Announce Mammoth 2027 ‘Summer Slam’ Regional Australian Tour",
       "source": "Music Feeds AU",
       "publishedAtIso": "2026-11-18T11:17:08.000Z",
@@ -5203,28 +5225,6 @@
       "source": "Music Feeds AU",
       "publishedAtIso": "2026-11-16T05:57:24.000Z",
       "url": "https://musicfeeds.com.au/news/brisbane-is-copping-a-massive-new-17000-cap-live-music-arena/",
-      "citiesMentioned": [
-        "sydney",
-        "melbourne"
-      ]
-    },
-    {
-      "id": "rss-aHR0cHM6Ly9tdXNp",
-      "headline": "Knocked Loose Announce Massive 2027 Australian Tour",
-      "source": "Music Feeds AU",
-      "publishedAtIso": "2026-11-16T05:44:52.000Z",
-      "url": "https://musicfeeds.com.au/news/knocked-loose-announce-massive-2027-australian-tour/",
-      "citiesMentioned": [
-        "sydney",
-        "melbourne"
-      ]
-    },
-    {
-      "id": "rss-aHR0cHM6Ly9tdXNp",
-      "headline": "Train Announce 2027 Australian Tour With Barenaked Ladies",
-      "source": "Music Feeds AU",
-      "publishedAtIso": "2026-11-13T03:36:16.000Z",
-      "url": "https://musicfeeds.com.au/news/train-announce-2027-australian-tour-with-barenaked-ladies/",
       "citiesMentioned": [
         "sydney",
         "melbourne"
