@@ -58,6 +58,24 @@ export function lookupStaticPortrait(rawName?: string): string {
   if (base.includes('let them eat cake')) return ARTIST_PORTRAITS['boys noize'] || '';
   if (base.includes('pitch music')) return ARTIST_PORTRAITS['haai'] || '';
   if (base.includes('ultra australia')) return ARTIST_PORTRAITS['calvin harris'] || '';
+  if (base.includes('coachella')) {
+    return 'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/28/Coachella18W1-18_%2842058161311%29.jpg/960px-Coachella18W1-18_%2842058161311%29.jpg';
+  }
+  if (base.includes('tomorrowland')) {
+    return 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ed/Tomorrowland2016mainstage.jpg/960px-Tomorrowland2016mainstage.jpg';
+  }
+  if (base.includes('burning man')) {
+    return 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ec/Temple_du_Burning_Man_2016.jpg/960px-Temple_du_Burning_Man_2016.jpg';
+  }
+  if (base.includes('fuji rock')) {
+    return 'https://upload.wikimedia.org/wikipedia/commons/d/d5/FujiGreenStage.jpg';
+  }
+  if (base.includes('wonderfruit')) {
+    return 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e1/Welcome_sign_at_Wonderfruit_festival.jpg/960px-Welcome_sign_at_Wonderfruit_festival.jpg';
+  }
+  if (base.includes('boom festival')) {
+    return 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ef/Boom_Festival_1997.jpg/960px-Boom_Festival_1997.jpg';
+  }
 
   const noBrackets = base.replace(/\s*\[[^\]]*\]\s*/g, '').trim();
   if (ARTIST_PORTRAITS[noBrackets]) return ARTIST_PORTRAITS[noBrackets];
@@ -200,12 +218,13 @@ export const ConcertMediaBanner: React.FC<ConcertMediaBannerProps> = ({
   supportActs,
 }) => {
   const portraitUrl = useArtistPortrait(artist);
-  const [bgFailed, setBgFailed] = useState(false);
+  const [failedBgUrl, setFailedBgUrl] = useState<string | null>(null);
   const fallbackGrad = MONOGRAM_PALETTES[hashString(artist) % MONOGRAM_PALETTES.length];
+  const showBgImg = Boolean(portraitUrl && portraitUrl !== failedBgUrl);
 
   return (
     <div className="gig-media-banner">
-      {portraitUrl && !bgFailed ? (
+      {showBgImg ? (
         <img
           src={portraitUrl}
           alt=""
@@ -213,7 +232,7 @@ export const ConcertMediaBanner: React.FC<ConcertMediaBannerProps> = ({
           className="gig-media-backdrop-img"
           loading="lazy"
           decoding="async"
-          onError={() => setBgFailed(true)}
+          onError={() => setFailedBgUrl(portraitUrl)}
         />
       ) : (
         <div

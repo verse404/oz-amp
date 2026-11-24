@@ -66,15 +66,24 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
   };
 
   const filteredFestivals = useMemo(() => {
-    return festivals.filter((fest) => {
-      if (cityFilter !== 'all' && !fest.stops.some((st) => st.city === cityFilter)) {
-        return false;
-      }
-      if (formatFilter !== 'all' && fest.format !== formatFilter) {
-        return false;
-      }
-      return true;
-    });
+    const todayAu = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Australia/Melbourne',
+    }).format(new Date());
+    return festivals
+      .map((fest) => ({
+        ...fest,
+        stops: fest.stops.filter((st) => st.dateIso >= todayAu),
+      }))
+      .filter((fest) => {
+        if (fest.stops.length === 0) return false;
+        if (cityFilter !== 'all' && !fest.stops.some((st) => st.city === cityFilter)) {
+          return false;
+        }
+        if (formatFilter !== 'all' && fest.format !== formatFilter) {
+          return false;
+        }
+        return true;
+      });
   }, [festivals, cityFilter, formatFilter]);
 
   const toggleExpand = (id: string) => {

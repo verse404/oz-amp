@@ -1,5 +1,5 @@
 {
-  "syncedAtIso": "2026-11-24T04:55:50.281Z",
+  "syncedAtIso": "2026-11-24T06:48:50.511Z",
   "liveSyncSource": "Verified Sydney & Melbourne Slate + Live AU Tour Press (12 dispatches)",
   "ticketmasterConfigured": false,
   "venues": [
@@ -4455,7 +4455,7 @@
       ],
       "promoter": "Handsome Tours",
       "agency": "Ticketek",
-      "status": "on-sale",
+      "status": "selling-fast",
       "priceMinAud": 139.9,
       "priceMaxAud": 269.9,
       "ticketUrl": "https://premier.ticketek.com.au/shows/show.aspx?sh=IKURAYA27",
@@ -4579,7 +4579,7 @@
       ],
       "promoter": "Handsome Tours",
       "agency": "Ticketek",
-      "status": "on-sale",
+      "status": "selling-fast",
       "priceMinAud": 139.9,
       "priceMaxAud": 269.9,
       "ticketUrl": "https://premier.ticketek.com.au/shows/show.aspx?sh=IKURAYA27",

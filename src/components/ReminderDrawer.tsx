@@ -220,7 +220,11 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
                         <ArtistAvatar name={item.artist} size="sm" shape="rounded" />
                         <div className="reminder-item-main">
                           <div className="reminder-badges">
-                            <span className={`city-pill city-pill--${item.city}`}>
+                            <span
+                              className={`city-pill ${
+                                item.regionBadge ? 'city-pill--global' : `city-pill--${item.city}`
+                              }`}
+                            >
                               {item.regionBadge
                                 ? item.regionBadge
                                 : item.city === 'sydney'

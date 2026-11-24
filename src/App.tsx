@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  ArrowUp,
   Award,
   Bell,
   BellPlus,
@@ -61,19 +62,34 @@ import {
   computeInterstateTripPlan,
   computeResaleGuard,
 } from './utils/auMarketTools';
-import { ReminderDrawer } from './components/ReminderDrawer';
-import { SmartImportModal } from './components/SmartImportModal';
 import { SingerMonitorSection } from './components/SingerMonitorSection';
 import { MusicFestivalsSection } from './components/MusicFestivalsSection';
 import { StubArchiveSection } from './components/StubArchiveSection';
-import { DedicatedWatchlistPage } from './components/DedicatedWatchlistPage';
-import { WorldFestivalsPage } from './components/WorldFestivalsPage';
-import { BackupSyncModal } from './components/BackupSyncModal';
 import { ArtistAvatar, ConcertMediaBanner } from './components/ArtistAvatar';
 import { UPLOADED_WATCHLIST_SINGERS } from './data/userSingerList';
 import { CORE_WORLD_FESTIVALS } from './data/worldFestivals';
 import { VENUE_INSIDER_TIPS } from './data/venueInsiderTips';
 import { buildArtistPreviewLinks } from './utils/musicPreviewLinks';
+
+const ReminderDrawer = lazy(() =>
+  import('./components/ReminderDrawer').then((m) => ({ default: m.ReminderDrawer })),
+);
+const SmartImportModal = lazy(() =>
+  import('./components/SmartImportModal').then((m) => ({ default: m.SmartImportModal })),
+);
+const BackupSyncModal = lazy(() =>
+  import('./components/BackupSyncModal').then((m) => ({ default: m.BackupSyncModal })),
+);
+const DedicatedWatchlistPage = lazy(() =>
+  import('./components/DedicatedWatchlistPage').then((m) => ({
+    default: m.DedicatedWatchlistPage,
+  })),
+);
+const WorldFestivalsPage = lazy(() =>
+  import('./components/WorldFestivalsPage').then((m) => ({ default: m.WorldFestivalsPage })),
+);
+
+type SortMode = 'date' | 'price-asc' | 'drops-first' | 'artist-az';
 
 type CityFilter = 'all' | CityId;
 type StatusFilter =
@@ -296,7 +312,9 @@ export const App: React.FC = () => {
   const [genreFilter, setGenreFilter] = useState<string>('All Genres');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortMode>('date');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Drawers, Modals & Standalone Page Route
   const [activePage, setActivePage] = useState<'guide' | 'watchlist' | 'world-festivals'>(() => {
@@ -347,6 +365,41 @@ export const App: React.FC = () => {
   }, []);
 
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  // Minute-granular clock prevents 1-second memo thrashing across 145+ concert cards
+  const clockMinute = Math.floor(nowMs / 60_000);
+
+  // Global Escape key dismissal for modals, drawers, and card popovers
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsReminderDrawerOpen(false);
+        setIsImportModalOpen(false);
+        setIsSyncModalOpen(false);
+        setActivePopoverId(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // Dismiss open card "Remind" popover on outside click
+  useEffect(() => {
+    if (!activePopoverId) return;
+    const onOutsideClick = (e: MouseEvent) => {
+      if (!(e.target instanceof HTMLElement) || !e.target.closest('.popover-anchor')) {
+        setActivePopoverId(null);
+      }
+    };
+    document.addEventListener('mousedown', onOutsideClick);
+    return () => document.removeEventListener('mousedown', onOutsideClick);
+  }, [activePopoverId]);
+
+  // Show subtle Back-to-Top floating button once scrolled down
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 520);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const [notificationPermission, setNotificationPermission] = useState<
     NotificationPermission | 'unsupported'
@@ -426,9 +479,10 @@ export const App: React.FC = () => {
   }, [savedWorldFestivals]);
 
   const allConcerts = useMemo(() => {
+    const refMs = clockMinute * 60_000;
     const todayAu = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Australia/Melbourne',
-    }).format(new Date(nowMs));
+    }).format(new Date(refMs));
 
     const combined = [...customConcerts, ...catalog.concerts]
       .filter((c) => {
@@ -438,7 +492,7 @@ export const App: React.FC = () => {
       .map((c) => {
         if (c.status === 'presale-soon' || c.status === 'presale-live') {
           const hasFutureDrop = c.ticketDrops.some(
-            (d) => new Date(d.opensAtIso).getTime() > nowMs,
+            (d) => new Date(d.opensAtIso).getTime() > refMs,
           );
           if (!hasFutureDrop) {
             return { ...c, status: 'on-sale' as const };
@@ -454,7 +508,7 @@ export const App: React.FC = () => {
       return a.city === 'melbourne' ? -1 : 1;
     });
     return combined;
-  }, [customConcerts, catalog.concerts, nowMs]);
+  }, [customConcerts, catalog.concerts, clockMinute]);
 
   // Evaluate monitored singers locally + via BFF `/api/artists/monitor-check` and trigger announcement alerts!
   const evaluateSingerAnnouncements = useCallback(
@@ -1019,12 +1073,13 @@ export const App: React.FC = () => {
   };
 
   const upcomingDrops = useMemo(() => {
+    const refMs = clockMinute * 60_000;
     const list: Array<{ concert: ConcertEvent; drop: TicketDropWindow; opensMs: number }> = [];
     for (const c of allConcerts) {
       if (cityFilter !== 'all' && c.city !== cityFilter) continue;
       for (const d of c.ticketDrops) {
         const opensMs = new Date(d.opensAtIso).getTime();
-        if (opensMs >= nowMs - 12 * 3600 * 1000) {
+        if (opensMs >= refMs - 12 * 3600 * 1000) {
           list.push({ concert: c, drop: d, opensMs });
         }
       }
@@ -1035,7 +1090,7 @@ export const App: React.FC = () => {
       return a.concert.city === 'melbourne' ? -1 : 1;
     });
     return list;
-  }, [allConcerts, cityFilter, nowMs]);
+  }, [allConcerts, cityFilter, clockMinute]);
 
   const availableVenues = useMemo(
     () =>
@@ -1107,7 +1162,8 @@ export const App: React.FC = () => {
 
   const filteredConcerts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return allConcerts.filter((c) => {
+    const refMs = clockMinute * 60_000;
+    const list = allConcerts.filter((c) => {
       if (cityFilter !== 'all' && c.city !== cityFilter) return false;
       if (venueFilter !== 'all' && c.venueId !== venueFilter) return false;
       if (genreFilter !== 'All Genres' && !c.genres.includes(genreFilter)) return false;
@@ -1154,6 +1210,23 @@ export const App: React.FC = () => {
       }
       return true;
     });
+
+    if (sortBy === 'price-asc') {
+      return [...list].sort((a, b) => a.priceMinAud - b.priceMinAud || a.dateIso.localeCompare(b.dateIso));
+    }
+    if (sortBy === 'artist-az') {
+      return [...list].sort((a, b) => a.artist.localeCompare(b.artist) || a.dateIso.localeCompare(b.dateIso));
+    }
+    if (sortBy === 'drops-first') {
+      const nextDropMs = (ev: ConcertEvent) => {
+        const future = ev.ticketDrops
+          .map((d) => new Date(d.opensAtIso).getTime())
+          .filter((ms) => ms >= refMs - 12 * 3600 * 1000);
+        return future.length > 0 ? Math.min(...future) : Number.MAX_SAFE_INTEGER;
+      };
+      return [...list].sort((a, b) => nextDropMs(a) - nextDropMs(b) || a.dateIso.localeCompare(b.dateIso));
+    }
+    return list;
   }, [
     allConcerts,
     cityFilter,
@@ -1161,10 +1234,11 @@ export const App: React.FC = () => {
     genreFilter,
     monthFilter,
     statusFilter,
+    sortBy,
+    clockMinute,
     searchQuery,
     isArtistFollowed,
     remindedConcertIds,
-    homeCity,
   ]);
 
   const sydneyCount = useMemo(
@@ -1248,7 +1322,7 @@ export const App: React.FC = () => {
             </button>
           </div>
 
-          <nav className="section-jump-nav" aria-label="Primary pages and sections">
+          <nav className="section-jump-nav" aria-label="Primary pages">
             <div className="page-mode-switcher" role="tablist" aria-label="Switch page view">
               <button
                 type="button"
@@ -1268,7 +1342,7 @@ export const App: React.FC = () => {
                 className={`page-mode-btn ${activePage === 'watchlist' ? 'is-active' : ''}`}
                 onClick={() => switchPage('watchlist')}
               >
-                My Singer Sessions ({UPLOADED_WATCHLIST_SINGERS.length})
+                My Singers ({UPLOADED_WATCHLIST_SINGERS.length})
               </button>
               <button
                 type="button"
@@ -1281,23 +1355,6 @@ export const App: React.FC = () => {
                 World Festivals ({CORE_WORLD_FESTIVALS.length + savedWorldFestivals.length})
               </button>
             </div>
-
-            {activePage === 'guide' && (
-              <>
-                <a href="#drops" className="jump-link">
-                  Drops ({upcomingDrops.length})
-                </a>
-                <a href="#singers-monitor" className="jump-link">
-                  Radar ({monitoredSingers.length})
-                </a>
-                <a href="#stub-wall" className="jump-link">
-                  Stubs ({cityScopedStubs.length})
-                </a>
-                <a href="#music-festivals" className="jump-link">
-                  Festivals ({cityScopedFestivals.length})
-                </a>
-              </>
-            )}
           </nav>
 
           <div className="masthead-actions">
@@ -1364,9 +1421,35 @@ export const App: React.FC = () => {
         </div>
       </header>
 
+      {activePage === 'guide' && (
+        <nav className="section-subnav-ribbon" aria-label="Jump to guide section">
+          <div className="container subnav-inner">
+            <a href="#drops" className="subnav-pill">
+              Ticket Drops ({upcomingDrops.length})
+            </a>
+            <a href="#singers-monitor" className="subnav-pill">
+              Singer Radar ({monitoredSingers.length})
+            </a>
+            <a href="#gigs" className="subnav-pill">
+              Concerts ({filteredConcerts.length})
+            </a>
+            <a href="#stub-wall" className="subnav-pill">
+              Ticket Stubs ({cityScopedStubs.length})
+            </a>
+            <a href="#venues-heading" className="subnav-pill">
+              Venue Sightlines ({availableVenues.length})
+            </a>
+            <a href="#music-festivals" className="subnav-pill">
+              AU Festivals ({cityScopedFestivals.length})
+            </a>
+          </div>
+        </nav>
+      )}
+
       <main className="container main-content">
         {activePage === 'world-festivals' ? (
-          <WorldFestivalsPage
+          <Suspense fallback={<div className="lazy-page-loader">Loading World Festivals…</div>}>
+            <WorldFestivalsPage
             savedExtraFestivals={savedWorldFestivals}
             onAddFestival={(fest) => {
               setSavedWorldFestivals((prev) => {
@@ -1441,8 +1524,10 @@ export const App: React.FC = () => {
             onBackToMainGuide={() => switchPage('guide')}
             onShowToast={showToast}
           />
+          </Suspense>
         ) : activePage === 'watchlist' ? (
-          <DedicatedWatchlistPage
+          <Suspense fallback={<div className="lazy-page-loader">Loading Your 275 Singer Sessions…</div>}>
+            <DedicatedWatchlistPage
             concerts={allConcerts}
             festivals={catalog.musicFestivals || FALLBACK_CATALOG.musicFestivals}
             reminders={cityScopedReminders}
@@ -1465,6 +1550,7 @@ export const App: React.FC = () => {
             onBackToMainGuide={() => switchPage('guide')}
             onShowToast={showToast}
           />
+          </Suspense>
         ) : (
           <>
         {/* Hero Editorial Section */}
@@ -1835,6 +1921,19 @@ export const App: React.FC = () => {
               <option value="reminded">
                 My Armed Reminders ({cityScopedReminders.length})
               </option>
+            </select>
+
+            <select
+              id="sort-order-select"
+              className="filter-select"
+              aria-label="Sort concerts"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortMode)}
+            >
+              <option value="date">Sort: Soonest Date</option>
+              <option value="drops-first">Sort: Next Ticket Drop</option>
+              <option value="price-asc">Sort: Lowest Price (AUD)</option>
+              <option value="artist-az">Sort: Artist A–Z</option>
             </select>
           </div>
 
@@ -2444,60 +2543,84 @@ export const App: React.FC = () => {
         </div>
       </footer>
 
-      <ReminderDrawer
-        isOpen={isReminderDrawerOpen}
-        onClose={() => setIsReminderDrawerOpen(false)}
-        reminders={cityScopedReminders}
-        onRemoveReminder={(id) => setReminders((prev) => prev.filter((r) => r.id !== id))}
-        onClearPastReminders={() => {
-          setReminders((prev) =>
-            prev.filter((r) => new Date(r.targetIso).getTime() > Date.now()),
-          );
-          showToast('Cleared elapsed ticket drops.');
-        }}
-        nowMs={nowMs}
-        notificationPermission={notificationPermission}
-        onRequestNotificationPermission={() => void requestNotificationPermission()}
-        onShowToast={showToast}
-        csrfToken={csrfToken}
-        readonlyMode={readonlyMode}
-        defaultWebhookMasked={defaultWebhookMasked}
-      />
+      {showBackToTop && (
+        <button
+          type="button"
+          className="back-to-top-fab"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Scroll back to top"
+        >
+          <ArrowUp size={15} />
+          <span>Top</span>
+        </button>
+      )}
 
-      <SmartImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        csrfToken={csrfToken}
-        onImportConcerts={handleImportConcerts}
-      />
+      {isReminderDrawerOpen && (
+        <Suspense fallback={null}>
+          <ReminderDrawer
+            isOpen={isReminderDrawerOpen}
+            onClose={() => setIsReminderDrawerOpen(false)}
+            reminders={cityScopedReminders}
+            onRemoveReminder={(id) => setReminders((prev) => prev.filter((r) => r.id !== id))}
+            onClearPastReminders={() => {
+              setReminders((prev) =>
+                prev.filter((r) => new Date(r.targetIso).getTime() > Date.now()),
+              );
+              showToast('Cleared elapsed ticket drops.');
+            }}
+            nowMs={nowMs}
+            notificationPermission={notificationPermission}
+            onRequestNotificationPermission={() => void requestNotificationPermission()}
+            onShowToast={showToast}
+            csrfToken={csrfToken}
+            readonlyMode={readonlyMode}
+            defaultWebhookMasked={defaultWebhookMasked}
+          />
+        </Suspense>
+      )}
 
-      <BackupSyncModal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-        theme={theme}
-        cityFilter={cityFilter}
-        reminders={reminders}
-        stubs={stubs}
-        monitoredSingers={monitoredSingers}
-        savedWorldFestivals={savedWorldFestivals}
-        customConcerts={customConcerts}
-        onRestoreBackup={(backup) => {
-          setTheme(backup.theme);
-          setCityFilter(backup.cityFilter);
-          setReminders(backup.reminders);
-          setStubs(backup.stubs);
-          if (backup.monitoredSingers.length > 0) {
-            setMonitoredSingers(backup.monitoredSingers);
-          }
-          setSavedWorldFestivals(backup.savedWorldFestivals);
-          setCustomConcerts(backup.customConcerts);
-          playReminderChime();
-          showToast(
-            `Restored OZ Amp profile (${backup.reminders.length} reminders, ${backup.stubs.length} stubs)!`,
-          );
-        }}
-        onShowToast={showToast}
-      />
+      {isImportModalOpen && (
+        <Suspense fallback={null}>
+          <SmartImportModal
+            isOpen={isImportModalOpen}
+            onClose={() => setIsImportModalOpen(false)}
+            csrfToken={csrfToken}
+            onImportConcerts={handleImportConcerts}
+          />
+        </Suspense>
+      )}
+
+      {isSyncModalOpen && (
+        <Suspense fallback={null}>
+          <BackupSyncModal
+            isOpen={isSyncModalOpen}
+            onClose={() => setIsSyncModalOpen(false)}
+            theme={theme}
+            cityFilter={cityFilter}
+            reminders={reminders}
+            stubs={stubs}
+            monitoredSingers={monitoredSingers}
+            savedWorldFestivals={savedWorldFestivals}
+            customConcerts={customConcerts}
+            onRestoreBackup={(backup) => {
+              setTheme(backup.theme);
+              setCityFilter(backup.cityFilter);
+              setReminders(backup.reminders);
+              setStubs(backup.stubs);
+              if (backup.monitoredSingers.length > 0) {
+                setMonitoredSingers(backup.monitoredSingers);
+              }
+              setSavedWorldFestivals(backup.savedWorldFestivals);
+              setCustomConcerts(backup.customConcerts);
+              playReminderChime();
+              showToast(
+                `Restored OZ Amp profile (${backup.reminders.length} reminders, ${backup.stubs.length} stubs)!`,
+              );
+            }}
+            onShowToast={showToast}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

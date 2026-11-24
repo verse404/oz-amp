@@ -291,28 +291,29 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
           </button>
         </div>
 
-        <div className="page-mode-switcher sync-modal-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'sync'}
-            className={`page-mode-btn ${activeTab === 'sync' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('sync')}
-          >
-            1. Sync Laptop ↔ Phone ({reminders.length} Alarms · {stubs.length} Stubs)
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'cloud-push'}
-            className={`page-mode-btn ${activeTab === 'cloud-push' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('cloud-push')}
-          >
-            2. Background Phone Push &amp; PWA Setup
-          </button>
-        </div>
+        <div className="modal-body sync-modal-scroll">
+          <div className="page-mode-switcher sync-modal-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'sync'}
+              className={`page-mode-btn ${activeTab === 'sync' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('sync')}
+            >
+              1. Sync Laptop ↔ Phone ({reminders.length} Alarms · {stubs.length} Stubs)
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'cloud-push'}
+              className={`page-mode-btn ${activeTab === 'cloud-push' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('cloud-push')}
+            >
+              2. Background Phone Push &amp; PWA Setup
+            </button>
+          </div>
 
-        {activeTab === 'sync' ? (
+          {activeTab === 'sync' ? (
           <div className="sync-modal-body">
             <p className="sync-helper-copy">
               Export your armed queue reminders (<strong>{reminders.length}</strong>), Ticket-Stub
@@ -436,6 +437,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
