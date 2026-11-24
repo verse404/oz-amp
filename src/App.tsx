@@ -6,6 +6,7 @@ import {
   Bell,
   BellPlus,
   Calendar,
+  CalendarDays,
   Check,
   Clock,
   ExternalLink,
@@ -13,6 +14,7 @@ import {
   FilePlus2,
   Headphones,
   Hotel,
+  LayoutGrid,
   ListMusic,
   MapPin,
   Moon,
@@ -28,6 +30,7 @@ import {
   Sun,
   Ticket,
   Train,
+  WifiOff,
 } from 'lucide-react';
 import type {
   ApacTourStop,
@@ -66,10 +69,15 @@ import { SingerMonitorSection } from './components/SingerMonitorSection';
 import { MusicFestivalsSection } from './components/MusicFestivalsSection';
 import { StubArchiveSection } from './components/StubArchiveSection';
 import { ArtistAvatar, ConcertMediaBanner } from './components/ArtistAvatar';
+import { PriceRangeSlider } from './components/PriceRangeSlider';
 import { UPLOADED_WATCHLIST_SINGERS } from './data/userSingerList';
 import { CORE_WORLD_FESTIVALS } from './data/worldFestivals';
 import { VENUE_INSIDER_TIPS } from './data/venueInsiderTips';
 import { buildArtistPreviewLinks } from './utils/musicPreviewLinks';
+
+const ConcertCalendarView = lazy(() =>
+  import('./components/ConcertCalendarView').then((m) => ({ default: m.ConcertCalendarView })),
+);
 
 const ReminderDrawer = lazy(() =>
   import('./components/ReminderDrawer').then((m) => ({ default: m.ReminderDrawer })),
@@ -313,8 +321,14 @@ export const App: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortMode>('date');
+  const [weekendOnly, setWeekendOnly] = useState<boolean>(false);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
+  const [gigViewMode, setGigViewMode] = useState<'grid' | 'calendar'>('grid');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isOffline, setIsOffline] = useState<boolean>(
+    () => typeof navigator !== 'undefined' && navigator.onLine === false,
+  );
 
   // Drawers, Modals & Standalone Page Route
   const [activePage, setActivePage] = useState<'guide' | 'watchlist' | 'world-festivals'>(() => {
@@ -399,6 +413,18 @@ export const App: React.FC = () => {
     const onScroll = () => setShowBackToTop(window.scrollY > 520);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Track offline/online transitions for Service Worker offline banner
+  useEffect(() => {
+    const onOnline = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
   }, []);
 
   const [notificationPermission, setNotificationPermission] = useState<
@@ -1169,6 +1195,18 @@ export const App: React.FC = () => {
       if (genreFilter !== 'All Genres' && !c.genres.includes(genreFilter)) return false;
       if (monthFilter !== 'all' && !c.dateIso.startsWith(monthFilter)) return false;
 
+      if (weekendOnly) {
+        const datesToCheck = [c.dateIso, ...(c.additionalDates || [])];
+        const hasWeekendNight = datesToCheck.some((iso) => {
+          const day = new Date(`${iso}T12:00:00Z`).getUTCDay();
+          return day === 5 || day === 6 || day === 0;
+        });
+        if (!hasWeekendNight) return false;
+      }
+
+      if (priceRange[0] > 0 && c.priceMinAud < priceRange[0]) return false;
+      if (priceRange[1] < 500 && c.priceMinAud > priceRange[1]) return false;
+
       if (
         statusFilter === 'drops' &&
         c.ticketDrops.length === 0 &&
@@ -1235,6 +1273,8 @@ export const App: React.FC = () => {
     monthFilter,
     statusFilter,
     sortBy,
+    weekendOnly,
+    priceRange,
     clockMinute,
     searchQuery,
     isArtistFollowed,
@@ -1304,6 +1344,16 @@ export const App: React.FC = () => {
         <div className="toast-banner" role="status" aria-live="polite">
           <Bell size={15} />
           <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {isOffline && (
+        <div className="offline-status-banner" role="status">
+          <WifiOff size={14} />
+          <span>
+            Offline Mode — Viewing cached gigs, set times, venue sightlines &amp; your Ticket-Stub
+            Wall.
+          </span>
         </div>
       )}
 
@@ -1937,6 +1987,55 @@ export const App: React.FC = () => {
             </select>
           </div>
 
+          {/* Draggable Price Range Bar & Weekend Quick Filter */}
+          <div className="filter-quick-bar">
+            <PriceRangeSlider
+              minBound={0}
+              maxBound={500}
+              step={10}
+              value={priceRange}
+              onChange={setPriceRange}
+            />
+
+            <div className="quick-toggle-cluster">
+              <button
+                type="button"
+                id="weekend-only-filter-btn"
+                aria-pressed={weekendOnly}
+                className={`weekend-toggle-pill ${weekendOnly ? 'is-active' : ''}`}
+                onClick={() => setWeekendOnly((v) => !v)}
+              >
+                <Calendar size={14} />
+                <span>{weekendOnly ? '✓ Fri–Sun Only' : 'Fri–Sun Only'}</span>
+              </button>
+
+              {(weekendOnly ||
+                priceRange[0] > 0 ||
+                priceRange[1] < 500 ||
+                venueFilter !== 'all' ||
+                genreFilter !== 'All Genres' ||
+                statusFilter !== 'all' ||
+                monthFilter !== 'all' ||
+                searchQuery.trim() !== '') && (
+                <button
+                  type="button"
+                  className="btn-subtle-sm"
+                  onClick={() => {
+                    setVenueFilter('all');
+                    setGenreFilter('All Genres');
+                    setStatusFilter('all');
+                    setMonthFilter('all');
+                    setWeekendOnly(false);
+                    setPriceRange([0, 500]);
+                    setSearchQuery('');
+                  }}
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="genre-pill-row" role="group" aria-label="Filter by music genre">
             {GENRE_FILTERS.map((g) => (
               <button
@@ -1951,7 +2050,7 @@ export const App: React.FC = () => {
           </div>
         </section>
 
-        {/* Results Meta Bar */}
+        {/* Results Meta Bar + Cards / Monthly Calendar View Switcher */}
         <div className="results-meta-bar">
           <p className="results-summary">
             Showing <strong>{filteredConcerts.length}</strong> live concert
@@ -1959,9 +2058,38 @@ export const App: React.FC = () => {
             {cityFilter !== 'all'
               ? ` in ${cityFilter === 'melbourne' ? 'Melbourne (VIC)' : 'Sydney (NSW)'}`
               : ' across Melbourne & Sydney'}
+            {weekendOnly ? ' · Fri–Sun' : ''}
+            {priceRange[0] > 0 || priceRange[1] < 500
+              ? ` · A$${priceRange[0]}–${priceRange[1] >= 500 ? 'A$500+' : `A$${priceRange[1]}`}`
+              : ''}
           </p>
 
           <div className="sync-status-cluster">
+            <div className="page-mode-switcher view-mode-switch" role="tablist" aria-label="Concert view layout">
+              <button
+                type="button"
+                id="view-mode-grid-btn"
+                role="tab"
+                aria-selected={gigViewMode === 'grid'}
+                className={`page-mode-btn ${gigViewMode === 'grid' ? 'is-active' : ''}`}
+                onClick={() => setGigViewMode('grid')}
+              >
+                <LayoutGrid size={13} />
+                <span>Cards Grid</span>
+              </button>
+              <button
+                type="button"
+                id="view-mode-calendar-btn"
+                role="tab"
+                aria-selected={gigViewMode === 'calendar'}
+                className={`page-mode-btn ${gigViewMode === 'calendar' ? 'is-active' : ''}`}
+                onClick={() => setGigViewMode('calendar')}
+              >
+                <CalendarDays size={13} />
+                <span>Monthly Calendar</span>
+              </button>
+            </div>
+
             <span className="sync-source-label">{catalog.liveSyncSource}</span>
             {!readonlyMode && (
               <button
@@ -1978,14 +2106,26 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Concert Broadsheet Grid */}
-        {filteredConcerts.length === 0 ? (
+        {/* Main Concert Broadsheet Grid OR Interactive Monthly Calendar */}
+        {gigViewMode === 'calendar' ? (
+          <Suspense fallback={<div className="lazy-page-loader">Loading Monthly Calendar…</div>}>
+            <ConcertCalendarView
+              concerts={filteredConcerts}
+              upcomingDrops={upcomingDrops}
+              worldFestivals={[...CORE_WORLD_FESTIVALS, ...savedWorldFestivals]}
+              reminders={cityScopedReminders}
+              onAddOrToggleReminder={addOrToggleReminder}
+              onOpenWorldFestivalsPage={() => switchPage('world-festivals')}
+            />
+          </Suspense>
+        ) : filteredConcerts.length === 0 ? (
           <section className="empty-results-panel">
             <Sparkles size={26} />
             <h2>No matching gigs under current filters</h2>
             <p>
-              Try clearing a filter, switching cities, or adding the singer to{' '}
-              <strong>Favourite Singers Radar</strong> above so we alert you as soon as dates drop.
+              Try widening your price slider, clearing Fri–Sun Only, switching cities, or adding
+              the singer to <strong>Favourite Singers Radar</strong> above so we alert you as soon
+              as dates drop.
             </p>
             <button
               type="button"
@@ -1997,6 +2137,8 @@ export const App: React.FC = () => {
                 setGenreFilter('All Genres');
                 setStatusFilter('all');
                 setMonthFilter('all');
+                setWeekendOnly(false);
+                setPriceRange([0, 500]);
                 setSearchQuery('');
               }}
             >

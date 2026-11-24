@@ -4325,3 +4325,567 @@ select option {
     font-size: 0.74rem;
   }
 }
+
+
+/* ── OFFLINE BANNER, DUAL PRICE RANGE SLIDER, WEEKEND PILL & MONTHLY CALENDAR ── */
+
+.offline-status-banner {
+  background: color-mix(in srgb, var(--accent-amber) 18%, var(--bg-surface));
+  border-bottom: 1px solid var(--accent-amber);
+  color: var(--fg-primary);
+  padding: 0.48rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Filter Quick Bar: Draggable Price Range Bar + Fri-Sun Toggle */
+.filter-quick-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.15rem;
+  flex-wrap: wrap;
+  padding: 0.72rem 0.95rem;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hairline);
+}
+
+.price-range-control {
+  flex: 1 1 320px;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.price-range-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+
+.price-range-title {
+  color: var(--fg-secondary);
+  font-weight: 600;
+}
+
+.price-range-readout {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--fg-primary);
+  padding: 0.1rem 0.48rem;
+  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+
+.price-range-readout.is-filtered {
+  color: var(--accent-amber);
+  border-color: color-mix(in srgb, var(--accent-amber) 55%, var(--border-hairline));
+}
+
+.price-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: none;
+  background: transparent;
+  color: var(--accent-primary);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.1rem 0.25rem;
+}
+
+.dual-slider-stage {
+  position: relative;
+  height: 26px;
+  display: flex;
+  align-items: center;
+}
+
+.dual-slider-rail {
+  position: absolute;
+  inset-inline: 0;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+}
+
+.dual-slider-fill {
+  position: absolute;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-amber), var(--accent-primary));
+  pointer-events: none;
+}
+
+.dual-slider-input {
+  position: absolute;
+  inset-inline: 0;
+  width: 100%;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  pointer-events: none;
+  height: 26px;
+}
+
+.dual-slider-input::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fffaf5;
+  border: 2.5px solid var(--accent-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.38);
+  cursor: grab;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.dual-slider-input::-webkit-slider-thumb:hover {
+  transform: scale(1.14);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 26%, transparent);
+}
+
+.dual-slider-input::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.18);
+}
+
+.dual-slider-input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fffaf5;
+  border: 2.5px solid var(--accent-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.38);
+  cursor: grab;
+}
+
+.dual-slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  color: var(--fg-muted);
+  user-select: none;
+}
+
+.quick-toggle-cluster {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.weekend-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.48rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  font-family: inherit;
+  font-size: 0.81rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.weekend-toggle-pill:hover {
+  border-color: var(--accent-primary);
+}
+
+.weekend-toggle-pill.is-active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #fffaf5;
+}
+
+.view-mode-switch .page-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+}
+
+/* Interactive Monthly Calendar View */
+.calendar-view-shell {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  padding: 1.25rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: var(--shadow-card);
+}
+
+.calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.calendar-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.calendar-month-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 190px;
+}
+
+.calendar-month-title {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.38rem;
+  line-height: 1.15;
+}
+
+.calendar-month-stats {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--fg-muted);
+}
+
+.calendar-overlay-toggles {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.calendar-overlay-toggles .genre-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+}
+
+.calendar-month-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  scrollbar-width: thin;
+}
+
+.cal-month-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-elevated);
+  color: var(--fg-secondary);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.cal-month-chip.is-active {
+  background: var(--fg-primary);
+  color: var(--bg-canvas);
+  border-color: var(--fg-primary);
+}
+
+.cal-month-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  opacity: 0.78;
+}
+
+.cal-world-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-sage);
+}
+
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+}
+
+.cal-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cal-dot--mel {
+  background: var(--city-melbourne-fg);
+}
+
+.cal-dot--syd {
+  background: var(--city-sydney-fg);
+}
+
+.cal-dot--drop {
+  background: var(--accent-amber);
+}
+
+.cal-dot--world {
+  background: var(--accent-sage);
+}
+
+.calendar-grid-scroll {
+  overflow-x: auto;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(112px, 1fr));
+  gap: 0.38rem;
+}
+
+.calendar-dow-head {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+  padding: 0.35rem 0.5rem;
+}
+
+.calendar-dow-head.is-weekend {
+  color: var(--accent-amber);
+}
+
+.calendar-cell {
+  min-height: 98px;
+  padding: 0.42rem 0.46rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-elevated);
+  color: var(--fg-primary);
+  font-family: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background-color 0.14s ease;
+}
+
+.calendar-cell.is-blank {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+}
+
+.calendar-cell.is-weekend {
+  background: color-mix(in srgb, var(--accent-amber) 5%, var(--bg-elevated));
+}
+
+.calendar-cell:not(.is-blank):hover {
+  border-color: var(--border-strong);
+}
+
+.calendar-cell.is-today {
+  border-color: var(--accent-amber);
+}
+
+.calendar-cell.is-selected {
+  border-color: var(--accent-primary);
+  box-shadow: inset 0 0 0 1px var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 9%, var(--bg-elevated));
+}
+
+.calendar-day-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendar-day-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--fg-secondary);
+}
+
+.calendar-cell.is-today .calendar-day-num {
+  color: var(--accent-amber);
+}
+
+.cal-clash-flag {
+  color: var(--accent-crimson);
+  display: inline-flex;
+}
+
+.calendar-cell-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.cal-ev-pill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.12rem 0.34rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-ev-pill--mel {
+  background: var(--city-melbourne-bg);
+  color: var(--city-melbourne-fg);
+}
+
+.cal-ev-pill--syd {
+  background: var(--city-sydney-bg);
+  color: var(--city-sydney-fg);
+}
+
+.cal-ev-pill--drop {
+  background: color-mix(in srgb, var(--accent-amber) 18%, transparent);
+  color: var(--accent-amber);
+  border: 1px dashed color-mix(in srgb, var(--accent-amber) 50%, transparent);
+}
+
+.cal-ev-pill--world {
+  background: color-mix(in srgb, var(--accent-sage) 22%, transparent);
+  color: var(--accent-sage);
+}
+
+.cal-more-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--fg-muted);
+}
+
+/* Selected Day Agenda Panel */
+.calendar-day-agenda {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.calendar-agenda-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.calendar-agenda-title {
+  margin: 0.15rem 0 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.2rem;
+}
+
+.calendar-agenda-empty {
+  margin: 0;
+  font-size: 0.83rem;
+  color: var(--fg-muted);
+}
+
+.calendar-agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.calendar-agenda-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.72rem 0.85rem;
+  border-radius: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+
+.calendar-agenda-row.is-world {
+  border-color: color-mix(in srgb, var(--accent-sage) 48%, var(--border-hairline));
+}
+
+.calendar-agenda-row.is-drop {
+  border-color: color-mix(in srgb, var(--accent-amber) 48%, var(--border-hairline));
+}
+
+.calendar-agenda-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.calendar-agenda-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.18rem;
+  flex-wrap: wrap;
+}
+
+.calendar-price-mini {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--fg-muted);
+}
+
+.calendar-agenda-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.77rem;
+  color: var(--fg-secondary);
+  margin-top: 0.12rem;
+}
+
+.calendar-agenda-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}

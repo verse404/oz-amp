@@ -10,7 +10,7 @@ const securityHeaders = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
 };
 
 export default defineConfig({

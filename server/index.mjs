@@ -68,7 +68,7 @@ const SPA_SECURITY_HEADERS = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
+    "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
 };
 
 function isAllowedOrigin(origin, requestHostHeader) {
@@ -233,14 +233,17 @@ async function serveStaticAsset(req, res, pathname) {
   try {
     const content = await fs.readFile(filePath);
     const ext = path.extname(filePath).toLowerCase();
+    const baseName = path.basename(filePath).toLowerCase();
     const mime = STATIC_MIME_TYPES[ext] || 'application/octet-stream';
+    const isNoCacheAsset =
+      ext === '.html' || ext === '.webmanifest' || baseName === 'sw.js';
     res.writeHead(200, {
       'Content-Type': mime,
-      'Cache-Control':
-        ext === '.html'
-          ? 'no-store, no-cache, must-revalidate, max-age=0'
-          : 'public, max-age=31536000, immutable',
-      ...(ext === '.html' ? { Pragma: 'no-cache', Expires: '0' } : {}),
+      'Cache-Control': isNoCacheAsset
+        ? 'no-store, no-cache, must-revalidate, max-age=0'
+        : 'public, max-age=31536000, immutable',
+      ...(isNoCacheAsset ? { Pragma: 'no-cache', Expires: '0' } : {}),
+      ...(baseName === 'sw.js' ? { 'Service-Worker-Allowed': '/' } : {}),
       ...SPA_SECURITY_HEADERS,
     });
     if (req.method === 'HEAD') {
