@@ -2,7 +2,7 @@
 // Provides offline access to saved gigs, set times, venue sightlines, and ticket stubs
 // inside low-signal stadiums/basements while keeping live catalog & builds fresh online.
 
-const CACHE_NAME = 'oz-amp-offline-v1';
+const CACHE_NAME = 'oz-amp-offline-v2';
 const APP_SHELL_URLS = [
   './',
   './index.html',
@@ -48,13 +48,18 @@ self.addEventListener('fetch', (event) => {
   if (
     url.pathname.startsWith('/api/') &&
     url.pathname !== '/api/catalog' &&
+    url.pathname !== '/api/trending-music' &&
     url.pathname !== '/api/healthz'
   ) {
     return;
   }
 
-  // Network-first with offline cache fallback for HTML navigation & live /api/catalog
-  if (request.mode === 'navigate' || url.pathname === '/api/catalog') {
+  // Network-first with offline cache fallback for HTML navigation, live /api/catalog & /api/trending-music
+  if (
+    request.mode === 'navigate' ||
+    url.pathname === '/api/catalog' ||
+    url.pathname === '/api/trending-music'
+  ) {
     event.respondWith(
       fetch(request)
         .then((response) => {

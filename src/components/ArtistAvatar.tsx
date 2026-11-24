@@ -195,6 +195,7 @@ export const ArtistAvatar: React.FC<ArtistAvatarProps> = ({
           className="sa-avatar-img"
           loading="lazy"
           decoding="async"
+          referrerPolicy="no-referrer"
           onError={() => setFailedUrl(portraitUrl)}
         />
       ) : (
@@ -232,6 +233,7 @@ export const ConcertMediaBanner: React.FC<ConcertMediaBannerProps> = ({
           className="gig-media-backdrop-img"
           loading="lazy"
           decoding="async"
+          referrerPolicy="no-referrer"
           onError={() => setFailedBgUrl(portraitUrl)}
         />
       ) : (

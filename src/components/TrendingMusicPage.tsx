@@ -5,6 +5,7 @@ import {
   Check,
   ExternalLink,
   Flame,
+  Globe,
   Headphones,
   ListMusic,
   Pause,
@@ -21,8 +22,10 @@ import type {
   CityId,
   ConcertEvent,
   MonitoredSinger,
+  MusicFestivalDirectoryItem,
   TrendingRegion,
   TrendingTrackItem,
+  WorldFestivalItem,
 } from '../types/gig';
 import { UPLOADED_WATCHLIST_SINGERS } from '../data/userSingerList';
 import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
@@ -31,10 +34,14 @@ import { ArtistAvatar } from './ArtistAvatar';
 
 interface TrendingMusicPageProps {
   concerts: ConcertEvent[];
+  musicFestivals: MusicFestivalDirectoryItem[];
+  worldFestivals: WorldFestivalItem[];
   monitoredSingers: MonitoredSinger[];
   cityFilter: 'all' | CityId;
   onToggleMonitorArtist: (artistName: string, artworkUrl?: string, genre?: string) => void;
   onJumpToAuConcert: (artistName: string) => void;
+  onJumpToAuFestival: () => void;
+  onJumpToWorldFestivals: () => void;
   onBackToMainGuide: () => void;
   onShowToast: (msg: string) => void;
 }
@@ -59,15 +66,33 @@ function normalizeTerm(s: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[.’'`]/g, '')
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
+}
+
+function matchesPerformerName(candidateRaw: string, targetRaw: string): boolean {
+  const cand = normalizeTerm(candidateRaw);
+  const target = normalizeTerm(targetRaw);
+  if (cand.length < 2 || target.length < 2) return false;
+  if (cand === target) return true;
+  if (/[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(cand)) {
+    return target.includes(cand);
+  }
+  const escaped = cand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, 'i').test(target);
 }
 
 export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
   concerts,
+  musicFestivals,
+  worldFestivals,
   monitoredSingers,
   cityFilter,
   onToggleMonitorArtist,
   onJumpToAuConcert,
+  onJumpToAuFestival,
+  onJumpToWorldFestivals,
   onBackToMainGuide,
   onShowToast,
 }) => {
@@ -79,11 +104,13 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [genreFilter, setGenreFilter] = useState('All Genres');
-  const [onlyTouringAu, setOnlyTouringAu] = useState(false);
+  const [onlyLiveEvents, setOnlyLiveEvents] = useState(false);
 
-  // Single-instance 30-second audio preview state
+  // Single-instance 30-second audio preview state + progress bar
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const requestSeqRef = useRef<number>(0);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  const [audioProgress, setAudioProgress] = useState<number>(0);
 
   const stopAudio = () => {
     if (audioRef.current) {
@@ -91,6 +118,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
       audioRef.current.currentTime = 0;
     }
     setPlayingTrackId(null);
+    setAudioProgress(0);
   };
 
   useEffect(() => {
@@ -103,16 +131,19 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
   }, []);
 
   const loadCharts = async (targetRegion: TrendingRegion, manual = false) => {
+    const seq = ++requestSeqRef.current;
     stopAudio();
     setLoading(true);
     try {
       const res = await fetch(`/api/trending-music?region=${encodeURIComponent(targetRegion)}`);
+      if (seq !== requestSeqRef.current) return;
       if (res.ok) {
         const data = (await res.json()) as {
           tracks?: TrendingTrackItem[];
           source?: string;
           updatedAtIso?: string;
         };
+        if (seq !== requestSeqRef.current) return;
         setTracks(Array.isArray(data.tracks) ? data.tracks : []);
         setChartSource(data.source || `Apple Music ${targetRegion.toUpperCase()} Top 25`);
         setUpdatedAtIso(data.updatedAtIso || new Date().toISOString());
@@ -123,9 +154,13 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
         }
       }
     } catch {
-      onShowToast('Unable to reach trending music feed right now.');
+      if (seq === requestSeqRef.current) {
+        onShowToast('Unable to reach trending music feed right now.');
+      }
     } finally {
-      setLoading(false);
+      if (seq === requestSeqRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -147,9 +182,19 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
 
     if (!audioRef.current) {
       audioRef.current = new Audio();
-      audioRef.current.onended = () => setPlayingTrackId(null);
+      audioRef.current.ontimeupdate = () => {
+        const el = audioRef.current;
+        if (el && el.duration && Number.isFinite(el.duration) && el.duration > 0) {
+          setAudioProgress(Math.min(100, Math.round((el.currentTime / el.duration) * 100)));
+        }
+      };
+      audioRef.current.onended = () => {
+        setPlayingTrackId(null);
+        setAudioProgress(0);
+      };
       audioRef.current.onerror = () => {
         setPlayingTrackId(null);
+        setAudioProgress(0);
         onShowToast('Audio preview could not be played in this browser.');
       };
     }
@@ -157,10 +202,12 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
     audioRef.current.pause();
     audioRef.current.src = track.previewUrl;
     audioRef.current.currentTime = 0;
+    setAudioProgress(0);
     void audioRef.current.play().then(
       () => setPlayingTrackId(track.id),
       () => {
         setPlayingTrackId(null);
+        setAudioProgress(0);
         onShowToast('Click again or open Spotify / Apple Music to listen.');
       },
     );
@@ -181,17 +228,33 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
     [monitoredSingers],
   );
 
-  // Match track artists against upcoming Melbourne / Sydney concerts
-  const matchTrackToConcerts = (track: TrendingTrackItem): ConcertEvent[] => {
-    const candidates = splitTrackArtists(track.artist).map(normalizeTerm);
-    if (candidates.length === 0) return [];
+  // Match track artists against upcoming Melbourne / Sydney solo concerts
+  const matchTrackToConcerts = (artistParts: string[]): ConcertEvent[] => {
+    if (artistParts.length === 0) return [];
     return concerts.filter((c) => {
       if (cityFilter !== 'all' && c.city !== cityFilter) return false;
-      const acts = [c.artist, ...c.supportActs].map(normalizeTerm);
-      return candidates.some((cand) =>
-        acts.some((act) => act === cand || (cand.length >= 4 && act.includes(cand))),
-      );
+      const acts = [c.artist, ...c.supportActs];
+      return artistParts.some((cand) => acts.some((act) => matchesPerformerName(cand, act)));
     });
+  };
+
+  // Match track artists against upcoming Australian & World Music Festivals
+  const matchTrackToAuFestivals = (artistParts: string[]): MusicFestivalDirectoryItem[] => {
+    if (artistParts.length === 0) return [];
+    return musicFestivals.filter((fest) =>
+      artistParts.some((cand) =>
+        fest.fullLineup.some((act) => matchesPerformerName(cand, act)),
+      ),
+    );
+  };
+
+  const matchTrackToWorldFestivals = (artistParts: string[]): WorldFestivalItem[] => {
+    if (artistParts.length === 0) return [];
+    return worldFestivals.filter((wf) =>
+      artistParts.some((cand) =>
+        wf.lineupHighlights.some((act) => matchesPerformerName(cand, act)),
+      ),
+    );
   };
 
   const availableGenres = useMemo(() => {
@@ -211,27 +274,61 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
       .map((track) => {
         const artistParts = splitTrackArtists(track.artist);
         const primaryArtist = artistParts[0] || track.artist;
-        const matchedAuShows = matchTrackToConcerts(track);
+        const matchedAuShows = matchTrackToConcerts(artistParts);
+        const matchedAuFests = matchTrackToAuFestivals(artistParts);
+        const matchedWorldFests = matchTrackToWorldFestivals(artistParts);
         const isWatched = artistParts.some(
           (p) => watchlistSet.has(normalizeTerm(p)) || monitoredSet.has(normalizeTerm(p)),
         );
         const isMonitored = monitoredSet.has(normalizeTerm(primaryArtist));
-        return { track, primaryArtist, matchedAuShows, isWatched, isMonitored };
+        const hasLiveCrossover =
+          matchedAuShows.length > 0 ||
+          matchedAuFests.length > 0 ||
+          matchedWorldFests.length > 0;
+        return {
+          track,
+          primaryArtist,
+          matchedAuShows,
+          matchedAuFests,
+          matchedWorldFests,
+          hasLiveCrossover,
+          isWatched,
+          isMonitored,
+        };
       })
-      .filter(({ track, matchedAuShows }) => {
+      .filter(({ track, hasLiveCrossover }) => {
         if (genreFilter !== 'All Genres' && track.genre !== genreFilter) return false;
-        if (onlyTouringAu && matchedAuShows.length === 0) return false;
+        if (onlyLiveEvents && !hasLiveCrossover) return false;
         if (q) {
           const hay = `${track.title} ${track.artist} ${track.album} ${track.genre}`.toLowerCase();
           if (!hay.includes(q)) return false;
         }
         return true;
       });
-  }, [tracks, genreFilter, onlyTouringAu, searchQuery, concerts, cityFilter, watchlistSet, monitoredSet]);
+  }, [
+    tracks,
+    genreFilter,
+    onlyLiveEvents,
+    searchQuery,
+    concerts,
+    musicFestivals,
+    worldFestivals,
+    cityFilter,
+    watchlistSet,
+    monitoredSet,
+  ]);
 
-  const touringCrossoversCount = useMemo(
-    () => tracks.filter((t) => matchTrackToConcerts(t).length > 0).length,
-    [tracks, concerts, cityFilter],
+  const liveCrossoversCount = useMemo(
+    () =>
+      tracks.filter((t) => {
+        const parts = splitTrackArtists(t.artist);
+        return (
+          matchTrackToConcerts(parts).length > 0 ||
+          matchTrackToAuFestivals(parts).length > 0 ||
+          matchTrackToWorldFestivals(parts).length > 0
+        );
+      }).length,
+    [tracks, concerts, musicFestivals, worldFestivals, cityFilter],
   );
 
   const watchlistCrossoversCount = useMemo(
@@ -308,8 +405,8 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
               <span className="watchlist-stat-label">Live Chart Tracks ({region.toUpperCase()})</span>
             </div>
             <div className="watchlist-stat-tile">
-              <span className="watchlist-stat-num">{touringCrossoversCount}</span>
-              <span className="watchlist-stat-label">Touring Melbourne / Sydney Soon</span>
+              <span className="watchlist-stat-num">{liveCrossoversCount}</span>
+              <span className="watchlist-stat-label">AU Shows &amp; Festival Crossovers</span>
             </div>
             <div className="watchlist-stat-tile">
               <span className="watchlist-stat-num">{watchlistCrossoversCount}</span>
@@ -325,17 +422,25 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
         {/* Now Playing Mini Bar */}
         {activePlayingTrack && (
           <div className="now-playing-bar" role="status">
-            <div className="now-playing-info">
-              <Volume2 size={16} className="now-playing-icon" />
-              <span>
-                <strong>Now Previewing #{activePlayingTrack.rank}:</strong>{' '}
-                {activePlayingTrack.title} — {activePlayingTrack.artist}
-              </span>
+            <div className="now-playing-main">
+              <div className="now-playing-info">
+                <Volume2 size={16} className="now-playing-icon" />
+                <span>
+                  <strong>Now Previewing #{activePlayingTrack.rank}:</strong>{' '}
+                  {activePlayingTrack.title} — {activePlayingTrack.artist}
+                </span>
+              </div>
+              <button type="button" className="btn-outline-sm" onClick={stopAudio}>
+                <Pause size={13} />
+                <span>Stop Preview</span>
+              </button>
             </div>
-            <button type="button" className="btn-outline-sm" onClick={stopAudio}>
-              <Pause size={13} />
-              <span>Stop Preview</span>
-            </button>
+            <div className="now-playing-progress" aria-hidden="true">
+              <div
+                className="now-playing-progress-fill"
+                style={{ width: `${audioProgress}%` }}
+              />
+            </div>
           </div>
         )}
       </section>
@@ -355,12 +460,15 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
 
           <button
             type="button"
-            className={`weekend-toggle-pill ${onlyTouringAu ? 'is-active' : ''}`}
-            onClick={() => setOnlyTouringAu((v) => !v)}
+            aria-pressed={onlyLiveEvents}
+            className={`weekend-toggle-pill ${onlyLiveEvents ? 'is-active' : ''}`}
+            onClick={() => setOnlyLiveEvents((v) => !v)}
           >
             <Ticket size={14} />
             <span>
-              {onlyTouringAu ? '✓ Touring MEL/SYD Only' : 'Filter: Touring MEL/SYD'}
+              {onlyLiveEvents
+                ? `✓ Touring / Festivals (${liveCrossoversCount})`
+                : `Filter: Touring / Festivals (${liveCrossoversCount})`}
             </span>
           </button>
         </div>
@@ -404,7 +512,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
               onClick={() => {
                 setSearchQuery('');
                 setGenreFilter('All Genres');
-                setOnlyTouringAu(false);
+                setOnlyLiveEvents(false);
               }}
             >
               Reset Chart Filters
@@ -412,156 +520,197 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
           </div>
         ) : (
           <div className="trending-tracks-grid">
-            {enrichedTracks.map(({ track, primaryArtist, matchedAuShows, isWatched, isMonitored }) => {
-              const isPlaying = playingTrackId === track.id;
-              const previewLinks = buildArtistPreviewLinks(primaryArtist);
-              const firstShow = matchedAuShows[0];
-              const showDateLabel = firstShow
-                ? formatConcertDate(firstShow.dateIso, firstShow.timeZone).dayMonth
-                : '';
+            {enrichedTracks.map(
+              ({
+                track,
+                primaryArtist,
+                matchedAuShows,
+                matchedAuFests,
+                matchedWorldFests,
+                hasLiveCrossover,
+                isWatched,
+                isMonitored,
+              }) => {
+                const isPlaying = playingTrackId === track.id;
+                const previewLinks = buildArtistPreviewLinks(primaryArtist);
+                const firstShow = matchedAuShows[0];
+                const firstAuFest = matchedAuFests[0];
+                const firstWorldFest = matchedWorldFests[0];
+                const showDateLabel = firstShow
+                  ? formatConcertDate(firstShow.dateIso, firstShow.timeZone).dayMonth
+                  : '';
 
-              return (
-                <article
-                  key={track.id}
-                  className={`trending-track-card ${isPlaying ? 'is-playing' : ''} ${
-                    matchedAuShows.length > 0 ? 'is-touring-au' : ''
-                  }`}
-                >
-                  <div className="trending-card-top">
-                    <span className="trending-rank-pill">#{track.rank}</span>
-                    <span className="presale-kind-badge">{track.genre}</span>
-                    {isWatched && (
-                      <span className="watched-match-pill">
-                        <Star size={11} />
-                        <span>Watchlist</span>
-                      </span>
-                    )}
-                    {firstShow && (
-                      <span className={`city-pill city-pill--${firstShow.city}`}>
-                        {firstShow.city === 'sydney' ? 'SYD' : 'MEL'} · {showDateLabel}
-                      </span>
-                    )}
-                  </div>
+                return (
+                  <article
+                    key={track.id}
+                    className={`trending-track-card ${isPlaying ? 'is-playing' : ''} ${
+                      hasLiveCrossover ? 'is-touring-au' : ''
+                    }`}
+                  >
+                    <div className="trending-card-top">
+                      <span className="trending-rank-pill">#{track.rank}</span>
+                      <span className="presale-kind-badge">{track.genre}</span>
+                      {isWatched && (
+                        <span className="watched-match-pill">
+                          <Star size={11} />
+                          <span>Watchlist</span>
+                        </span>
+                      )}
+                      {firstShow && (
+                        <span className={`city-pill city-pill--${firstShow.city}`}>
+                          {firstShow.city === 'sydney' ? 'SYD' : 'MEL'} · {showDateLabel}
+                        </span>
+                      )}
+                      {firstAuFest && (
+                        <span className="city-pill city-pill--melbourne">
+                          {firstAuFest.name}
+                        </span>
+                      )}
+                      {firstWorldFest && (
+                        <span className="city-pill city-pill--global">
+                          <Globe size={10} /> {firstWorldFest.name}
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="trending-track-identity">
-                    <div className="trending-cover-wrap">
-                      <ArtistAvatar
-                        name={primaryArtist}
-                        explicitUrl={track.artworkUrl || undefined}
-                        size="lg"
-                        shape="rounded"
-                      />
+                    <div className="trending-track-identity">
+                      <div className="trending-cover-wrap">
+                        <ArtistAvatar
+                          name={primaryArtist}
+                          explicitUrl={track.artworkUrl || undefined}
+                          size="lg"
+                          shape="rounded"
+                        />
+                        {track.previewUrl && (
+                          <button
+                            type="button"
+                            className={`trending-play-overlay ${isPlaying ? 'is-playing' : ''}`}
+                            onClick={() => toggleAudioPreview(track)}
+                            aria-label={
+                              isPlaying
+                                ? `Pause preview for ${track.title}`
+                                : `Play 30 second preview for ${track.title}`
+                            }
+                          >
+                            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="trending-track-meta">
+                        <h3 className="trending-track-title" title={track.title}>
+                          {track.title}
+                        </h3>
+                        <p className="trending-track-artist" title={track.artist}>
+                          {track.artist}
+                        </p>
+                        {track.album && (
+                          <p className="trending-track-album" title={track.album}>
+                            {track.album}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="music-preview-strip">
                       {track.previewUrl && (
                         <button
                           type="button"
-                          className={`trending-play-overlay ${isPlaying ? 'is-playing' : ''}`}
+                          className={`preview-chip preview-chip--audio ${isPlaying ? 'is-playing' : ''}`}
                           onClick={() => toggleAudioPreview(track)}
-                          aria-label={
-                            isPlaying
-                              ? `Pause preview for ${track.title}`
-                              : `Play 30 second preview for ${track.title}`
-                          }
                         >
-                          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                          {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                          <span>{isPlaying ? 'Playing 30s' : '30s Preview'}</span>
                         </button>
                       )}
-                    </div>
-
-                    <div className="trending-track-meta">
-                      <h3 className="trending-track-title" title={track.title}>
-                        {track.title}
-                      </h3>
-                      <p className="trending-track-artist" title={track.artist}>
-                        {track.artist}
-                      </p>
-                      {track.album && (
-                        <p className="trending-track-album" title={track.album}>
-                          {track.album}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="music-preview-strip">
-                    {track.previewUrl && (
-                      <button
-                        type="button"
-                        className={`preview-chip preview-chip--audio ${isPlaying ? 'is-playing' : ''}`}
-                        onClick={() => toggleAudioPreview(track)}
+                      <a
+                        href={previewLinks.spotify}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="preview-chip"
                       >
-                        {isPlaying ? <Pause size={12} /> : <Play size={12} />}
-                        <span>{isPlaying ? 'Playing 30s' : '30s Preview'}</span>
-                      </button>
-                    )}
-                    <a
-                      href={previewLinks.spotify}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="preview-chip"
-                    >
-                      <Headphones size={12} />
-                      <span>Spotify</span>
-                    </a>
-                    <a
-                      href={track.appleMusicUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="preview-chip"
-                    >
-                      <Radio size={12} />
-                      <span>Apple Music</span>
-                    </a>
-                    <a
-                      href={previewLinks.setlistFm}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="preview-chip preview-chip--setlist"
-                    >
-                      <ListMusic size={12} />
-                      <span>Setlist.fm</span>
-                    </a>
-                  </div>
-
-                  <div className="trending-card-footer">
-                    <button
-                      type="button"
-                      className={isMonitored ? 'btn-armed-sm' : 'btn-outline-sm'}
-                      onClick={() =>
-                        onToggleMonitorArtist(
-                          primaryArtist,
-                          track.artworkUrl || undefined,
-                          track.genre,
-                        )
-                      }
-                    >
-                      {isMonitored ? <Check size={14} /> : <BellPlus size={14} />}
-                      <span>{isMonitored ? 'Monitoring' : 'Monitor Artist'}</span>
-                    </button>
-
-                    {firstShow ? (
-                      <button
-                        type="button"
-                        className="btn-primary-sm"
-                        onClick={() => onJumpToAuConcert(firstShow.artist)}
-                      >
-                        <Ticket size={14} />
-                        <span>View AU Show</span>
-                      </button>
-                    ) : (
+                        <Headphones size={12} />
+                        <span>Spotify</span>
+                      </a>
                       <a
                         href={track.appleMusicUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn-subtle-sm"
+                        className="preview-chip"
                       >
-                        <span>Open Track</span>
-                        <ExternalLink size={12} />
+                        <Radio size={12} />
+                        <span>Apple Music</span>
                       </a>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+                      <a
+                        href={previewLinks.setlistFm}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="preview-chip preview-chip--setlist"
+                      >
+                        <ListMusic size={12} />
+                        <span>Setlist.fm</span>
+                      </a>
+                    </div>
+
+                    <div className="trending-card-footer">
+                      <button
+                        type="button"
+                        className={isMonitored ? 'btn-armed-sm' : 'btn-outline-sm'}
+                        onClick={() =>
+                          onToggleMonitorArtist(
+                            primaryArtist,
+                            track.artworkUrl || undefined,
+                            track.genre,
+                          )
+                        }
+                      >
+                        {isMonitored ? <Check size={14} /> : <BellPlus size={14} />}
+                        <span>{isMonitored ? 'Monitoring' : 'Monitor Artist'}</span>
+                      </button>
+
+                      {firstShow ? (
+                        <button
+                          type="button"
+                          className="btn-primary-sm"
+                          onClick={() => onJumpToAuConcert(firstShow.artist)}
+                        >
+                          <Ticket size={14} />
+                          <span>View AU Show</span>
+                        </button>
+                      ) : firstAuFest ? (
+                        <button
+                          type="button"
+                          className="btn-primary-sm"
+                          onClick={onJumpToAuFestival}
+                        >
+                          <Ticket size={14} />
+                          <span>View AU Fest</span>
+                        </button>
+                      ) : firstWorldFest ? (
+                        <button
+                          type="button"
+                          className="btn-primary-sm"
+                          onClick={onJumpToWorldFestivals}
+                        >
+                          <Globe size={14} />
+                          <span>World Fest</span>
+                        </button>
+                      ) : (
+                        <a
+                          href={track.appleMusicUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-subtle-sm"
+                        >
+                          <span>Open Track</span>
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
+                    </div>
+                  </article>
+                );
+              },
+            )}
           </div>
         )}
       </section>

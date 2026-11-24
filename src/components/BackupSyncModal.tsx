@@ -98,15 +98,26 @@ function validateAndSanitizeBackup(rawText: string): OzAmpProfileBackup {
     : [];
 
   const stubs: TicketStubRecord[] = Array.isArray(parsed.stubs)
-    ? parsed.stubs.slice(0, 300).map((s: TicketStubRecord) => ({
-        ...s,
-        id: String(s.id || '').slice(0, 80),
-        concertId: String(s.concertId || '').slice(0, 80),
-        artist: String(s.artist || '').slice(0, 100),
-        city: s.city === 'sydney' ? 'sydney' : 'melbourne',
-        venueName: String(s.venueName || '').slice(0, 100),
-        sectionNote: String(s.sectionNote || '').slice(0, 280),
-      }))
+    ? parsed.stubs.slice(0, 300).map((s: TicketStubRecord) => {
+        const rawRating = Math.round(Number(s.venueRating));
+        const safeRating = (
+          Number.isFinite(rawRating) ? Math.max(1, Math.min(5, rawRating)) : 5
+        ) as 1 | 2 | 3 | 4 | 5;
+        const rawPaid = Number(s.paidAud);
+        const safePaid = Number.isFinite(rawPaid) ? Math.max(0, Math.min(5000, rawPaid)) : 0;
+        return {
+          ...s,
+          id: String(s.id || '').slice(0, 80),
+          concertId: String(s.concertId || '').slice(0, 80),
+          artist: String(s.artist || '').slice(0, 100),
+          city: s.city === 'sydney' ? 'sydney' : 'melbourne',
+          venueName: String(s.venueName || '').slice(0, 100),
+          paidAud: safePaid,
+          venueRating: safeRating,
+          status: s.status === 'attended' ? 'attended' : 'secured',
+          sectionNote: String(s.sectionNote || '').slice(0, 280),
+        };
+      })
     : [];
 
   const monitoredSingers: MonitoredSinger[] = Array.isArray(parsed.monitoredSingers)
@@ -431,8 +442,8 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
               <p className="sync-helper-copy">
                 Open your Render URL in Safari (iOS) or Chrome (Android), tap{' '}
                 <strong>Share → Add to Home Screen</strong>, and OZ Amp launches full-screen with
-                direct shortcuts to <em>All Gigs</em>, <em>My Singer Sessions</em>, and{' '}
-                <em>World Festivals</em>.
+                direct shortcuts to <em>All Gigs</em>, <em>My Singer Sessions</em>,{' '}
+                <em>World Festivals</em>, and <em>Trending Music</em>.
               </p>
             </div>
           </div>

@@ -3,6 +3,19 @@ import { AlertTriangle, Check, ExternalLink, Sparkles } from 'lucide-react';
 import type { CityId, FestivalAdvisorItem, MonitoredSinger } from '../types/gig';
 import { analyzeFestivalDecision } from '../utils/auMarketTools';
 import { formatAudPrice, sanitizeExternalHttpsUrl } from '../utils/formatters';
+import { UPLOADED_WATCHLIST_SINGERS } from '../data/userSingerList';
+
+function matchesWatchTerm(actName: string, rawTerm: string): boolean {
+  const act = actName.trim().toLowerCase();
+  const term = rawTerm.trim().toLowerCase();
+  if (!act || term.length < 2) return false;
+  if (act === term) return true;
+  if (/[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(term)) {
+    return act.includes(term);
+  }
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, 'i').test(act);
+}
 
 interface FestivalAdvisorSectionProps {
   festivals: FestivalAdvisorItem[];
@@ -39,15 +52,16 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
   };
 
   const syncWithMonitored = () => {
+    const watchTerms: string[] = [];
+    for (const m of monitoredSingers) {
+      watchTerms.push(m.name, ...m.aliases);
+    }
+    for (const w of UPLOADED_WATCHLIST_SINGERS) {
+      watchTerms.push(w.displayName, ...w.matchTerms);
+    }
     const matched = festival.slots
       .map((s) => s.artist)
-      .filter((act) =>
-        monitoredSingers.some(
-          (m) =>
-            m.name.toLowerCase() === act.toLowerCase() ||
-            act.toLowerCase().includes(m.name.toLowerCase()),
-        ),
-      );
+      .filter((act) => watchTerms.some((term) => matchesWatchTerm(act, term)));
     if (matched.length > 0) {
       setPickedActs(matched);
     } else {

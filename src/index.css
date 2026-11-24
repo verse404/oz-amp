@@ -4313,16 +4313,30 @@ select option {
     grid-template-columns: 1fr;
   }
 
+  .section-jump-nav {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .page-mode-switcher {
     width: 100%;
-    justify-content: space-between;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    margin-inline-end: 0;
+  }
+
+  .page-mode-switcher::-webkit-scrollbar {
+    display: none;
   }
 
   .page-mode-btn {
-    flex: 1;
+    flex: 0 0 auto;
     text-align: center;
-    padding: 0.34rem 0.45rem;
-    font-size: 0.74rem;
+    padding: 0.36rem 0.68rem;
+    font-size: 0.76rem;
   }
 }
 
@@ -4925,14 +4939,35 @@ select option {
 
 .now-playing-bar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.55rem;
   padding: 0.65rem 0.9rem;
   border-radius: 10px;
   background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-elevated));
   border: 1px solid var(--accent-primary);
+}
+
+.now-playing-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.now-playing-progress {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fg-primary) 14%, transparent);
+  overflow: hidden;
+}
+
+.now-playing-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-primary);
+  transition: width 0.2s linear;
 }
 
 .now-playing-info {
@@ -5095,4 +5130,49 @@ select option {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+/* Ticket-Stub Mode Switcher, Clickable Stamp & Calendar Mobile Hint */
+.stub-mode-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.stub-stamp--btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  background: transparent;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.stub-stamp--btn:hover {
+  background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}
+
+.stub-stamp--btn.is-attended {
+  border-color: var(--accent-sage);
+  color: var(--accent-sage);
+  background: color-mix(in srgb, var(--accent-sage) 14%, transparent);
+}
+
+.calendar-mobile-hint {
+  display: none;
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--fg-muted);
+}
+
+@media (max-width: 860px) {
+  .calendar-mobile-hint {
+    display: block;
+  }
+
+  .trending-tracks-grid {
+    grid-template-columns: 1fr;
+  }
 }

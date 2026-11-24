@@ -391,6 +391,17 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
+  // Keep browser tab title synced with the active standalone view
+  useEffect(() => {
+    const titles: Record<typeof activePage, string> = {
+      guide: 'OZ Amp — Melbourne & Sydney Live Concert & Ticket-Drop Guide',
+      watchlist: 'OZ Amp — My 275 Singer Sessions & Tour Alerts',
+      'world-festivals': 'OZ Amp — Iconic World Music Festivals & Trip Budgets',
+      trending: 'OZ Amp — Trending Popular Music & Live Tour Radar',
+    };
+    document.title = titles[activePage];
+  }, [activePage]);
+
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   // Minute-granular clock prevents 1-second memo thrashing across 145+ concert cards
   const clockMinute = Math.floor(nowMs / 60_000);
@@ -1156,12 +1167,35 @@ export const App: React.FC = () => {
     [catalog.tourNews, cityFilter],
   );
 
-  const cityScopedFestivals = useMemo(
-    () =>
-      (catalog.musicFestivals || FALLBACK_CATALOG.musicFestivals).filter(
-        (f) => cityFilter === 'all' || f.stops.some((st) => st.city === cityFilter),
+  const cityScopedFestivals = useMemo(() => {
+    const todayAu = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Australia/Melbourne',
+    }).format(new Date(clockMinute * 60_000));
+    return (catalog.musicFestivals || FALLBACK_CATALOG.musicFestivals).filter((f) =>
+      f.stops.some(
+        (st) => st.dateIso >= todayAu && (cityFilter === 'all' || st.city === cityFilter),
       ),
-    [catalog.musicFestivals, cityFilter],
+    );
+  }, [catalog.musicFestivals, cityFilter, clockMinute]);
+
+  const jumpToConcertSearch = useCallback(
+    (artistName: string) => {
+      setSearchQuery(artistName);
+      setStatusFilter('all');
+      setVenueFilter('all');
+      setGenreFilter('All Genres');
+      setMonthFilter('all');
+      setWeekendOnly(false);
+      setPriceRange([0, 500]);
+      setGigViewMode('grid');
+      if (activePage !== 'guide') {
+        switchPage('guide');
+      }
+      window.setTimeout(() => {
+        document.getElementById('gigs')?.scrollIntoView({ behavior: 'smooth' });
+      }, 120);
+    },
+    [activePage, switchPage],
   );
 
   const cityScopedStubs = useMemo(
@@ -1524,19 +1558,21 @@ export const App: React.FC = () => {
           <Suspense fallback={<div className="lazy-page-loader">Loading Trending Popular Music…</div>}>
             <TrendingMusicPage
               concerts={allConcerts}
+              musicFestivals={cityScopedFestivals}
+              worldFestivals={[...CORE_WORLD_FESTIVALS, ...savedWorldFestivals]}
               monitoredSingers={monitoredSingers}
               cityFilter={cityFilter}
               onToggleMonitorArtist={(artistName, artworkUrl, genre) =>
                 handleAddOrToggleSinger({ name: artistName, artworkUrl, genre })
               }
-              onJumpToAuConcert={(artistName) => {
-                setSearchQuery(artistName);
-                setStatusFilter('all');
+              onJumpToAuConcert={jumpToConcertSearch}
+              onJumpToAuFestival={() => {
                 switchPage('guide');
                 window.setTimeout(() => {
-                  document.getElementById('gigs')?.scrollIntoView({ behavior: 'smooth' });
-                }, 120);
+                  document.getElementById('music-festivals')?.scrollIntoView({ behavior: 'smooth' });
+                }, 140);
               }}
+              onJumpToWorldFestivals={() => switchPage('world-festivals')}
               onBackToMainGuide={() => switchPage('guide')}
               onShowToast={showToast}
             />
@@ -1916,11 +1952,7 @@ export const App: React.FC = () => {
               prev.filter((s) => s.name.toLowerCase() !== name.toLowerCase()),
             )
           }
-          onJumpToArtistConcerts={(artistName) => {
-            setSearchQuery(artistName);
-            setStatusFilter('all');
-            document.getElementById('gigs')?.scrollIntoView({ behavior: 'smooth' });
-          }}
+          onJumpToArtistConcerts={jumpToConcertSearch}
         />
 
         {/* Tour News Wire */}
@@ -2569,6 +2601,15 @@ export const App: React.FC = () => {
             ]);
             playReminderChime();
             showToast(`Stamped ${newStub.artist} onto your Ticket-Stub Wall.`);
+          }}
+          onToggleStubStatus={(id) => {
+            setStubs((prev) =>
+              prev.map((s) =>
+                s.id === id
+                  ? { ...s, status: s.status === 'attended' ? 'secured' : 'attended' }
+                  : s,
+              ),
+            );
           }}
           onRemoveStub={(id) => setStubs((prev) => prev.filter((s) => s.id !== id))}
         />

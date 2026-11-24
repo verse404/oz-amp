@@ -266,7 +266,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
 
   const jumpToMonth = (nextMonth: string) => {
     setActiveMonth(nextMonth);
-    setSelectedDayIso(`${nextMonth}-01`);
+    setSelectedDayIso('');
   };
 
   return (
@@ -370,6 +370,9 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
       </div>
 
       {/* 7-Column Mon–Sun Grid */}
+      <p className="calendar-mobile-hint">
+        Swipe calendar horizontally ↔ or tap any highlighted day to inspect its agenda below.
+      </p>
       <div className="calendar-grid-scroll">
         <div className="calendar-grid">
           {WEEKDAY_HEADERS.map((wd, idx) => (

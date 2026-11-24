@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Award, ExternalLink, PlusCircle, Star, Ticket, Trash2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Award, CheckCircle2, ExternalLink, PlusCircle, Star, Ticket, Trash2 } from 'lucide-react';
 import type { CityId, ConcertEvent, TicketStubRecord } from '../types/gig';
 import { formatAudPrice, formatConcertDate } from '../utils/formatters';
 import { ArtistAvatar } from './ArtistAvatar';
@@ -9,6 +9,7 @@ interface StubArchiveSectionProps {
   concerts: ConcertEvent[];
   cityFilter: 'all' | CityId;
   onAddStub: (stub: Omit<TicketStubRecord, 'id' | 'createdAtIso'>) => void;
+  onToggleStubStatus: (id: string) => void;
   onRemoveStub: (id: string) => void;
 }
 
@@ -17,16 +18,43 @@ export const StubArchiveSection: React.FC<StubArchiveSectionProps> = ({
   concerts,
   cityFilter,
   onAddStub,
+  onToggleStubStatus,
   onRemoveStub,
 }) => {
   const visibleStubs =
     cityFilter === 'all' ? stubs : stubs.filter((s) => s.city === cityFilter);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [entryMode, setEntryMode] = useState<'catalog' | 'custom'>('catalog');
   const [selectedConcertId, setSelectedConcertId] = useState<string>(concerts[0]?.id || '');
-  const [paidAud, setPaidAud] = useState<string>('149.90');
+  const [customArtist, setCustomArtist] = useState<string>('');
+  const [customVenue, setCustomVenue] = useState<string>('');
+  const [customCity, setCustomCity] = useState<CityId>(
+    cityFilter === 'sydney' ? 'sydney' : 'melbourne',
+  );
+  const [customDateIso, setCustomDateIso] = useState<string>(() =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date()),
+  );
+  const [paidAud, setPaidAud] = useState<string>(() =>
+    String(concerts[0]?.priceMinAud ?? '149.90'),
+  );
   const [sectionNote, setSectionNote] = useState<string>('');
   const [venueRating, setVenueRating] = useState<1 | 2 | 3 | 4 | 5>(5);
   const [stubStatus, setStubStatus] = useState<'secured' | 'attended'>('secured');
+
+  // Keep selected concert & custom city synced when Home City changes
+  useEffect(() => {
+    if (cityFilter === 'sydney' || cityFilter === 'melbourne') {
+      setCustomCity(cityFilter);
+    }
+    if (concerts.length > 0 && !concerts.some((c) => c.id === selectedConcertId)) {
+      setSelectedConcertId(concerts[0].id);
+      setPaidAud(String(concerts[0].priceMinAud));
+    }
+  }, [concerts, selectedConcertId, cityFilter]);
+
+  const effectiveSelectedId = concerts.some((c) => c.id === selectedConcertId)
+    ? selectedConcertId
+    : concerts[0]?.id || '';
 
   const totalAudSpent = visibleStubs.reduce((acc, s) => acc + (Number(s.paidAud) || 0), 0);
   const sydneyCount = visibleStubs.filter((s) => s.city === 'sydney').length;
@@ -38,7 +66,34 @@ export const StubArchiveSection: React.FC<StubArchiveSectionProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const matched = concerts.find((c) => c.id === selectedConcertId) || concerts[0];
+    if (entryMode === 'custom') {
+      const artistTrim = customArtist.trim().slice(0, 90);
+      const venueTrim = customVenue.trim().slice(0, 100);
+      if (!artistTrim || !venueTrim) return;
+      const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(customDateIso)
+        ? customDateIso
+        : new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date());
+      onAddStub({
+        concertId: `custom-stub-${Date.now().toString(36)}`,
+        artist: artistTrim,
+        city: customCity,
+        venueName: venueTrim,
+        dateIso: safeDate,
+        paidAud: Math.max(0, Math.min(5000, Number(paidAud) || 0)),
+        sectionNote:
+          sectionNote.trim().slice(0, 140) ||
+          'General Admission / Stalls — clear sightline & punchy mix.',
+        venueRating,
+        status: stubStatus,
+      });
+      setCustomArtist('');
+      setCustomVenue('');
+      setSectionNote('');
+      setShowAddForm(false);
+      return;
+    }
+
+    const matched = concerts.find((c) => c.id === effectiveSelectedId) || concerts[0];
     if (!matched) return;
     onAddStub({
       concertId: matched.id,
@@ -105,25 +160,101 @@ export const StubArchiveSection: React.FC<StubArchiveSectionProps> = ({
 
       {showAddForm && (
         <form className="utility-panel stub-log-form" onSubmit={handleSubmit}>
+          <div className="stub-mode-bar" role="tablist" aria-label="Choose concert source">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={entryMode === 'catalog'}
+              className={`genre-pill ${entryMode === 'catalog' ? 'is-active' : ''}`}
+              onClick={() => setEntryMode('catalog')}
+            >
+              Upcoming Catalog Show
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={entryMode === 'custom'}
+              className={`genre-pill ${entryMode === 'custom' ? 'is-active' : ''}`}
+              onClick={() => {
+                setEntryMode('custom');
+                setStubStatus('attended');
+              }}
+            >
+              Custom / Past Concert Memory
+            </button>
+          </div>
+
           <div className="stub-form-grid">
-            <label className="form-field">
-              <span>Select Concert</span>
-              <select
-                className="filter-select"
-                value={selectedConcertId}
-                onChange={(e) => {
-                  setSelectedConcertId(e.target.value);
-                  const found = concerts.find((c) => c.id === e.target.value);
-                  if (found) setPaidAud(String(found.priceMinAud));
-                }}
-              >
-                {concerts.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    [{c.city === 'sydney' ? 'SYD' : 'MEL'}] {c.artist} — {c.venueName} ({c.dateIso})
-                  </option>
-                ))}
-              </select>
-            </label>
+            {entryMode === 'catalog' ? (
+              <label className="form-field">
+                <span>Select Concert</span>
+                <select
+                  className="filter-select"
+                  value={effectiveSelectedId}
+                  onChange={(e) => {
+                    setSelectedConcertId(e.target.value);
+                    const found = concerts.find((c) => c.id === e.target.value);
+                    if (found) setPaidAud(String(found.priceMinAud));
+                  }}
+                >
+                  {concerts.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      [{c.city === 'sydney' ? 'SYD' : 'MEL'}] {c.artist} — {c.venueName} ({c.dateIso})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <>
+                <label className="form-field">
+                  <span>Artist / Band Name</span>
+                  <input
+                    type="text"
+                    required
+                    maxLength={90}
+                    className="text-input"
+                    placeholder="e.g., Coldplay, Fred again.., Taylor Swift"
+                    value={customArtist}
+                    onChange={(e) => setCustomArtist(e.target.value)}
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>Venue Name</span>
+                  <input
+                    type="text"
+                    required
+                    maxLength={100}
+                    className="text-input"
+                    placeholder="e.g., Rod Laver Arena, Forum Melbourne, Accor Stadium"
+                    value={customVenue}
+                    onChange={(e) => setCustomVenue(e.target.value)}
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>City</span>
+                  <select
+                    className="filter-select"
+                    value={customCity}
+                    onChange={(e) => setCustomCity(e.target.value as CityId)}
+                  >
+                    <option value="melbourne">Melbourne · VIC</option>
+                    <option value="sydney">Sydney · NSW</option>
+                  </select>
+                </label>
+
+                <label className="form-field">
+                  <span>Show Date</span>
+                  <input
+                    type="date"
+                    className="text-input"
+                    value={customDateIso}
+                    onChange={(e) => setCustomDateIso(e.target.value)}
+                  />
+                </label>
+              </>
+            )}
 
             <label className="form-field">
               <span>Ticket Status</span>
@@ -214,9 +345,15 @@ export const StubArchiveSection: React.FC<StubArchiveSectionProps> = ({
                     <span className={`city-pill city-pill--${stub.city}`}>
                       {stub.city === 'sydney' ? 'SYDNEY · NSW' : 'MELBOURNE · VIC'}
                     </span>
-                    <span className="stub-stamp">
-                      {stub.status === 'attended' ? 'ATTENDED' : 'TICKET SECURED'}
-                    </span>
+                    <button
+                      type="button"
+                      className={`stub-stamp stub-stamp--btn ${stub.status === 'attended' ? 'is-attended' : ''}`}
+                      onClick={() => onToggleStubStatus(stub.id)}
+                      title="Click to toggle between Ticket Secured and Attended"
+                    >
+                      {stub.status === 'attended' && <CheckCircle2 size={11} />}
+                      <span>{stub.status === 'attended' ? 'ATTENDED' : 'TICKET SECURED'}</span>
+                    </button>
                   </div>
 
                   <div className="stub-artist-row">

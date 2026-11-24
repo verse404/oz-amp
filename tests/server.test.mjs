@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseTourAnnouncement } from '../server/parseAnnouncement.mjs';
 import { checkMonitoredSingersAnnouncements } from '../server/artistMonitor.mjs';
 import {
@@ -10,6 +13,19 @@ import {
 } from '../server/seedCatalog.mjs';
 import { createAppServer } from '../server/index.mjs';
 import { runDailyDigest } from '../server/dailyDigestAlert.mjs';
+
+const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.resolve(TESTS_DIR, '..');
+
+test('Offline Service Worker caches catalog and trending music APIs safely', async () => {
+  const swSource = await fs.readFile(path.join(PROJECT_ROOT, 'public/sw.js'), 'utf8');
+  assert.ok(swSource.includes('/api/catalog'), 'Service Worker must cache /api/catalog');
+  assert.ok(
+    swSource.includes('/api/trending-music'),
+    'Service Worker must cache /api/trending-music for offline charts',
+  );
+  assert.ok(!swSource.includes('/api/session'), 'Service Worker must never cache CSRF /api/session');
+});
 
 test('runDailyDigest scans 275-singer watchlist & World Festivals safely without webhook', async () => {
   const res = await runDailyDigest();
