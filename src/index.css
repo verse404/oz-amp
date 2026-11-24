@@ -4254,6 +4254,9 @@ select option {
 }
 
 .city-pill--global {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
   background: color-mix(in srgb, var(--accent-sage) 22%, transparent);
   color: var(--accent-sage);
 }
@@ -5130,6 +5133,16 @@ select option {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.trending-footer-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.42rem;
+  flex-wrap: wrap;
+  margin-inline-start: auto;
 }
 
 /* Ticket-Stub Mode Switcher, Clickable Stamp & Calendar Mobile Hint */

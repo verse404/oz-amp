@@ -568,7 +568,8 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                       )}
                       {firstWorldFest && (
                         <span className="city-pill city-pill--global">
-                          <Globe size={10} /> {firstWorldFest.name}
+                          <Globe size={11} />
+                          <span>{firstWorldFest.name}</span>
                         </span>
                       )}
                     </div>
@@ -668,34 +669,37 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                         <span>{isMonitored ? 'Monitoring' : 'Monitor Artist'}</span>
                       </button>
 
-                      {firstShow ? (
-                        <button
-                          type="button"
-                          className="btn-primary-sm"
-                          onClick={() => onJumpToAuConcert(firstShow.artist)}
-                        >
-                          <Ticket size={14} />
-                          <span>View AU Show</span>
-                        </button>
-                      ) : firstAuFest ? (
-                        <button
-                          type="button"
-                          className="btn-primary-sm"
-                          onClick={onJumpToAuFestival}
-                        >
-                          <Ticket size={14} />
-                          <span>View AU Fest</span>
-                        </button>
-                      ) : firstWorldFest ? (
-                        <button
-                          type="button"
-                          className="btn-primary-sm"
-                          onClick={onJumpToWorldFestivals}
-                        >
-                          <Globe size={14} />
-                          <span>World Fest</span>
-                        </button>
-                      ) : (
+                      <div className="trending-footer-actions">
+                        {firstShow && (
+                          <button
+                            type="button"
+                            className="btn-primary-sm"
+                            onClick={() => onJumpToAuConcert(firstShow.artist)}
+                          >
+                            <Ticket size={13} />
+                            <span>AU Show</span>
+                          </button>
+                        )}
+                        {firstAuFest && (
+                          <button
+                            type="button"
+                            className="btn-primary-sm"
+                            onClick={onJumpToAuFestival}
+                          >
+                            <Ticket size={13} />
+                            <span>AU Fest</span>
+                          </button>
+                        )}
+                        {firstWorldFest && (
+                          <button
+                            type="button"
+                            className="btn-primary-sm"
+                            onClick={onJumpToWorldFestivals}
+                          >
+                            <Globe size={13} />
+                            <span>World Fest</span>
+                          </button>
+                        )}
                         <a
                           href={track.appleMusicUrl}
                           target="_blank"
@@ -705,7 +709,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                           <span>Open Track</span>
                           <ExternalLink size={12} />
                         </a>
-                      )}
+                      </div>
                     </div>
                   </article>
                 );
