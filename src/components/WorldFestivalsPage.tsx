@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Bell,
@@ -235,6 +235,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
   const [liveResults, setLiveResults] = useState<WorldFestivalItem[]>([]);
   const [liveSearching, setLiveSearching] = useState(false);
   const [liveSearchNote, setLiveSearchNote] = useState<string | null>(null);
+  const searchSeqRef = useRef<number>(0);
 
   // Custom Festival Builder state
   const [showCustomForm, setShowCustomForm] = useState(false);
@@ -316,6 +317,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
   }, [myFestivals, watchedArtistSet]);
 
   const executeLiveWorldwideSearch = async (rawQuery: string, explicitClick = false) => {
+    const seq = ++searchSeqRef.current;
     const trimmed = rawQuery.trim();
     if (trimmed.length < 2) {
       setLiveResults([]);
@@ -328,11 +330,13 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         `/api/world-festivals/search?q=${encodeURIComponent(trimmed)}`,
         { headers: { Accept: 'application/json' } },
       );
+      if (seq !== searchSeqRef.current) return;
       if (res.ok) {
         const data = (await res.json()) as {
           festivals?: WorldFestivalItem[];
           results?: WorldFestivalItem[];
         };
+        if (seq !== searchSeqRef.current) return;
         const rawList = data.festivals || data.results;
         const items = Array.isArray(rawList) ? rawList : [];
         setLiveResults(items);
@@ -345,11 +349,13 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         }
       }
     } catch {
-      if (explicitClick) {
+      if (seq === searchSeqRef.current && explicitClick) {
         setLiveSearchNote('Showing curated offline global festival catalog.');
       }
     } finally {
-      setLiveSearching(false);
+      if (seq === searchSeqRef.current) {
+        setLiveSearching(false);
+      }
     }
   };
 

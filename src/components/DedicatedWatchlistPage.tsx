@@ -287,12 +287,19 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
     return bySingerId;
   }, [allSingers, concerts, festivals, cityFilter]);
 
+  // Minute-granular clock avoids rebuilding upcomingWatchlistSessions every 1 second
+  const clockMinute = Math.floor(nowMs / 60_000);
+
   // Deduplicated matched concerts (Melbourne prioritized first, then date)
   const matchedWatchlistConcerts = useMemo(() => {
-    const map = new Map<string, { concert: ConcertEvent; matchedSingers: string[] }>();
+    const map = new Map<
+      string,
+      { concert: ConcertEvent; matchedSingers: string[]; hasUnmutedSinger: boolean }
+    >();
     for (const singer of allSingers) {
       const m = singerMatches.get(singer.id);
       if (!m) continue;
+      const isUnmuted = !mutedSet.has(singer.id);
       for (const c of m.concerts) {
         if (cityFilter !== 'all' && c.city !== cityFilter) continue;
         const cur = map.get(c.id);
@@ -300,8 +307,13 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
           if (!cur.matchedSingers.includes(singer.displayName)) {
             cur.matchedSingers.push(singer.displayName);
           }
+          if (isUnmuted) cur.hasUnmutedSinger = true;
         } else {
-          map.set(c.id, { concert: c, matchedSingers: [singer.displayName] });
+          map.set(c.id, {
+            concert: c,
+            matchedSingers: [singer.displayName],
+            hasUnmutedSinger: isUnmuted,
+          });
         }
       }
     }
@@ -313,21 +325,23 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
       return a.concert.dateIso.localeCompare(b.concert.dateIso);
     });
     return list;
-  }, [allSingers, singerMatches, cityFilter]);
+  }, [allSingers, singerMatches, cityFilter, mutedSet]);
 
   // Extract all upcoming ticket-sale sessions / drops for matched concerts (Melbourne first on ties)
   const upcomingWatchlistSessions = useMemo(() => {
+    const refMs = clockMinute * 60_000;
     const items: Array<{
       concert: ConcertEvent;
       drop: TicketDropWindow;
       matchedSingers: string[];
+      hasUnmutedSinger: boolean;
       opensMs: number;
     }> = [];
-    for (const { concert, matchedSingers } of matchedWatchlistConcerts) {
+    for (const { concert, matchedSingers, hasUnmutedSinger } of matchedWatchlistConcerts) {
       for (const drop of concert.ticketDrops) {
         const opensMs = new Date(drop.opensAtIso).getTime();
-        if (opensMs >= nowMs - 18 * 3600 * 1000) {
-          items.push({ concert, drop, matchedSingers, opensMs });
+        if (opensMs >= refMs - 18 * 3600 * 1000) {
+          items.push({ concert, drop, matchedSingers, hasUnmutedSinger, opensMs });
         }
       }
     }
@@ -337,7 +351,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
       return a.concert.city === 'melbourne' ? -1 : 1;
     });
     return items;
-  }, [matchedWatchlistConcerts, nowMs]);
+  }, [matchedWatchlistConcerts, clockMinute]);
 
   const activeSingersCount = useMemo(() => {
     let n = 0;
@@ -375,7 +389,8 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
     const existingIds = new Set(reminders.map((r) => r.id));
     const toAdd: ReminderRule[] = [];
 
-    for (const { concert, drop } of upcomingWatchlistSessions) {
+    for (const { concert, drop, hasUnmutedSinger } of upcomingWatchlistSessions) {
+      if (!hasUnmutedSinger) continue;
       const ruleId = `${concert.id}::${drop.id}::15`;
       if (!existingIds.has(ruleId)) {
         existingIds.add(ruleId);
@@ -397,7 +412,8 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
       }
     }
 
-    for (const { concert } of matchedWatchlistConcerts) {
+    for (const { concert, hasUnmutedSinger } of matchedWatchlistConcerts) {
+      if (!hasUnmutedSinger) continue;
       const showRuleId = `${concert.id}::doors::1440`;
       if (!existingIds.has(showRuleId)) {
         existingIds.add(showRuleId);
@@ -436,7 +452,8 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
       alarmMinutes?: number;
     }> = [];
 
-    for (const { concert, drop, matchedSingers } of upcomingWatchlistSessions) {
+    for (const { concert, drop, matchedSingers, hasUnmutedSinger } of upcomingWatchlistSessions) {
+      if (!hasUnmutedSinger) continue;
       const start = new Date(drop.opensAtIso);
       const end = new Date(start.getTime() + 45 * 60 * 1000);
       const url = sanitizeExternalHttpsUrl(drop.bookingUrl, concert.artist);
@@ -451,7 +468,8 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
       });
     }
 
-    for (const { concert, matchedSingers } of matchedWatchlistConcerts) {
+    for (const { concert, matchedSingers, hasUnmutedSinger } of matchedWatchlistConcerts) {
+      if (!hasUnmutedSinger) continue;
       const start = new Date(buildConcertDoorsIso(concert));
       const end = new Date(start.getTime() + 3.5 * 3600 * 1000);
       const url = sanitizeExternalHttpsUrl(concert.ticketUrl, concert.artist);

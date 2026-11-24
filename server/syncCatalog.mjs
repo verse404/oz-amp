@@ -215,11 +215,17 @@ async function fetchAustralianTourRssNews() {
         if (/melbourne|vic|forum|rod laver|marvel|meredith|bowl/i.test(headline)) cities.push('melbourne');
         if (cities.length === 0) cities.push('sydney', 'melbourne');
 
+        const parsedPubDate = dateMatch ? new Date(decodeXmlEntities(dateMatch[1])) : null;
+        const publishedAtIso =
+          parsedPubDate && !Number.isNaN(parsedPubDate.getTime())
+            ? parsedPubDate.toISOString()
+            : new Date().toISOString();
+
         items.push({
           id: `rss-${Buffer.from(linkUrl).toString('base64url').slice(0, 16)}`,
           headline: headline.slice(0, 160),
           source: feed.source,
-          publishedAtIso: dateMatch ? new Date(decodeXmlEntities(dateMatch[1])).toISOString() : new Date().toISOString(),
+          publishedAtIso,
           url: linkUrl,
           citiesMentioned: cities,
         });
@@ -278,6 +284,11 @@ export async function syncLiveCatalog() {
       return c;
     });
 
+  const activeMusicFestivals = MUSIC_FESTIVALS_DIRECTORY.map((fest) => ({
+    ...fest,
+    stops: (fest.stops || []).filter((st) => st.dateIso >= todayAu),
+  })).filter((fest) => fest.stops.length > 0);
+
   const payload = {
     syncedAtIso: new Date().toISOString(),
     liveSyncSource:
@@ -290,7 +301,7 @@ export async function syncLiveCatalog() {
     venues: VENUES,
     concerts: activeConcerts,
     tourNews: rssNews.length > 0 ? [...rssNews.slice(0, 6), ...SEED_TOUR_NEWS].slice(0, 8) : SEED_TOUR_NEWS,
-    musicFestivals: MUSIC_FESTIVALS_DIRECTORY,
+    musicFestivals: activeMusicFestivals,
     festivals: FESTIVAL_ADVISOR_DATA,
     presetSingers: PRESET_SINGERS,
   };

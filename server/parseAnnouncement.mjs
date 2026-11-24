@@ -28,12 +28,15 @@ const VENUE_ALIASES = [
   { venueId: 'syd-metro', patterns: [/metro\s+theatre/i] },
   { venueId: 'syd-centennial', patterns: [/centennial\s+park/i] },
   { venueId: 'syd-showground', patterns: [/sydney\s+showground/i, /engie\s+stadium/i] },
+  { venueId: 'syd-tumbalong-park', patterns: [/tumbalong\s+park/i, /darling\s+harbour/i] },
   { venueId: 'mel-marvel', patterns: [/marvel\s+stadium/i, /docklands\s+stadium/i] },
-  { venueId: 'mel-rodlaver', patterns: [/rod\s+laver/i, /john\s+cain\s+arena/i] },
+  { venueId: 'mel-rodlaver', patterns: [/rod\s+laver/i] },
+  { venueId: 'mel-johncain', patterns: [/john\s+cain\s+arena/i, /melbourne\s+arena/i] },
   { venueId: 'mel-mca', patterns: [/margaret\s+court/i] },
   { venueId: 'mel-festhall', patterns: [/festival\s+hall/i] },
   { venueId: 'mel-foreshore', patterns: [/palace\s+foreshore/i, /st\s+kilda\s+triangle/i] },
   { venueId: 'mel-bowl', patterns: [/sidney\s+myer/i, /music\s+bowl/i] },
+  { venueId: 'mel-rbg', patterns: [/royal\s+botanic\s+gardens/i, /botanic\s+gardens\s+melbourne/i] },
   { venueId: 'mel-forum', patterns: [/forum\s+melbourne/i, /\bthe\s+forum\b/i] },
   { venueId: 'mel-palais', patterns: [/palais\s+theatre/i] },
   { venueId: 'mel-northcote', patterns: [/northcote\s+theatre/i, /northcote\s+social/i] },
@@ -195,11 +198,12 @@ export function parseTourAnnouncement(rawInput) {
   const promoter = detectPromoter(cleaned);
 
   // Extract Ticket Drop windows (Presales & General On-Sale)
+  const currentYear = new Date().getFullYear();
   const ticketDrops = [];
   for (const line of lines) {
     const kind = detectPresaleKind(line);
     if (!kind) continue;
-    const dropDate = parseAuDateFromLine(line, 2026);
+    const dropDate = parseAuDateFromLine(line, currentYear);
     if (!dropDate) continue;
     const time24 = parseTime24(line, 10);
     const month = Number(dropDate.slice(5, 7));

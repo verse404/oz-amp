@@ -445,12 +445,22 @@ export function exportRemindersToIcs(reminders: ReminderRule[]): void {
   downloadIcsEvents('oz-amp-reminders.ics', events);
 }
 
-// Plays a gentle two-note stage harmonic chime using Web Audio API (no external audio assets required)
+let sharedAudioCtx: AudioContext | null = null;
+
+// Plays a gentle two-note stage harmonic chime using a single reused Web AudioContext
 export function playReminderChime(): void {
   try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+    if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
+      sharedAudioCtx = new AudioCtx();
+    }
+    const ctx = sharedAudioCtx;
+    if (ctx.state === 'suspended') {
+      void ctx.resume().catch(() => {});
+    }
     const now = ctx.currentTime;
     const notes = [523.25, 659.25]; // C5 -> E5 warm interval
     notes.forEach((freq, i) => {

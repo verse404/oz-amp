@@ -1659,7 +1659,7 @@ export const App: React.FC = () => {
           <Suspense fallback={<div className="lazy-page-loader">Loading Your 275 Singer Sessions…</div>}>
             <DedicatedWatchlistPage
             concerts={allConcerts}
-            festivals={catalog.musicFestivals || FALLBACK_CATALOG.musicFestivals}
+            festivals={cityScopedFestivals}
             reminders={cityScopedReminders}
             nowMs={nowMs}
             cityFilter={cityFilter}

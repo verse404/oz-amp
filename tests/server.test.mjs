@@ -136,6 +136,16 @@ General Public On-Sale: Fri 27 Nov 2026 12:00pm AEDT`;
   assert.equal(result.ticketDropsCount, 3);
   assert.equal(result.concerts[0].priceMinAud, 149.9);
   assert.equal(result.concerts[0].priceMaxAud, 289.9);
+
+  // Verify John Cain Arena, Royal Botanic Gardens & Tumbalong Park map to their exact venue IDs
+  const venueCheck = parseTourAnnouncement(`Bonobo — Live in Australia 2027
+Friday 12 March 2027 — John Cain Arena, Melbourne VIC
+Saturday 13 March 2027 — Royal Botanic Gardens Melbourne, VIC
+Sunday 14 March 2027 — Tumbalong Park, Darling Harbour, Sydney NSW`);
+  assert.deepEqual(
+    venueCheck.concerts.map((c) => c.venueId),
+    ['mel-johncain', 'mel-rbg', 'syd-tumbalong-park'],
+  );
 });
 
 test('checkMonitoredSingersAnnouncements resolves bilingual aliases and detects announced vs monitoring singers', () => {

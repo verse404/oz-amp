@@ -10,16 +10,28 @@ interface SmartImportModalProps {
   onImportConcerts: (concerts: ConcertEvent[], autoRemind: boolean) => void;
 }
 
-const SAMPLE_ANNOUNCEMENT = `Tame Impala — Deadbeat Australian Arena Tour 2027
+function buildFreshSampleAnnouncement(): string {
+  const fmtAu = (daysAhead: number) => {
+    const d = new Date(Date.now() + daysAhead * 86_400_000);
+    return new Intl.DateTimeFormat('en-AU', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'Australia/Melbourne',
+    }).format(d);
+  };
+  return `Tame Impala — Deadbeat Australian Arena Tour 2027
 Presented by Frontier Touring & Chugg Entertainment
 Tickets from A$139.90 - A$219.90 via Ticketek
 
 Friday 16 April 2027 — Rod Laver Arena, Melbourne VIC
 Wednesday 21 April 2027 — Qudos Bank Arena, Sydney NSW
 
-Telstra Plus Pre-Sale: Mon 23 Nov 2026 11:00am AEDT
-Frontier Members Pre-Sale: Wed 25 Nov 2026 1:00pm AEDT
-General Public On-Sale: Fri 27 Nov 2026 12:00pm AEDT`;
+Telstra Plus Pre-Sale: ${fmtAu(2)} 11:00am AEDT
+Frontier Members Pre-Sale: ${fmtAu(4)} 1:00pm AEDT
+General Public On-Sale: ${fmtAu(6)} 12:00pm AEDT`;
+}
 
 export const SmartImportModal: React.FC<SmartImportModalProps> = ({
   isOpen,
@@ -111,8 +123,9 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
               id="load-sample-tour-btn"
               className="btn-outline-sm"
               onClick={() => {
-                setRawText(SAMPLE_ANNOUNCEMENT);
-                void handleParse(SAMPLE_ANNOUNCEMENT);
+                const sample = buildFreshSampleAnnouncement();
+                setRawText(sample);
+                void handleParse(sample);
               }}
             >
               <Sparkles size={14} />

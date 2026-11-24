@@ -67,6 +67,7 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
 
         <button
           type="button"
+          aria-pressed={onlyAsiaExclusive}
           className={`genre-pill ${onlyAsiaExclusive ? 'is-selected' : ''}`}
           onClick={() => setOnlyAsiaExclusive((v) => !v)}
         >
@@ -119,6 +120,25 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
         </div>
       </div>
 
+      {filteredStops.length === 0 ? (
+        <div className="empty-state-box">
+          <Sparkles size={20} />
+          <p>
+            No upcoming {hubFilter === 'All Hubs' ? 'Asia-Pacific' : hubFilter} stops match the
+            current filter.
+          </p>
+          <button
+            type="button"
+            className="btn-outline-sm"
+            onClick={() => {
+              setHubFilter('All Hubs');
+              setOnlyAsiaExclusive(false);
+            }}
+          >
+            Reset Asia-Pacific Filters
+          </button>
+        </div>
+      ) : (
       <div className="apac-grid">
         {filteredStops.map((stop) => {
           const isArmed = remindedIds.has(stop.id);
@@ -223,6 +243,7 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
           );
         })}
       </div>
+      )}
     </section>
   );
 };
