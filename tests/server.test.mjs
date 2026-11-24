@@ -195,6 +195,15 @@ test('BFF enforces security headers, HTTP method allow-list, CSRF, SSRF protecti
     const validWorldJson = await validWorldRes.json();
     assert.ok(Array.isArray(validWorldJson.results));
 
+    // 3d. Trending Popular Music endpoint validates region and returns structured tracks
+    const badTrending = await fetch(`${baseUrl}/api/trending-music?region=invalid`);
+    assert.equal(badTrending.status, 400);
+
+    const okTrending = await fetch(`${baseUrl}/api/trending-music?region=au`);
+    assert.equal(okTrending.status, 200);
+    const trendingJson = await okTrending.json();
+    assert.ok(Array.isArray(trendingJson.tracks) && trendingJson.tracks.length > 0);
+
     // 4. POST without CSRF token fails with 403
     const noCsrfRes = await fetch(`${baseUrl}/api/artists/monitor-check`, {
       method: 'POST',

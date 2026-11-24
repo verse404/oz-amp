@@ -15,6 +15,10 @@ import {
 } from './artistMonitor.mjs';
 import { resolvePortraitsForNames } from './artistPortraitsService.mjs';
 import { searchWorldFestivalsLive } from './worldFestivalsSearch.mjs';
+import {
+  ALLOWED_TRENDING_REGIONS,
+  fetchTrendingMusic,
+} from './trendingMusicService.mjs';
 
 // Cryptographic synchronizer CSRF token generated per server boot (never hardcoded).
 const SERVER_CSRF_TOKEN = crypto.randomBytes(32).toString('hex');
@@ -68,7 +72,7 @@ const SPA_SECURITY_HEADERS = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
+    "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org data:; media-src 'self' https://audio-ssl.itunes.apple.com; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
 };
 
 function isAllowedOrigin(origin, requestHostHeader) {
@@ -348,6 +352,22 @@ export function createAppServer() {
         writeJson(req, res, 200, { query: q, profiles });
       } catch {
         writeJson(req, res, 500, { error: 'Artist search temporarily unavailable.' });
+      }
+      return;
+    }
+
+    // Live Trending Popular Music Charts (Apple Music / iTunes RSS)
+    if (pathname === '/api/trending-music' && req.method === 'GET') {
+      const region = String(parsedUrl.searchParams.get('region') || 'au').trim().toLowerCase();
+      if (!ALLOWED_TRENDING_REGIONS.has(region)) {
+        writeJson(req, res, 400, { error: 'Region must be one of au, us, gb, or jp.' });
+        return;
+      }
+      try {
+        const payload = await fetchTrendingMusic(region);
+        writeJson(req, res, 200, payload);
+      } catch {
+        writeJson(req, res, 500, { error: 'Trending music charts temporarily unavailable.' });
       }
       return;
     }

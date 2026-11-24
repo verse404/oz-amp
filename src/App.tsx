@@ -96,6 +96,9 @@ const DedicatedWatchlistPage = lazy(() =>
 const WorldFestivalsPage = lazy(() =>
   import('./components/WorldFestivalsPage').then((m) => ({ default: m.WorldFestivalsPage })),
 );
+const TrendingMusicPage = lazy(() =>
+  import('./components/TrendingMusicPage').then((m) => ({ default: m.TrendingMusicPage })),
+);
 
 type SortMode = 'date' | 'price-asc' | 'drops-first' | 'artist-az';
 
@@ -331,9 +334,12 @@ export const App: React.FC = () => {
   );
 
   // Drawers, Modals & Standalone Page Route
-  const [activePage, setActivePage] = useState<'guide' | 'watchlist' | 'world-festivals'>(() => {
+  const [activePage, setActivePage] = useState<
+    'guide' | 'watchlist' | 'world-festivals' | 'trending'
+  >(() => {
     if (window.location.hash === '#/my-sessions') return 'watchlist';
     if (window.location.hash === '#/world-festivals') return 'world-festivals';
+    if (window.location.hash === '#/trending') return 'trending';
     return 'guide';
   });
   const [isReminderDrawerOpen, setIsReminderDrawerOpen] = useState(false);
@@ -344,25 +350,30 @@ export const App: React.FC = () => {
   const [showAllDrops, setShowAllDrops] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const switchPage = useCallback((nextPage: 'guide' | 'watchlist' | 'world-festivals') => {
-    setActivePage(nextPage);
-    try {
-      const nextHash =
-        nextPage === 'watchlist'
-          ? '#/my-sessions'
-          : nextPage === 'world-festivals'
-            ? '#/world-festivals'
-            : '';
-      window.history.replaceState(
-        null,
-        '',
-        nextHash || window.location.pathname + window.location.search,
-      );
-    } catch {
-      // Ignore history API restrictions
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  const switchPage = useCallback(
+    (nextPage: 'guide' | 'watchlist' | 'world-festivals' | 'trending') => {
+      setActivePage(nextPage);
+      try {
+        const nextHash =
+          nextPage === 'watchlist'
+            ? '#/my-sessions'
+            : nextPage === 'world-festivals'
+              ? '#/world-festivals'
+              : nextPage === 'trending'
+                ? '#/trending'
+                : '';
+        window.history.replaceState(
+          null,
+          '',
+          nextHash || window.location.pathname + window.location.search,
+        );
+      } catch {
+        // Ignore history API restrictions
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [],
+  );
 
   useEffect(() => {
     const onHashChange = () => {
@@ -370,6 +381,8 @@ export const App: React.FC = () => {
         setActivePage('watchlist');
       } else if (window.location.hash === '#/world-festivals') {
         setActivePage('world-festivals');
+      } else if (window.location.hash === '#/trending') {
+        setActivePage('trending');
       } else if (window.location.hash === '#/guide' || window.location.hash === '') {
         setActivePage('guide');
       }
@@ -1404,6 +1417,16 @@ export const App: React.FC = () => {
               >
                 World Festivals ({CORE_WORLD_FESTIVALS.length + savedWorldFestivals.length})
               </button>
+              <button
+                type="button"
+                id="nav-page-trending-btn"
+                role="tab"
+                aria-selected={activePage === 'trending'}
+                className={`page-mode-btn ${activePage === 'trending' ? 'is-active' : ''}`}
+                onClick={() => switchPage('trending')}
+              >
+                Trending Music
+              </button>
             </div>
           </nav>
 
@@ -1497,7 +1520,28 @@ export const App: React.FC = () => {
       )}
 
       <main className="container main-content">
-        {activePage === 'world-festivals' ? (
+        {activePage === 'trending' ? (
+          <Suspense fallback={<div className="lazy-page-loader">Loading Trending Popular Music…</div>}>
+            <TrendingMusicPage
+              concerts={allConcerts}
+              monitoredSingers={monitoredSingers}
+              cityFilter={cityFilter}
+              onToggleMonitorArtist={(artistName, artworkUrl, genre) =>
+                handleAddOrToggleSinger({ name: artistName, artworkUrl, genre })
+              }
+              onJumpToAuConcert={(artistName) => {
+                setSearchQuery(artistName);
+                setStatusFilter('all');
+                switchPage('guide');
+                window.setTimeout(() => {
+                  document.getElementById('gigs')?.scrollIntoView({ behavior: 'smooth' });
+                }, 120);
+              }}
+              onBackToMainGuide={() => switchPage('guide')}
+              onShowToast={showToast}
+            />
+          </Suspense>
+        ) : activePage === 'world-festivals' ? (
           <Suspense fallback={<div className="lazy-page-loader">Loading World Festivals…</div>}>
             <WorldFestivalsPage
             savedExtraFestivals={savedWorldFestivals}

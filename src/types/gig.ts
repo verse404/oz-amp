@@ -282,6 +282,22 @@ export interface WorldFestivalItem {
   isCustomAdded?: boolean;
 }
 
+export type TrendingRegion = 'au' | 'us' | 'gb' | 'jp';
+
+export interface TrendingTrackItem {
+  id: string;
+  rank: number;
+  title: string;
+  artist: string;
+  album: string;
+  genre: string;
+  region: TrendingRegion;
+  artworkUrl: string;
+  previewUrl: string;
+  appleMusicUrl: string;
+  releaseDateLabel?: string;
+}
+
 export interface ApacTourStop {
   id: string;
   artist: string;

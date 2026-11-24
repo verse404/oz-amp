@@ -4889,3 +4889,210 @@ select option {
   gap: 0.45rem;
   flex-wrap: wrap;
 }
+
+
+/* ── TRENDING POPULAR MUSIC PAGE ─────────────────────────────────────────── */
+
+.trending-music-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding-top: 0.35rem;
+}
+
+.trending-hero-card {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent-primary) 10%, var(--bg-surface)) 0%,
+    var(--bg-surface) 64%
+  );
+}
+
+.trending-flag-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.36rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--fg-primary) 12%, transparent);
+}
+
+.trending-flame-icon {
+  color: var(--accent-primary);
+  vertical-align: -2px;
+  margin-inline-end: 0.25rem;
+}
+
+.now-playing-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-elevated));
+  border: 1px solid var(--accent-primary);
+}
+
+.now-playing-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+}
+
+.now-playing-icon {
+  color: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+.trending-controls-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.trending-tracks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.trending-track-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hairline);
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.16s ease, transform 0.16s ease;
+}
+
+.trending-track-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.trending-track-card.is-playing {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.trending-track-card.is-touring-au {
+  border-color: color-mix(in srgb, var(--accent-amber) 55%, var(--border-hairline));
+}
+
+.trending-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.trending-rank-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.14rem 0.48rem;
+  border-radius: 6px;
+  background: var(--fg-primary);
+  color: var(--bg-canvas);
+}
+
+.trending-track-identity {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.trending-cover-wrap {
+  position: relative;
+  width: 58px;
+  height: 58px;
+}
+
+.trending-play-overlay {
+  position: absolute;
+  inset: 0;
+  border: none;
+  border-radius: 11px;
+  background: rgba(14, 12, 10, 0.56);
+  color: #fffaf5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.trending-cover-wrap:hover .trending-play-overlay,
+.trending-play-overlay.is-playing {
+  opacity: 1;
+}
+
+.trending-play-overlay.is-playing {
+  background: color-mix(in srgb, var(--accent-primary) 78%, transparent);
+}
+
+.trending-track-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.14rem;
+}
+
+.trending-track-title {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.08rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trending-track-artist {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--fg-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trending-track-album {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-chip--audio {
+  cursor: pointer;
+  font-family: inherit;
+  border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-hairline));
+  color: var(--accent-primary);
+}
+
+.preview-chip--audio.is-playing {
+  background: var(--accent-primary);
+  color: #fffaf5;
+  border-color: var(--accent-primary);
+}
+
+.trending-card-footer {
+  margin-top: auto;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--border-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
