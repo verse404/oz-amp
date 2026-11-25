@@ -1,6 +1,6 @@
 {
-  "syncedAtIso": "2026-11-24T06:48:50.511Z",
-  "liveSyncSource": "Verified Sydney & Melbourne Slate + Live AU Tour Press (12 dispatches)",
+  "syncedAtIso": "2026-11-25T03:41:10.901Z",
+  "liveSyncSource": "Verified Sydney & Melbourne Slate + Live AU Tour Press (14 dispatches)",
   "ticketmasterConfigured": false,
   "venues": [
     {
@@ -410,34 +410,6 @@
     }
   ],
   "concerts": [
-    {
-      "id": "robyn-mel-2026",
-      "artist": "Robyn",
-      "supportActs": [],
-      "tourTitle": "The Sexistential Tour",
-      "city": "melbourne",
-      "venueId": "mel-rodlaver",
-      "venueName": "Rod Laver Arena",
-      "suburb": "Melbourne Park",
-      "venueTier": "arena",
-      "dateIso": "2026-11-24",
-      "doorsTimeLocal": "18:30",
-      "setTimeLocal": "20:45",
-      "timeZone": "Australia/Melbourne",
-      "genres": [
-        "Pop",
-        "Electronic"
-      ],
-      "promoter": "Handsome Tours",
-      "agency": "Ticketek",
-      "status": "selling-fast",
-      "priceMinAud": 139.9,
-      "priceMaxAud": 249.9,
-      "ticketUrl": "https://premier.ticketek.com.au/Shows/Show.aspx?sh=WIEVHBEM26",
-      "resaleUrl": "https://tixel.com/au/discover/tickets?q=Robyn",
-      "ticketDrops": [],
-      "editorialNote": "Melbourne arena headline leg of Robyn’s Sexistential Australian return."
-    },
     {
       "id": "rise-against-mel-2026",
       "artist": "Rise Against",
