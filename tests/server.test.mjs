@@ -258,6 +258,30 @@ test('BFF enforces security headers, HTTP method allow-list, CSRF, SSRF protecti
     const monitorBody = await monitorRes.json();
     assert.equal(monitorBody.results.length, 2);
 
+    // 5b. CSRF double-submit survives container restart (valid 64-hex matching cookie & header)
+    const restartedTok = 'a'.repeat(64);
+    const surviveRes = await fetch(`${baseUrl}/api/artists/monitor-check`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `southern_amp_csrf=${restartedTok}`,
+        'X-CSRF-Token': restartedTok,
+      },
+      body: JSON.stringify({ singers: [{ name: 'Radiohead' }] }),
+    });
+    assert.equal(surviveRes.status, 200);
+
+    const mismatchRes = await fetch(`${baseUrl}/api/artists/monitor-check`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `southern_amp_csrf=${restartedTok}`,
+        'X-CSRF-Token': 'b'.repeat(64),
+      },
+      body: JSON.stringify({ singers: [{ name: 'Radiohead' }] }),
+    });
+    assert.equal(mismatchRes.status, 403);
+
     // 6. SSRF protection blocks loopback/internal webhook URLs
     const ssrfRes = await fetch(`${baseUrl}/api/reminders/test-webhook`, {
       method: 'POST',

@@ -4,5 +4,6 @@ dist/
 .env.local
 server/cache/live-catalog.json
 start-cloudtop.sh
+deploy-*.sh
 *.log
 .DS_Store

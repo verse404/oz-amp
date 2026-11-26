@@ -48,6 +48,7 @@ import {
 import { ArtistAvatar } from './ArtistAvatar';
 import { ApacRadarSection } from './ApacRadarSection';
 import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
+import { IS_STATIC_MODE } from '../config/runtimeMode';
 
 function resolveTripPlanner(fest: WorldFestivalItem): {
   allInBudgetAud: string;
@@ -324,6 +325,15 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
       setLiveSearchNote(null);
       return;
     }
+    if (IS_STATIC_MODE) {
+      setLiveResults([]);
+      if (explicitClick) {
+        setLiveSearchNote(
+          `Filtered curated worldwide festival catalog for "${trimmed}" — or add any festival via + Custom Festival below.`,
+        );
+      }
+      return;
+    }
     setLiveSearching(true);
     try {
       const res = await fetch(
@@ -521,6 +531,9 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
 
+    const nowDate = new Date();
+    const targetSeasonYear = nowDate.getMonth() >= 9 ? nowDate.getFullYear() + 1 : nowDate.getFullYear();
+
     const created: WorldFestivalItem = {
       id: `wf-custom-${slug}-${Date.now().toString(36)}`,
       name: cleanName,
@@ -529,8 +542,8 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
       countryCode: cleanCountry.slice(0, 10).toUpperCase(),
       region: customRegion,
       vibe: customVibe,
-      datesLabel: customDates.trim() || '2027 Edition · Dates TBA',
-      startDateIso: '2027-07-01',
+      datesLabel: customDates.trim() || `${targetSeasonYear} Edition · Dates TBA`,
+      startDateIso: `${targetSeasonYear}-07-01`,
       venueName: `${cleanCity} Festival Grounds`,
       themeOrEdition: 'Custom Tracked Pilgrimage',
       status: 'registration-soon',
@@ -545,7 +558,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
       lineupHighlights: [],
       stagesOrCamps: ['Main Festival Stage'],
       nextSessionLabel: 'Official Lineup & Ticket Release Check',
-      nextSessionIso: '2027-02-01T10:00:00+11:00',
+      nextSessionIso: `${targetSeasonYear}-02-01T10:00:00+11:00`,
       description: `Custom world festival added to your OZ Amp global pilgrimage tracker in ${cleanCity}, ${cleanCountry}.`,
       isCustomAdded: true,
     };

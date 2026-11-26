@@ -18,7 +18,7 @@ import {
 
 export const FALLBACK_CATALOG: CatalogPayload = {
   syncedAtIso: '2026-11-18T05:25:00Z',
-  liveSyncSource: 'Verified Sydney & Melbourne 2026–2027 Concert & Festival Slate',
+  liveSyncSource: 'Verified Sydney & Melbourne Live Concert & Festival Slate',
   ticketmasterConfigured: false,
   venues: VENUES as VenueInfo[],
   concerts: SEED_CONCERTS as ConcertEvent[],

@@ -19,3 +19,7 @@ services:
         value: "1"
       - key: CACHE_TTL_HOURS
         value: "24"
+      - key: TICKETMASTER_API_KEY
+        sync: false
+      - key: REMINDER_WEBHOOK_URL
+        sync: false

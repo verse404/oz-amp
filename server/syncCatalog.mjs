@@ -16,6 +16,9 @@ export const PROJECT_ROOT = path.resolve(__dirname, '..');
 export const CACHE_DIR = path.join(__dirname, 'cache');
 export const CACHE_FILE = path.join(CACHE_DIR, 'live-catalog.json');
 
+let memoryCatalog = null;
+let inFlightSync = null;
+
 function loadDotEnvIfPresent() {
   const envPath = path.join(PROJECT_ROOT, '.env');
   if (!fsSync.existsSync(envPath)) return;
@@ -71,13 +74,16 @@ async function fetchTicketmasterAuEvents(apiKey) {
     { cityParam: 'Sydney', cityId: 'sydney', defaultVenue: sydDefault, tz: 'Australia/Sydney' },
   ];
 
+  const nowStartUtc = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+
   for (const target of cities) {
     const url = new URL('https://app.ticketmaster.com/discovery/v2/events.json');
     url.searchParams.set('apikey', apiKey);
     url.searchParams.set('countryCode', 'AU');
     url.searchParams.set('classificationName', 'music');
     url.searchParams.set('city', target.cityParam);
-    url.searchParams.set('size', '25');
+    url.searchParams.set('startDateTime', nowStartUtc);
+    url.searchParams.set('size', '80');
     url.searchParams.set('sort', 'date,asc');
 
     const controller = new AbortController();
@@ -185,6 +191,7 @@ async function fetchAustralianTourRssNews() {
   const feeds = [
     { source: 'Music Feeds AU', url: 'https://musicfeeds.com.au/feed/' },
     { source: 'Tone Deaf AU', url: 'https://tonedeaf.thebrag.com/feed/' },
+    { source: 'Beat Melbourne', url: 'https://beat.com.au/feed/' },
   ];
   const items = [];
 
@@ -296,22 +303,33 @@ export async function syncLiveCatalog() {
         ? `Curated AU Slate + Ticketmaster Discovery (${tmConcerts.length} live) + AU Music Press`
         : rssNews.length > 0
           ? `Verified Sydney & Melbourne Slate + Live AU Tour Press (${rssNews.length} dispatches)`
-          : 'Verified Sydney & Melbourne 2026–2027 Concert Slate',
+          : 'Verified Sydney & Melbourne Live Concert Slate',
     ticketmasterConfigured: Boolean(cfg.ticketmasterApiKey),
     venues: VENUES,
     concerts: activeConcerts,
-    tourNews: rssNews.length > 0 ? [...rssNews.slice(0, 6), ...SEED_TOUR_NEWS].slice(0, 8) : SEED_TOUR_NEWS,
+    tourNews: rssNews.length > 0 ? [...rssNews.slice(0, 8), ...SEED_TOUR_NEWS].slice(0, 10) : SEED_TOUR_NEWS,
     musicFestivals: activeMusicFestivals,
     festivals: FESTIVAL_ADVISOR_DATA,
     presetSingers: PRESET_SINGERS,
   };
 
-  await fs.writeFile(CACHE_FILE, JSON.stringify(payload, null, 2), 'utf-8');
+  memoryCatalog = payload;
+  try {
+    await fs.writeFile(CACHE_FILE, JSON.stringify(payload, null, 2), 'utf-8');
+  } catch {
+    // Keep serving fresh in-memory catalog even on ephemeral/read-only container filesystems
+  }
   return payload;
 }
 
 export async function loadOrSyncCatalog() {
   const cfg = getApiConfig();
+  if (memoryCatalog) {
+    const memAgeHours = (Date.now() - new Date(memoryCatalog.syncedAtIso).getTime()) / 3_600_000;
+    if (memAgeHours < cfg.cacheTtlHours) {
+      return memoryCatalog;
+    }
+  }
   try {
     const raw = await fs.readFile(CACHE_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
@@ -319,17 +337,22 @@ export async function loadOrSyncCatalog() {
     if (
       ageHours < cfg.cacheTtlHours &&
       Array.isArray(parsed.concerts) &&
-      parsed.concerts.length > 0 &&
       Array.isArray(parsed.festivals) &&
       Array.isArray(parsed.musicFestivals) &&
       Array.isArray(parsed.presetSingers)
     ) {
+      memoryCatalog = parsed;
       return parsed;
     }
   } catch {
     // Cache absent, stale, or pre-upgrade schema; run fresh sync
   }
-  return syncLiveCatalog();
+  if (!inFlightSync) {
+    inFlightSync = syncLiveCatalog().finally(() => {
+      inFlightSync = null;
+    });
+  }
+  return inFlightSync;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

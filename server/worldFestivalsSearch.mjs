@@ -226,6 +226,9 @@ export async function searchWorldFestivalsLive(rawQuery) {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-|-$/g, '');
 
+        const nowDate = new Date();
+        const seasonYear = nowDate.getMonth() >= 9 ? nowDate.getFullYear() + 1 : nowDate.getFullYear();
+
         discovered.push({
           id: `wf-live-${slug}`,
           name: cleanDisplayTitle,
@@ -234,11 +237,11 @@ export async function searchWorldFestivalsLive(rawQuery) {
           countryCode: code,
           region,
           vibe,
-          datesLabel: '2027 Season · Check Official Calendar',
-          startDateIso: '2027-06-15',
+          datesLabel: `${seasonYear} Season · Check Official Calendar`,
+          startDateIso: `${seasonYear}-06-15`,
           venueName: loc.city,
           status: 'registration-soon',
-          statusLabel: 'Discovered · Watch 2027',
+          statusLabel: `Discovered · Watch ${seasonYear}`,
           passPriceApprox: 'See Official Site',
           melbourneFlightTip: 'MEL international connection via regional hub',
           sydneyFlightTip: 'SYD international connection via regional hub',
@@ -248,8 +251,8 @@ export async function searchWorldFestivalsLive(rawQuery) {
           lineupAnnounced: false,
           lineupHighlights: [],
           stagesOrCamps: ['Main Festival Grounds'],
-          nextSessionLabel: '2027 Lineup & Pass Release Check',
-          nextSessionIso: '2027-01-15T10:00:00+11:00',
+          nextSessionLabel: `${seasonYear} Lineup & Pass Release Check`,
+          nextSessionIso: `${seasonYear}-01-15T10:00:00+11:00`,
           description: extract.slice(0, 260),
           isCustomAdded: true,
         });

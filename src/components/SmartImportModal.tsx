@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { FileText, PlusCircle, Sparkles, X } from 'lucide-react';
 import type { ConcertEvent } from '../types/gig';
 import { formatAudRange, formatAuTimestamp, formatConcertDate } from '../utils/formatters';
+import { IS_STATIC_MODE } from '../config/runtimeMode';
+import { parseTourAnnouncement } from '../../server/parseAnnouncement.mjs';
 
 interface SmartImportModalProps {
   isOpen: boolean;
@@ -51,6 +53,11 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
     setErrorMsg(null);
     setLoading(true);
     try {
+      if (IS_STATIC_MODE) {
+        const parsed = parseTourAnnouncement(textToParse);
+        setPreview((parsed.concerts || []) as ConcertEvent[]);
+        return;
+      }
       const res = await fetch('/api/parse-announcement', {
         method: 'POST',
         headers: {
@@ -66,8 +73,20 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
       } else {
         setPreview(data.concerts || []);
       }
-    } catch {
-      setErrorMsg('Unable to reach local parser API.');
+    } catch (err) {
+      if (IS_STATIC_MODE) {
+        setErrorMsg(err instanceof Error ? err.message : 'Could not parse tour announcement.');
+        setPreview(null);
+      } else {
+        // Fallback to local parser if backend is momentarily unreachable
+        try {
+          const parsed = parseTourAnnouncement(textToParse);
+          setPreview((parsed.concerts || []) as ConcertEvent[]);
+        } catch {
+          setErrorMsg('Unable to parse tour announcement.');
+          setPreview(null);
+        }
+      }
     } finally {
       setLoading(false);
     }

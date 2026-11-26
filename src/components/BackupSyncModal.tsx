@@ -18,6 +18,7 @@ import type {
   WorldFestivalItem,
 } from '../types/gig';
 import { sanitizeExternalHttpsUrl } from '../utils/formatters';
+import { IS_STATIC_MODE } from '../config/runtimeMode';
 
 export interface OzAmpProfileBackup {
   schemaVersion: 1;
@@ -388,51 +389,78 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
           </div>
         ) : (
           <div className="sync-modal-body">
-            <div className="cloud-guide-card">
-              <div className="cloud-guide-title">
-                <BellRing size={16} />
-                <strong>Background 7:30 AM AEDT Phone Push Alerts ($0 via GitHub Actions)</strong>
+            {IS_STATIC_MODE ? (
+              <div className="cloud-guide-card">
+                <div className="cloud-guide-title">
+                  <BellRing size={16} />
+                  <strong>Private Per-Browser Storage &amp; Calendar Alerts</strong>
+                </div>
+                <p className="sync-helper-copy">
+                  Your reminders, watched singers, custom world festivals, and Ticket-Stub Wall are
+                  stored privately inside your own browser (<code>localStorage</code>) — other
+                  visitors never see your personal selections.
+                </p>
+                <ul className="cloud-secrets-list">
+                  <li>
+                    Use <strong>Download All as .ics Calendar</strong> inside the{' '}
+                    <strong>Reminders</strong> drawer or click <strong>GCal</strong> on any ticket
+                    drop to sync 15-minute pre-sale queue alerts directly to Google Calendar / Apple
+                    Calendar on your phone.
+                  </li>
+                  <li>
+                    Use <strong>Tab 1 (Sync Laptop ↔ Phone)</strong> to export or copy your JSON
+                    profile whenever you switch devices.
+                  </li>
+                </ul>
               </div>
-              <p className="sync-helper-copy">
-                Your repository (<code>verse404/oz-amp</code>) runs an automated morning radar check
-                across all <strong>275 watchlist singers</strong> and <strong>6 World Festivals</strong>{' '}
-                even when your laptop and browser tabs are closed. Add two optional free secrets in
-                GitHub <strong>Settings → Secrets and variables → Actions</strong>:
-              </p>
-              <ul className="cloud-secrets-list">
-                <li>
-                  <code>REMINDER_WEBHOOK_URL</code> — Paste a free HTTPS webhook from{' '}
-                  <strong>Discord</strong>, <strong>Slack</strong>, <strong>Telegram</strong>, or{' '}
-                  <strong>Bark (iOS Push)</strong> to receive instant morning phone alerts when new
-                  Melbourne/Sydney tours or &lt;36h pre-sales appear.
-                </li>
-                <li>
-                  <code>TICKETMASTER_API_KEY</code> — Grab a free key (5,000 calls/day) from
-                  Ticketmaster Developer Portal so the morning job automatically pulls newly listed
-                  VIC &amp; NSW Ticketmaster/Live Nation shows.
-                </li>
-              </ul>
-              <div className="sync-export-row">
-                <a
-                  href="https://github.com/verse404/oz-amp/settings/secrets/actions"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary-sm"
-                >
-                  <span>Open GitHub Actions Secrets</span>
-                  <ExternalLink size={13} />
-                </a>
-                <a
-                  href="https://developer.ticketmaster.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-outline-sm"
-                >
-                  <span>Free Ticketmaster Key</span>
-                  <ExternalLink size={13} />
-                </a>
+            ) : (
+              <div className="cloud-guide-card">
+                <div className="cloud-guide-title">
+                  <BellRing size={16} />
+                  <strong>Background 7:30 AM AEDT Phone Push Alerts ($0 via GitHub Actions)</strong>
+                </div>
+                <p className="sync-helper-copy">
+                  Your repository (<code>verse404/oz-amp</code>) runs an automated morning radar
+                  check across all <strong>275 watchlist singers</strong> and{' '}
+                  <strong>6 World Festivals</strong> even when your laptop and browser tabs are
+                  closed. Add two optional free secrets in GitHub{' '}
+                  <strong>Settings → Secrets and variables → Actions</strong>:
+                </p>
+                <ul className="cloud-secrets-list">
+                  <li>
+                    <code>REMINDER_WEBHOOK_URL</code> — Paste a free HTTPS webhook from{' '}
+                    <strong>Discord</strong>, <strong>Slack</strong>, <strong>Telegram</strong>, or{' '}
+                    <strong>Bark (iOS Push)</strong> to receive instant morning phone alerts when
+                    new Melbourne/Sydney tours or &lt;36h pre-sales appear.
+                  </li>
+                  <li>
+                    <code>TICKETMASTER_API_KEY</code> — Grab a free key (5,000 calls/day) from
+                    Ticketmaster Developer Portal so the morning job automatically pulls newly
+                    listed VIC &amp; NSW Ticketmaster/Live Nation shows.
+                  </li>
+                </ul>
+                <div className="sync-export-row">
+                  <a
+                    href="https://github.com/verse404/oz-amp/settings/secrets/actions"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary-sm"
+                  >
+                    <span>Open GitHub Actions Secrets</span>
+                    <ExternalLink size={13} />
+                  </a>
+                  <a
+                    href="https://developer.ticketmaster.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-outline-sm"
+                  >
+                    <span>Free Ticketmaster Key</span>
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="cloud-guide-card">
               <div className="cloud-guide-title">
@@ -440,7 +468,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
                 <strong>Install OZ Amp on iPhone / Android Home Screen (PWA Enabled)</strong>
               </div>
               <p className="sync-helper-copy">
-                Open your Render URL in Safari (iOS) or Chrome (Android), tap{' '}
+                Open this page in Safari (iOS) or Chrome (Android), tap{' '}
                 <strong>Share → Add to Home Screen</strong>, and OZ Amp launches full-screen with
                 direct shortcuts to <em>All Gigs</em>, <em>My Singer Sessions</em>,{' '}
                 <em>World Festivals</em>, and <em>Trending Music</em>.

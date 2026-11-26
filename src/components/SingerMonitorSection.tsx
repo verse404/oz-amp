@@ -22,6 +22,8 @@ import type {
 } from '../types/gig';
 import { sanitizeExternalHttpsUrl } from '../utils/formatters';
 import { ArtistAvatar } from './ArtistAvatar';
+import { IS_STATIC_MODE } from '../config/runtimeMode';
+import { UPLOADED_WATCHLIST_SINGERS } from '../data/userSingerList';
 
 interface SingerMonitorSectionProps {
   monitoredSingers: MonitoredSinger[];
@@ -84,10 +86,74 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
   const isMonitored = (name: string) =>
     monitoredSingers.some((s) => s.name.toLowerCase() === name.toLowerCase());
 
+  const buildLocalSearchProfiles = (q: string): ArtistSearchProfile[] => {
+    const qLower = q.toLowerCase();
+    const seen = new Set<string>();
+    const results: ArtistSearchProfile[] = [];
+
+    const makeLinks = (artistName: string) => ({
+      ticketek: `https://marketplace.ticketek.com.au/purchase/searchlist?keyword=${encodeURIComponent(artistName)}`,
+      ticketmaster: `https://www.ticketmaster.com.au/search?q=${encodeURIComponent(artistName)}`,
+      frontier: `https://www.livenation.com.au/search?keyword=${encodeURIComponent(artistName)}`,
+      livenation: `https://www.livenation.com.au/search?keyword=${encodeURIComponent(artistName)}`,
+      tixel: `https://tixel.com/au/discover/tickets?q=${encodeURIComponent(artistName)}`,
+    });
+
+    const addProfile = (name: string, aliases: string[], genre: string, origin = '') => {
+      const key = name.trim().toLowerCase();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      const matched = concerts.filter((c) =>
+        [c.artist, ...c.supportActs].some((act) => act.toLowerCase().includes(key)),
+      );
+      const matchedCities = Array.from(new Set(matched.map((c) => c.city)));
+      results.push({
+        name,
+        aliases,
+        genre,
+        origin,
+        artworkUrl: '',
+        upcomingAuCount: matched.length,
+        matchedCities,
+        auLinks: makeLinks(name),
+      });
+    };
+
+    for (const p of presetSingers) {
+      if (
+        p.name.toLowerCase().includes(qLower) ||
+        p.aliases.some((al) => al.toLowerCase().includes(qLower))
+      ) {
+        addProfile(p.name, p.aliases, p.genre, p.origin);
+      }
+    }
+    for (const w of UPLOADED_WATCHLIST_SINGERS) {
+      if (
+        w.displayName.toLowerCase().includes(qLower) ||
+        w.matchTerms.some((t) => t.toLowerCase().includes(qLower))
+      ) {
+        addProfile(w.displayName, w.matchTerms.slice(1), w.group);
+      }
+    }
+    for (const c of concerts) {
+      if (c.artist.toLowerCase().includes(qLower)) {
+        addProfile(c.artist, [], c.genres[0] || 'Touring AU');
+      }
+    }
+    if (results.length === 0) {
+      addProfile(q.slice(0, 60), [], 'Custom Monitored Singer');
+    }
+    return results.slice(0, 8);
+  };
+
   const handleLiveSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchTerm.trim();
     if (!q) return;
+    if (IS_STATIC_MODE) {
+      setSearchResults(buildLocalSearchProfiles(q));
+      return;
+    }
     setSearching(true);
     try {
       const res = await fetch(`/api/artists/search?q=${encodeURIComponent(q)}`);
@@ -95,28 +161,10 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
         const data = await res.json();
         setSearchResults(data.profiles || []);
       } else {
-        setSearchResults([]);
+        setSearchResults(buildLocalSearchProfiles(q));
       }
     } catch {
-      // Fallback local profile so user can still monitor even if offline
-      setSearchResults([
-        {
-          name: q.slice(0, 60),
-          aliases: [],
-          genre: 'Custom Monitored Singer',
-          origin: '',
-          artworkUrl: '',
-          upcomingAuCount: 0,
-          matchedCities: [],
-          auLinks: {
-            ticketek: `https://marketplace.ticketek.com.au/purchase/searchlist?keyword=${encodeURIComponent(q)}`,
-            ticketmaster: `https://www.ticketmaster.com.au/search?q=${encodeURIComponent(q)}`,
-            frontier: `https://www.livenation.com.au/search?keyword=${encodeURIComponent(q)}`,
-            livenation: `https://www.livenation.com.au/search?keyword=${encodeURIComponent(q)}`,
-            tixel: `https://tixel.com/au/discover/tickets?q=${encodeURIComponent(q)}`,
-          },
-        },
-      ]);
+      setSearchResults(buildLocalSearchProfiles(q));
     } finally {
       setSearching(false);
     }

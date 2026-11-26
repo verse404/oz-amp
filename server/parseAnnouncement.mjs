@@ -54,40 +54,52 @@ function auOffsetForMonth(month) {
   return month >= 4 && month <= 9 ? '+10:00' : '+11:00';
 }
 
-function parseAuDateFromLine(line, fallbackYear = 2027) {
-  // ISO YYYY-MM-DD
-  const isoMatch = line.match(/\b(202[6-9])-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
+function parseAuDateFromLine(line, fallbackYear = new Date().getFullYear() + 1) {
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth() + 1;
+
+  // ISO YYYY-MM-DD (supports 2020–2039)
+  const isoMatch = line.match(/\b(20[2-3]\d)-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
   if (isoMatch) {
     return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
   }
 
   // DD Month YYYY or Month DD, YYYY (e.g., "14 March 2027", "Thu 19 Nov 2026", "March 14, 2027")
   const dmyMatch = line.match(
-    /\b([0-3]?\d)(?:st|nd|rd|th)?\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?:\s*,?\s*(202[6-9]))?\b/i,
+    /\b([0-3]?\d)(?:st|nd|rd|th)?\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?:\s*,?\s*(20[2-3]\d))?\b/i,
   );
   if (dmyMatch) {
     const day = Number(dmyMatch[1]);
     const month = MONTHS[dmyMatch[2].toLowerCase().slice(0, 3)];
-    const year = dmyMatch[3] ? Number(dmyMatch[3]) : month >= 11 ? 2026 : fallbackYear;
+    const year = dmyMatch[3]
+      ? Number(dmyMatch[3])
+      : month >= curMonth
+        ? curYear
+        : Math.max(curYear + 1, fallbackYear);
     if (day >= 1 && day <= 31 && month) {
       return `${year}-${pad2(month)}-${pad2(day)}`;
     }
   }
 
   const mdyMatch = line.match(
-    /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+([0-3]?\d)(?:st|nd|rd|th)?(?:\s*,?\s*(202[6-9]))?\b/i,
+    /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+([0-3]?\d)(?:st|nd|rd|th)?(?:\s*,?\s*(20[2-3]\d))?\b/i,
   );
   if (mdyMatch) {
     const month = MONTHS[mdyMatch[1].toLowerCase().slice(0, 3)];
     const day = Number(mdyMatch[2]);
-    const year = mdyMatch[3] ? Number(mdyMatch[3]) : month >= 11 ? 2026 : fallbackYear;
+    const year = mdyMatch[3]
+      ? Number(mdyMatch[3])
+      : month >= curMonth
+        ? curYear
+        : Math.max(curYear + 1, fallbackYear);
     if (day >= 1 && day <= 31 && month) {
       return `${year}-${pad2(month)}-${pad2(day)}`;
     }
   }
 
   // Australian DD/MM/YYYY
-  const slashMatch = line.match(/\b([0-3]?\d)\/(0?[1-9]|1[0-2])\/(202[6-9])\b/);
+  const slashMatch = line.match(/\b([0-3]?\d)\/(0?[1-9]|1[0-2])\/(20[2-3]\d)\b/);
   if (slashMatch) {
     return `${slashMatch[3]}-${pad2(Number(slashMatch[2]))}-${pad2(Number(slashMatch[1]))}`;
   }
@@ -221,10 +233,11 @@ export function parseTourAnnouncement(rawInput) {
   }
 
   // Match Sydney & Melbourne tour stops line-by-line
+  const nextYear = currentYear + 1;
   const matchedStops = [];
   for (const line of lines) {
     if (detectPresaleKind(line)) continue;
-    const dateIso = parseAuDateFromLine(line, 2027);
+    const dateIso = parseAuDateFromLine(line, nextYear);
 
     let matchedVenue = null;
     for (const alias of VENUE_ALIASES) {
@@ -248,7 +261,10 @@ export function parseTourAnnouncement(rawInput) {
 
   // Fallback if entire announcement had a venue + date across separate lines
   if (matchedStops.length === 0) {
-    const anyDate = parseAuDateFromLine(cleaned, 2027) || '2027-03-20';
+    const defaultSoonIso = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Australia/Melbourne',
+    }).format(new Date(Date.now() + 60 * 86_400_000));
+    const anyDate = parseAuDateFromLine(cleaned, nextYear) || defaultSoonIso;
     const mentionsSyd = /\bsydney\b/i.test(cleaned);
     const mentionsMel = /\bmelbourne\b/i.test(cleaned);
     if (mentionsSyd || (!mentionsSyd && !mentionsMel)) {

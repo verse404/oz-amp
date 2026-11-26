@@ -11,6 +11,7 @@
     "digest": "node ./server/dailyDigestAlert.mjs",
     "start": "SERVE_STATIC=1 PUBLIC_READONLY_MODE=1 node ./server/index.mjs",
     "build": "tsc -b && vite build",
+    "build:static": "VITE_STATIC_MODE=1 tsc -b && VITE_STATIC_MODE=1 vite build && node ./server/buildStaticSnapshots.mjs",
     "lint": "eslint .",
     "test": "node --test ./tests/*.test.mjs",
     "preview": "vite preview"

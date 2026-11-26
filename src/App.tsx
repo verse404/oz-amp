@@ -74,6 +74,7 @@ import { UPLOADED_WATCHLIST_SINGERS } from './data/userSingerList';
 import { CORE_WORLD_FESTIVALS } from './data/worldFestivals';
 import { VENUE_INSIDER_TIPS } from './data/venueInsiderTips';
 import { buildArtistPreviewLinks } from './utils/musicPreviewLinks';
+import { IS_STATIC_MODE } from './config/runtimeMode';
 
 const ConcertCalendarView = lazy(() =>
   import('./components/ConcertCalendarView').then((m) => ({ default: m.ConcertCalendarView })),
@@ -314,7 +315,7 @@ export const App: React.FC = () => {
 
   // Session & CSRF state (kept strictly in memory; never persisted in localStorage)
   const [csrfToken, setCsrfToken] = useState('');
-  const [readonlyMode, setReadonlyMode] = useState(false);
+  const [readonlyMode, setReadonlyMode] = useState(IS_STATIC_MODE);
   const [defaultWebhookMasked, setDefaultWebhookMasked] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
 
@@ -656,13 +657,13 @@ export const App: React.FC = () => {
     [showToast],
   );
 
-  // Run server-backed monitor scan
+  // Run server-backed monitor scan (or instant local catalog scan in static mode)
   const runServerMonitorScan = useCallback(
     async (refreshFeed = false, explicitToken?: string) => {
       const tokenToUse = explicitToken ?? csrfToken;
       setCheckingRadar(true);
       try {
-        if (tokenToUse) {
+        if (!IS_STATIC_MODE && tokenToUse) {
           const res = await fetch('/api/artists/monitor-check', {
             method: 'POST',
             headers: {
@@ -686,6 +687,8 @@ export const App: React.FC = () => {
               showToast(`Scanned AU radar for ${monitoredSingers.length} favourite singers.`);
             }
           }
+        } else if (IS_STATIC_MODE && refreshFeed) {
+          showToast(`Scanned OZ Amp catalog for ${monitoredSingers.length} favourite singers.`);
         }
         evaluateSingerAnnouncements(monitoredSingers, allConcerts, true);
       } catch {
@@ -702,6 +705,17 @@ export const App: React.FC = () => {
     let cancelled = false;
     async function bootstrap() {
       try {
+        if (IS_STATIC_MODE) {
+          setReadonlyMode(true);
+          const catalogRes = await fetch('./data/catalog.json');
+          if (!cancelled && catalogRes.ok) {
+            const cData = (await catalogRes.json()) as CatalogPayload;
+            if (Array.isArray(cData.concerts) && cData.concerts.length > 0) {
+              setCatalog(cData);
+            }
+          }
+          return;
+        }
         const [sessionRes, catalogRes] = await Promise.all([
           fetch('/api/session'),
           fetch('/api/catalog'),
@@ -2016,7 +2030,7 @@ export const App: React.FC = () => {
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
             >
-              <option value="all">All Months (2026–2027)</option>
+              <option value="all">All Upcoming Months</option>
               {availableMonths.map(([key, label]) => (
                 <option key={key} value={key}>
                   {label}

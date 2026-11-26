@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ARTIST_PORTRAITS } from '../data/artistPortraits';
+import { IS_STATIC_MODE } from '../config/runtimeMode';
 
 const RUNTIME_PORTRAIT_CACHE = new Map<string, string>();
 const PENDING_NAMES = new Set<string>();
@@ -99,6 +100,7 @@ export function lookupStaticPortrait(rawName?: string): string {
 }
 
 function scheduleRuntimePortraitFetch(rawName: string) {
+  if (IS_STATIC_MODE) return;
   const key = rawName.trim().toLowerCase().replace(/\s+/g, ' ');
   if (!key || RUNTIME_PORTRAIT_CACHE.has(key)) return;
   PENDING_NAMES.add(rawName.trim());

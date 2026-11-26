@@ -31,6 +31,7 @@ import { UPLOADED_WATCHLIST_SINGERS } from '../data/userSingerList';
 import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
 import { formatConcertDate } from '../utils/formatters';
 import { ArtistAvatar } from './ArtistAvatar';
+import { IS_STATIC_MODE } from '../config/runtimeMode';
 
 interface TrendingMusicPageProps {
   concerts: ConcertEvent[];
@@ -135,7 +136,10 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
     stopAudio();
     setLoading(true);
     try {
-      const res = await fetch(`/api/trending-music?region=${encodeURIComponent(targetRegion)}`);
+      const endpoint = IS_STATIC_MODE
+        ? `./data/trending-${encodeURIComponent(targetRegion)}.json`
+        : `/api/trending-music?region=${encodeURIComponent(targetRegion)}`;
+      const res = await fetch(endpoint);
       if (seq !== requestSeqRef.current) return;
       if (res.ok) {
         const data = (await res.json()) as {

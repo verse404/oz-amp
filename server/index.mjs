@@ -130,12 +130,16 @@ function verifyCsrf(req) {
     cookies.get('southern_amp_csrf') ||
     '';
   if (!headerToken || !cookieToken) return false;
+  // Require 64-char cryptographic hex token issued via HttpOnly SameSite=Strict cookie
+  // and matching X-CSRF-Token header (survives container sleep/restart on Render Free Tier).
+  if (!/^[a-f0-9]{64}$/i.test(headerToken) || !/^[a-f0-9]{64}$/i.test(cookieToken)) {
+    return false;
+  }
   try {
     const a = Buffer.from(headerToken, 'utf-8');
-    const b = Buffer.from(SERVER_CSRF_TOKEN, 'utf-8');
     const c = Buffer.from(cookieToken, 'utf-8');
-    if (a.length !== b.length || c.length !== b.length) return false;
-    return crypto.timingSafeEqual(a, b) && crypto.timingSafeEqual(c, b);
+    if (a.length !== c.length) return false;
+    return crypto.timingSafeEqual(a, c);
   } catch {
     return false;
   }

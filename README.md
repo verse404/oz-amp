@@ -38,3 +38,9 @@ Serves the app locally on `http://127.0.0.1:3102/` (or set `PORT=5182`).
 
 1. Open [Deploy to Render Blueprint](https://render.com/deploy?repo=https://github.com/verse404/oz-amp) (or sign in to [Render](https://dashboard.render.com/) and select **New + → Blueprint**).
 2. Connect `verse404/oz-amp` — Render automatically configures the free Docker web service via `render.yaml`.
+
+## Autonomous Long-Term Operation (No Local Machine Required)
+
+- **Always-Live Public Feeds (`$0`, No Key)**: Trending Popular Music (`AU`/`US`/`UK`/`JP` Top 25 + 30s audio previews via Apple Music RSS), Live Artist Search (Apple Music + MusicBrainz), Worldwide Festival Discovery (Wikipedia/Wikimedia), Australian Tour Press Wire (Music Feeds, Tone Deaf, Beat Melbourne), and Smart Tour Importer all run directly on Render with zero external maintenance.
+- **Daily Automated Sync**: GitHub Actions (`.github/workflows/daily-gig-sync.yml`) runs every morning at **7:30 AM AEDT**, pruning past shows, pulling fresh tour news, and pushing updates to trigger a clean Render redeploy. Even if GitHub Actions is paused, Render automatically refreshes its cache every 24 hours on demand.
+- **Recommended 2-Minute Setup for Perpetual 2028+ Concerts**: Add a free `TICKETMASTER_API_KEY` (5,000 calls/day from [Ticketmaster Developer Portal](https://developer.ticketmaster.com/)) to **GitHub → Settings → Secrets and variables → Actions** and/or **Render → Environment** so OZ Amp automatically ingests up to 160 newly listed Melbourne & Sydney concerts indefinitely. Optionally add `REMINDER_WEBHOOK_URL` (Discord, Slack, Telegram, or Bark iOS) for automated morning phone alerts.
