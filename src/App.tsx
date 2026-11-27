@@ -175,35 +175,23 @@ const USER_REQUESTED_SINGERS: MonitoredSinger[] = [
     addedAtIso: '2026-11-18T05:12:30Z',
     knownConcertIds: [],
   },
+  {
+    name: 'Dua Lipa',
+    aliases: [],
+    genre: 'Dance-Pop',
+    artworkUrl:
+      'https://cdn-images.dzcdn.net/images/artist/877872aaf75694f11d53c318700ab2b5/500x500-000000-80-0-0.jpg',
+    radarNote:
+      'Headlined sold-out Melbourne (Rod Laver Arena) & Sydney (Qudos Bank Arena) arena runs — watching Live Nation AU & Ticketek for her next Australian tour dates.',
+    notifyOnAnnounce: true,
+    addedAtIso: '2026-11-27T02:35:00Z',
+    knownConcertIds: [],
+  },
 ];
 
-const DEFAULT_MONITORED_SINGERS: MonitoredSinger[] = [
-  ...USER_REQUESTED_SINGERS,
-  {
-    name: 'Radiohead',
-    aliases: [],
-    genre: 'Alt-Rock',
-    notifyOnAnnounce: true,
-    addedAtIso: '2026-11-18T03:30:00Z',
-    knownConcertIds: ['radiohead-mel-2027', 'radiohead-syd-2027'],
-  },
-  {
-    name: 'YOASOBI',
-    aliases: ['ヨアソビ'],
-    genre: 'J-Pop',
-    notifyOnAnnounce: true,
-    addedAtIso: '2026-11-18T03:30:00Z',
-    knownConcertIds: ['yoasobi-mel-2027', 'yoasobi-syd-2027'],
-  },
-  {
-    name: 'Spacey Jane',
-    aliases: [],
-    genre: 'AU Indie Rock',
-    notifyOnAnnounce: true,
-    addedAtIso: '2026-11-18T03:30:00Z',
-    knownConcertIds: ['spacey-jane-mel-2026', 'spacey-jane-syd-2026'],
-  },
-];
+const REMOVED_LEGACY_DEFAULT_SINGERS = new Set(['radiohead', 'yoasobi', 'spacey jane']);
+
+const DEFAULT_MONITORED_SINGERS: MonitoredSinger[] = [...USER_REQUESTED_SINGERS];
 
 const DEFAULT_STUBS: TicketStubRecord[] = [
   {
@@ -283,19 +271,22 @@ export const App: React.FC = () => {
       ),
     );
     const appliedBatch = safeReadJson<string>(STORAGE_KEYS.userPinnedBatchVersion, '');
-    if (appliedBatch === 'batch-fred-daniel-weeknd-v2') {
+    if (appliedBatch === 'batch-fred-daniel-weeknd-dualipa-v3') {
       return existing;
     }
     try {
       window.localStorage.setItem(
         STORAGE_KEYS.userPinnedBatchVersion,
-        JSON.stringify('batch-fred-daniel-weeknd-v2'),
+        JSON.stringify('batch-fred-daniel-weeknd-dualipa-v3'),
       );
     } catch {
       // Ignore storage quota issues
     }
     const requestedNames = new Set(USER_REQUESTED_SINGERS.map((u) => u.name.toLowerCase()));
-    const filteredExisting = existing.filter((s) => !requestedNames.has(s.name.toLowerCase()));
+    const filteredExisting = existing.filter((s) => {
+      const low = s.name.toLowerCase();
+      return !requestedNames.has(low) && !REMOVED_LEGACY_DEFAULT_SINGERS.has(low);
+    });
     return [...USER_REQUESTED_SINGERS, ...filteredExisting];
   });
   const [reminders, setReminders] = useState<ReminderRule[]>(() =>
