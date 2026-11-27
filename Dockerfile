@@ -27,7 +27,7 @@ COPY --chown=node:node package.json ./
 COPY --chown=node:node server ./server
 COPY --from=builder --chown=node:node /app/dist ./dist
 
-RUN mkdir -p /app/server/cache && chown -R node:node /app/server/cache
+RUN mkdir -p /app/server/cache /app/server/data && chown -R node:node /app/server/cache /app/server/data
 
 USER node
 EXPOSE 8080

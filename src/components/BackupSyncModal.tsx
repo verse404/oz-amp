@@ -14,7 +14,6 @@ import type {
   ConcertEvent,
   MonitoredSinger,
   ReminderRule,
-  TicketStubRecord,
   WorldFestivalItem,
 } from '../types/gig';
 import { sanitizeExternalHttpsUrl } from '../utils/formatters';
@@ -26,7 +25,6 @@ export interface OzAmpProfileBackup {
   theme: 'dark' | 'light';
   cityFilter: 'all' | CityId;
   reminders: ReminderRule[];
-  stubs: TicketStubRecord[];
   monitoredSingers: MonitoredSinger[];
   savedWorldFestivals: WorldFestivalItem[];
   customConcerts: ConcertEvent[];
@@ -40,7 +38,6 @@ interface BackupSyncModalProps {
   theme: 'dark' | 'light';
   cityFilter: 'all' | CityId;
   reminders: ReminderRule[];
-  stubs: TicketStubRecord[];
   monitoredSingers: MonitoredSinger[];
   savedWorldFestivals: WorldFestivalItem[];
   customConcerts: ConcertEvent[];
@@ -98,29 +95,6 @@ function validateAndSanitizeBackup(rawText: string): OzAmpProfileBackup {
       }))
     : [];
 
-  const stubs: TicketStubRecord[] = Array.isArray(parsed.stubs)
-    ? parsed.stubs.slice(0, 300).map((s: TicketStubRecord) => {
-        const rawRating = Math.round(Number(s.venueRating));
-        const safeRating = (
-          Number.isFinite(rawRating) ? Math.max(1, Math.min(5, rawRating)) : 5
-        ) as 1 | 2 | 3 | 4 | 5;
-        const rawPaid = Number(s.paidAud);
-        const safePaid = Number.isFinite(rawPaid) ? Math.max(0, Math.min(5000, rawPaid)) : 0;
-        return {
-          ...s,
-          id: String(s.id || '').slice(0, 80),
-          concertId: String(s.concertId || '').slice(0, 80),
-          artist: String(s.artist || '').slice(0, 100),
-          city: s.city === 'sydney' ? 'sydney' : 'melbourne',
-          venueName: String(s.venueName || '').slice(0, 100),
-          paidAud: safePaid,
-          venueRating: safeRating,
-          status: s.status === 'attended' ? 'attended' : 'secured',
-          sectionNote: String(s.sectionNote || '').slice(0, 280),
-        };
-      })
-    : [];
-
   const monitoredSingers: MonitoredSinger[] = Array.isArray(parsed.monitoredSingers)
     ? parsed.monitoredSingers.slice(0, 400).map((m: MonitoredSinger) => ({
         ...m,
@@ -164,7 +138,6 @@ function validateAndSanitizeBackup(rawText: string): OzAmpProfileBackup {
     theme,
     cityFilter,
     reminders,
-    stubs,
     monitoredSingers,
     savedWorldFestivals,
     customConcerts,
@@ -183,7 +156,6 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
   theme,
   cityFilter,
   reminders,
-  stubs,
   monitoredSingers,
   savedWorldFestivals,
   customConcerts,
@@ -204,7 +176,6 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
     theme,
     cityFilter,
     reminders,
-    stubs,
     monitoredSingers,
     savedWorldFestivals,
     customConcerts,
@@ -312,7 +283,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
               className={`page-mode-btn ${activeTab === 'sync' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('sync')}
             >
-              1. Sync Laptop ↔ Phone ({reminders.length} Alarms · {stubs.length} Stubs)
+              1. Sync Laptop ↔ Phone ({reminders.length} Alarms · {monitoredSingers.length} Singers)
             </button>
             <button
               type="button"
@@ -328,10 +299,10 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
           {activeTab === 'sync' ? (
           <div className="sync-modal-body">
             <p className="sync-helper-copy">
-              Export your armed queue reminders (<strong>{reminders.length}</strong>), Ticket-Stub
-              Wall (<strong>{stubs.length}</strong>), custom World Festivals (
+              Export your armed queue reminders (<strong>{reminders.length}</strong>), monitored
+              singers (<strong>{monitoredSingers.length}</strong>), custom World Festivals (
               <strong>{savedWorldFestivals.length}</strong>), and Home City preference to transfer
-              between your laptop and mobile phone with zero paid cloud database.
+              between your laptop and mobile phone—or sign in with your email for automatic sync.
             </p>
 
             <div className="sync-export-row">
@@ -396,9 +367,9 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
                   <strong>Private Per-Browser Storage &amp; Calendar Alerts</strong>
                 </div>
                 <p className="sync-helper-copy">
-                  Your reminders, watched singers, custom world festivals, and Ticket-Stub Wall are
-                  stored privately inside your own browser (<code>localStorage</code>) — other
-                  visitors never see your personal selections.
+                  Your reminders, watched singers, and custom world festivals are stored privately
+                  inside your own browser (<code>localStorage</code>) — other visitors never see your
+                  personal selections.
                 </p>
                 <ul className="cloud-secrets-list">
                   <li>

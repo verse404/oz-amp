@@ -99,7 +99,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
       <div className="section-header-row">
         <div>
           <span className="eyebrow-kicker">
-            04 · Music Festivals &amp; Full Artist Lineups (VIC &amp; NSW)
+            03 · Music Festivals &amp; Full Artist Lineups (VIC &amp; NSW)
           </span>
           <h2 id="music-festivals-heading" className="section-heading">
             Upcoming Music Festivals — Who’s Performing ({filteredFestivals.length})

@@ -19,6 +19,15 @@ import {
   ALLOWED_TRENDING_REGIONS,
   fetchTrendingMusic,
 } from './trendingMusicService.mjs';
+import {
+  authenticateSessionToken,
+  getUserProfile,
+  isPersistentCloudAuthConfigured,
+  loginUserAccount,
+  registerUserAccount,
+  revokeAllUserSessions,
+  saveUserProfile,
+} from './authStore.mjs';
 
 // Cryptographic synchronizer CSRF token generated per server boot (never hardcoded).
 const SERVER_CSRF_TOKEN = crypto.randomBytes(32).toString('hex');
@@ -46,6 +55,20 @@ function allowRateLimit(remoteIp) {
     return true;
   }
   if (entry.count >= 90) return false;
+  entry.count += 1;
+  return true;
+}
+
+// Stricter per-IP rate limiter for authentication endpoints (20 attempts / 15 min)
+const authRateBuckets = new Map();
+function allowAuthRateLimit(remoteIp) {
+  const now = Date.now();
+  const entry = authRateBuckets.get(remoteIp);
+  if (!entry || now - entry.windowStart > 15 * 60_000) {
+    authRateBuckets.set(remoteIp, { windowStart: now, count: 1 });
+    return true;
+  }
+  if (entry.count >= 20) return false;
   entry.count += 1;
   return true;
 }
@@ -122,6 +145,32 @@ function buildCsrfSetCookieHeader(req) {
   return attrs.join('; ');
 }
 
+function getSessionCookieName(req) {
+  const isTls =
+    req.headers['x-forwarded-proto'] === 'https' || CONTAINER_RUNTIME;
+  return isTls ? '__Host-oz_amp_session' : 'oz_amp_session';
+}
+
+function buildSessionSetCookieHeader(req, rawToken, clear = false) {
+  const isTls =
+    req.headers['x-forwarded-proto'] === 'https' || CONTAINER_RUNTIME;
+  const name = getSessionCookieName(req);
+  const attrs = [
+    `${name}=${clear ? '' : rawToken}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    clear ? 'Max-Age=0' : 'Max-Age=1209600',
+  ];
+  if (isTls) attrs.push('Secure');
+  return attrs.join('; ');
+}
+
+function readSessionCookieToken(req) {
+  const cookies = parseCookies(req.headers.cookie || '');
+  return cookies.get('__Host-oz_amp_session') || cookies.get('oz_amp_session') || '';
+}
+
 function verifyCsrf(req) {
   const headerToken = String(req.headers['x-csrf-token'] || '');
   const cookies = parseCookies(req.headers.cookie || '');
@@ -161,7 +210,15 @@ function readBoundedJsonBody(req, maxBytes = 16_384) {
     req.on('end', () => {
       try {
         const raw = Buffer.concat(chunks).toString('utf-8');
-        resolve(raw ? JSON.parse(raw) : {});
+        resolve(
+          raw
+            ? JSON.parse(raw, (key, value) =>
+                key === '__proto__' || key === 'constructor' || key === 'prototype'
+                  ? undefined
+                  : value,
+              )
+            : {},
+        );
       } catch {
         reject(new Error('Invalid JSON payload'));
       }
@@ -293,6 +350,8 @@ export function createAppServer() {
 
     if (pathname === '/api/session' && req.method === 'GET') {
       const cfg = getApiConfig();
+      const user = await authenticateSessionToken(readSessionCookieToken(req));
+      const savedProfile = user ? await getUserProfile(user.id) : null;
       writeJson(
         req,
         res,
@@ -302,11 +361,153 @@ export function createAppServer() {
           readonlyMode: PUBLIC_READONLY_MODE,
           ticketmasterConfigured: Boolean(cfg.ticketmasterApiKey),
           defaultWebhookMasked: maskUrl(cfg.reminderWebhookUrl),
+          cloudAccountsPersistent: isPersistentCloudAuthConfigured(),
+          user,
+          savedProfile,
         },
         {
           'Set-Cookie': buildCsrfSetCookieHeader(req),
         },
       );
+      return;
+    }
+
+    // Account Registration (Email + Password, CSRF-protected, memory-hard scrypt)
+    if (pathname === '/api/auth/register' && req.method === 'POST') {
+      if (!verifyCsrf(req)) {
+        writeJson(req, res, 403, { error: 'CSRF token validation failed. Refresh and retry.' });
+        return;
+      }
+      if (!allowAuthRateLimit(remoteIp)) {
+        writeJson(req, res, 429, { error: 'Too many authentication attempts. Please wait 15 minutes.' });
+        return;
+      }
+      try {
+        const body = await readBoundedJsonBody(req, 262_144);
+        const result = await registerUserAccount({
+          email: body?.email,
+          password: body?.password,
+          displayName: body?.displayName,
+          initialProfile: body?.profile,
+        });
+        if (!result.ok) {
+          writeJson(req, res, result.status, { error: result.error });
+          return;
+        }
+        writeJson(
+          req,
+          res,
+          201,
+          {
+            user: result.user,
+            profile: result.profile,
+            cloudAccountsPersistent: isPersistentCloudAuthConfigured(),
+          },
+          {
+            'Set-Cookie': buildSessionSetCookieHeader(req, result.sessionToken, false),
+          },
+        );
+      } catch {
+        writeJson(req, res, 400, { error: 'Unable to complete registration.' });
+      }
+      return;
+    }
+
+    // Account Sign-In (Email + Password, CSRF-protected, HttpOnly SameSite=Strict cookie)
+    if (pathname === '/api/auth/login' && req.method === 'POST') {
+      if (!verifyCsrf(req)) {
+        writeJson(req, res, 403, { error: 'CSRF token validation failed. Refresh and retry.' });
+        return;
+      }
+      if (!allowAuthRateLimit(remoteIp)) {
+        writeJson(req, res, 429, { error: 'Too many authentication attempts. Please wait 15 minutes.' });
+        return;
+      }
+      try {
+        const body = await readBoundedJsonBody(req, 8192);
+        const result = await loginUserAccount({
+          email: body?.email,
+          password: body?.password,
+        });
+        if (!result.ok) {
+          writeJson(req, res, result.status, { error: result.error });
+          return;
+        }
+        writeJson(
+          req,
+          res,
+          200,
+          {
+            user: result.user,
+            profile: result.profile,
+            cloudAccountsPersistent: isPersistentCloudAuthConfigured(),
+          },
+          {
+            'Set-Cookie': buildSessionSetCookieHeader(req, result.sessionToken, false),
+          },
+        );
+      } catch {
+        writeJson(req, res, 400, { error: 'Unable to sign in.' });
+      }
+      return;
+    }
+
+    // Account Sign-Out (CSRF-protected; revokes ALL active sessions for the user)
+    if (pathname === '/api/auth/logout' && req.method === 'POST') {
+      if (!verifyCsrf(req)) {
+        writeJson(req, res, 403, { error: 'CSRF token validation failed.' });
+        return;
+      }
+      try {
+        await revokeAllUserSessions(readSessionCookieToken(req));
+      } catch {
+        // Clear cookie even if backing store had an error
+      }
+      writeJson(
+        req,
+        res,
+        200,
+        { ok: true },
+        {
+          'Set-Cookie': buildSessionSetCookieHeader(req, '', true),
+        },
+      );
+      return;
+    }
+
+    // Authenticated User Profile Read / Save (strictly scoped to session owner)
+    if (pathname === '/api/account/profile' && req.method === 'GET') {
+      const user = await authenticateSessionToken(readSessionCookieToken(req));
+      if (!user) {
+        writeJson(req, res, 401, { error: 'Please sign in to access your saved profile.' });
+        return;
+      }
+      try {
+        const profile = await getUserProfile(user.id);
+        writeJson(req, res, 200, { user, profile });
+      } catch {
+        writeJson(req, res, 500, { error: 'Unable to load saved profile.' });
+      }
+      return;
+    }
+
+    if (pathname === '/api/account/profile' && req.method === 'POST') {
+      if (!verifyCsrf(req)) {
+        writeJson(req, res, 403, { error: 'CSRF token validation failed.' });
+        return;
+      }
+      const user = await authenticateSessionToken(readSessionCookieToken(req));
+      if (!user) {
+        writeJson(req, res, 401, { error: 'Please sign in to save your choices.' });
+        return;
+      }
+      try {
+        const body = await readBoundedJsonBody(req, 262_144);
+        const saved = await saveUserProfile(user.id, body?.profile || body);
+        writeJson(req, res, 200, { ok: true, updatedAtIso: saved.updatedAtIso });
+      } catch {
+        writeJson(req, res, 400, { error: 'Invalid profile data.' });
+      }
       return;
     }
 

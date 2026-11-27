@@ -1,8 +1,7 @@
-import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   ArrowUp,
-  Award,
   Bell,
   BellPlus,
   Calendar,
@@ -30,10 +29,13 @@ import {
   Sun,
   Ticket,
   Train,
+  UserCheck,
+  UserCircle,
   WifiOff,
 } from 'lucide-react';
 import type {
   ApacTourStop,
+  AuthUser,
   CatalogPayload,
   CityId,
   ConcertEvent,
@@ -41,9 +43,9 @@ import type {
   MonitoredSinger,
   MusicFestivalDirectoryItem,
   ReminderRule,
+  SavedAccountProfile,
   SingerMonitorCheckResult,
   TicketDropWindow,
-  TicketStubRecord,
   WorldFestivalItem,
 } from './types/gig';
 import { FALLBACK_CATALOG } from './data/fallbackCatalog';
@@ -67,7 +69,6 @@ import {
 } from './utils/auMarketTools';
 import { SingerMonitorSection } from './components/SingerMonitorSection';
 import { MusicFestivalsSection } from './components/MusicFestivalsSection';
-import { StubArchiveSection } from './components/StubArchiveSection';
 import { ArtistAvatar, ConcertMediaBanner } from './components/ArtistAvatar';
 import { PriceRangeSlider } from './components/PriceRangeSlider';
 import { UPLOADED_WATCHLIST_SINGERS } from './data/userSingerList';
@@ -88,6 +89,9 @@ const SmartImportModal = lazy(() =>
 );
 const BackupSyncModal = lazy(() =>
   import('./components/BackupSyncModal').then((m) => ({ default: m.BackupSyncModal })),
+);
+const AccountAuthModal = lazy(() =>
+  import('./components/AccountAuthModal').then((m) => ({ default: m.AccountAuthModal })),
 );
 const DedicatedWatchlistPage = lazy(() =>
   import('./components/DedicatedWatchlistPage').then((m) => ({
@@ -134,8 +138,9 @@ const STORAGE_KEYS = {
   userPinnedBatchVersion: 'southern_amp_user_batch_v1',
   reminders: 'southern_amp_reminders_v1',
   customConcerts: 'southern_amp_custom_gigs_v1',
-  stubs: 'southern_amp_stubs_v1',
   worldFestivalsExtra: 'oz_amp_world_festivals_saved_v1',
+  dedicatedCustomSingers: 'southern_amp_dedicated_custom_singers_v1',
+  dedicatedMutedIds: 'southern_amp_dedicated_muted_ids_v1',
 };
 
 const USER_REQUESTED_SINGERS: MonitoredSinger[] = [
@@ -192,23 +197,6 @@ const USER_REQUESTED_SINGERS: MonitoredSinger[] = [
 const REMOVED_LEGACY_DEFAULT_SINGERS = new Set(['radiohead', 'yoasobi', 'spacey jane']);
 
 const DEFAULT_MONITORED_SINGERS: MonitoredSinger[] = [...USER_REQUESTED_SINGERS];
-
-const DEFAULT_STUBS: TicketStubRecord[] = [
-  {
-    id: 'stub-seed-1',
-    concertId: 'spacey-jane-syd-2026',
-    artist: 'Spacey Jane',
-    tourTitle: 'On the Steps Summer Series',
-    city: 'sydney',
-    venueName: 'Sydney Opera House Forecourt',
-    dateIso: '2026-12-10',
-    paidAud: 114.9,
-    sectionNote: 'Harbour GA Steps — arrive before 6:30 PM for sunset sightline under the sails.',
-    venueRating: 5,
-    status: 'secured',
-    createdAtIso: '2026-11-18T03:30:00Z',
-  },
-];
 
 function concertMatchesArtistTerm(concert: ConcertEvent, rawTerm: string): boolean {
   const clean = rawTerm.trim().toLowerCase();
@@ -292,12 +280,16 @@ export const App: React.FC = () => {
   const [reminders, setReminders] = useState<ReminderRule[]>(() =>
     safeReadJson<ReminderRule[]>(STORAGE_KEYS.reminders, []),
   );
-  const [stubs, setStubs] = useState<TicketStubRecord[]>(() =>
-    safeReadJson<TicketStubRecord[]>(STORAGE_KEYS.stubs, DEFAULT_STUBS),
-  );
   const [savedWorldFestivals, setSavedWorldFestivals] = useState<WorldFestivalItem[]>(() =>
     safeReadJson<WorldFestivalItem[]>(STORAGE_KEYS.worldFestivalsExtra, []),
   );
+
+  // Email Account & Automatic Cloud Profile Sync State
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [cloudAccountsPersistent, setCloudAccountsPersistent] = useState(false);
+  const [accountSyncState, setAccountSyncState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastAccountSavedIso, setLastAccountSavedIso] = useState<string | null>(null);
+  const skipNextAutoSaveRef = useRef(false);
 
   // Live Singer Monitor Check State
   const [monitorResults, setMonitorResults] = useState<Record<string, SingerMonitorCheckResult>>({});
@@ -337,6 +329,7 @@ export const App: React.FC = () => {
   const [isReminderDrawerOpen, setIsReminderDrawerOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showVenueTips, setShowVenueTips] = useState(true);
   const [activePopoverId, setActivePopoverId] = useState<string | null>(null);
   const [showAllDrops, setShowAllDrops] = useState(false);
@@ -405,6 +398,7 @@ export const App: React.FC = () => {
         setIsReminderDrawerOpen(false);
         setIsImportModalOpen(false);
         setIsSyncModalOpen(false);
+        setIsAuthModalOpen(false);
         setActivePopoverId(null);
       }
     };
@@ -503,14 +497,6 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEYS.stubs, JSON.stringify(stubs));
-    } catch {
-      // Ignore
-    }
-  }, [stubs]);
-
-  useEffect(() => {
-    try {
       window.localStorage.setItem(
         STORAGE_KEYS.worldFestivalsExtra,
         JSON.stringify(savedWorldFestivals),
@@ -519,6 +505,115 @@ export const App: React.FC = () => {
       // Ignore
     }
   }, [savedWorldFestivals]);
+
+  const buildCurrentAccountProfile = useCallback((): SavedAccountProfile => ({
+    schemaVersion: 2,
+    theme,
+    cityFilter,
+    monitoredSingers,
+    reminders,
+    savedWorldFestivals,
+    customConcerts,
+    dedicatedCustomSingers: safeReadJson<unknown[]>(STORAGE_KEYS.dedicatedCustomSingers, []),
+    dedicatedMutedIds: safeReadJson<string[]>(STORAGE_KEYS.dedicatedMutedIds, []),
+  }), [theme, cityFilter, monitoredSingers, reminders, savedWorldFestivals, customConcerts]);
+
+  const applySavedAccountProfile = useCallback((profile: SavedAccountProfile) => {
+    skipNextAutoSaveRef.current = true;
+    setTheme(profile.theme === 'light' ? 'light' : 'dark');
+    setCityFilter(
+      profile.cityFilter === 'sydney' || profile.cityFilter === 'all'
+        ? profile.cityFilter
+        : 'melbourne',
+    );
+    if (Array.isArray(profile.monitoredSingers) && profile.monitoredSingers.length > 0) {
+      setMonitoredSingers(profile.monitoredSingers);
+    }
+    if (Array.isArray(profile.reminders)) {
+      setReminders(profile.reminders);
+    }
+    if (Array.isArray(profile.savedWorldFestivals)) {
+      setSavedWorldFestivals(profile.savedWorldFestivals);
+    }
+    if (Array.isArray(profile.customConcerts)) {
+      setCustomConcerts(profile.customConcerts);
+    }
+    try {
+      if (Array.isArray(profile.dedicatedCustomSingers)) {
+        window.localStorage.setItem(
+          STORAGE_KEYS.dedicatedCustomSingers,
+          JSON.stringify(profile.dedicatedCustomSingers),
+        );
+      }
+      if (Array.isArray(profile.dedicatedMutedIds)) {
+        window.localStorage.setItem(
+          STORAGE_KEYS.dedicatedMutedIds,
+          JSON.stringify(profile.dedicatedMutedIds),
+        );
+      }
+    } catch {
+      // Ignore storage quota issues
+    }
+    if (profile.updatedAtIso) {
+      setLastAccountSavedIso(profile.updatedAtIso);
+    }
+    setAccountSyncState('saved');
+  }, []);
+
+  const persistProfileToAccount = useCallback(
+    async (manual = false) => {
+      if (!authUser || IS_STATIC_MODE || !csrfToken) return;
+      setAccountSyncState('saving');
+      try {
+        const res = await fetch('/api/account/profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          body: JSON.stringify({ profile: buildCurrentAccountProfile() }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLastAccountSavedIso(data.updatedAtIso || new Date().toISOString());
+          setAccountSyncState('saved');
+          if (manual) {
+            showToast('Saved all your choices to your OZ Amp account.');
+          }
+        } else {
+          setAccountSyncState('error');
+          if (manual) showToast('Could not save to account right now — please retry.');
+        }
+      } catch {
+        setAccountSyncState('error');
+        if (manual) showToast('Network error while saving choices.');
+      }
+    },
+    [authUser, csrfToken, buildCurrentAccountProfile, showToast],
+  );
+
+  // Auto-save choices to the signed-in user's account whenever preferences change
+  useEffect(() => {
+    if (!authUser || IS_STATIC_MODE || !csrfToken) return;
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void persistProfileToAccount(false);
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [
+    authUser,
+    csrfToken,
+    theme,
+    cityFilter,
+    monitoredSingers,
+    reminders,
+    savedWorldFestivals,
+    customConcerts,
+    persistProfileToAccount,
+  ]);
 
   const allConcerts = useMemo(() => {
     const refMs = clockMinute * 60_000;
@@ -718,6 +813,13 @@ export const App: React.FC = () => {
           setCsrfToken(tok);
           setReadonlyMode(Boolean(sData.readonlyMode));
           setDefaultWebhookMasked(sData.defaultWebhookMasked || null);
+          setCloudAccountsPersistent(Boolean(sData.cloudAccountsPersistent));
+          if (sData.user) {
+            setAuthUser(sData.user as AuthUser);
+            if (sData.savedProfile) {
+              applySavedAccountProfile(sData.savedProfile as SavedAccountProfile);
+            }
+          }
         }
         if (!cancelled && catalogRes.ok) {
           const cData = (await catalogRes.json()) as CatalogPayload;
@@ -1101,32 +1203,6 @@ export const App: React.FC = () => {
     );
   };
 
-  const handleQuickStampStub = (concert: ConcertEvent) => {
-    const exists = stubs.some((s) => s.concertId === concert.id);
-    if (exists) {
-      showToast(`${concert.artist} is already on your Stub Wall.`);
-      document.getElementById('stub-wall')?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    const newStub: TicketStubRecord = {
-      id: `stub-${Date.now().toString(36)}`,
-      concertId: concert.id,
-      artist: concert.artist,
-      tourTitle: concert.tourTitle,
-      city: concert.city,
-      venueName: concert.venueName,
-      dateIso: concert.dateIso,
-      paidAud: concert.priceMinAud,
-      sectionNote: 'General Admission / Reserved Seating — stamped from gig card.',
-      venueRating: 5,
-      status: 'secured',
-      createdAtIso: new Date().toISOString(),
-    };
-    setStubs((prev) => [newStub, ...prev]);
-    playReminderChime();
-    showToast(`Stamped ${concert.artist} onto your Ticket-Stub Wall!`);
-  };
-
   const upcomingDrops = useMemo(() => {
     const refMs = clockMinute * 60_000;
     const list: Array<{ concert: ConcertEvent; drop: TicketDropWindow; opensMs: number }> = [];
@@ -1201,11 +1277,6 @@ export const App: React.FC = () => {
       }, 120);
     },
     [activePage, switchPage],
-  );
-
-  const cityScopedStubs = useMemo(
-    () => (cityFilter === 'all' ? stubs : stubs.filter((s) => s.city === cityFilter)),
-    [stubs, cityFilter],
   );
 
   const cityScopedReminders = useMemo(
@@ -1403,8 +1474,8 @@ export const App: React.FC = () => {
         <div className="offline-status-banner" role="status">
           <WifiOff size={14} />
           <span>
-            Offline Mode — Viewing cached gigs, set times, venue sightlines &amp; your Ticket-Stub
-            Wall.
+            Offline Mode — Viewing cached gigs, set times, venue sightlines &amp; your saved
+            reminders.
           </span>
         </div>
       )}
@@ -1520,6 +1591,21 @@ export const App: React.FC = () => {
 
             <button
               type="button"
+              id="open-account-auth-btn"
+              className={authUser ? 'btn-armed-sm' : 'btn-outline-sm'}
+              onClick={() => setIsAuthModalOpen(true)}
+              title={
+                authUser
+                  ? `Signed in (${authUser.maskedEmail}) — choices auto-save`
+                  : 'Sign in or register with email to save your choices across visits'
+              }
+            >
+              {authUser ? <UserCheck size={15} /> : <UserCircle size={15} />}
+              <span>{authUser ? authUser.displayName : 'Sign In'}</span>
+            </button>
+
+            <button
+              type="button"
               id="toggle-theme-btn"
               className="icon-btn"
               onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
@@ -1544,9 +1630,6 @@ export const App: React.FC = () => {
             </a>
             <a href="#gigs" className="subnav-pill">
               Concerts ({filteredConcerts.length})
-            </a>
-            <a href="#stub-wall" className="subnav-pill">
-              Ticket Stubs ({cityScopedStubs.length})
             </a>
             <a href="#venues-heading" className="subnav-pill">
               Venue Sightlines ({availableVenues.length})
@@ -2278,16 +2361,6 @@ export const App: React.FC = () => {
                     <div className="card-corner-tools">
                       <button
                         type="button"
-                        className="star-btn"
-                        onClick={() => handleQuickStampStub(concert)}
-                        title="Stamp ticket onto my Stub Wall"
-                        aria-label={`Stamp ${concert.artist} onto Ticket-Stub Wall`}
-                      >
-                        <Award size={15} />
-                      </button>
-
-                      <button
-                        type="button"
                         className={`star-btn ${watched ? 'is-starred' : ''}`}
                         onClick={() => handleAddOrToggleSinger({ name: concert.artist })}
                         aria-label={
@@ -2590,41 +2663,12 @@ export const App: React.FC = () => {
           </section>
         )}
 
-        {/* AU UPGRADE #3: VINTAGE AUSTRALIAN TICKET-STUB ARCHIVE WALL & SIGHTLINE NOTES */}
-        <StubArchiveSection
-          stubs={stubs}
-          concerts={cityScopedConcerts}
-          cityFilter={cityFilter}
-          onAddStub={(newStub) => {
-            setStubs((prev) => [
-              {
-                ...newStub,
-                id: `stub-${Date.now().toString(36)}`,
-                createdAtIso: new Date().toISOString(),
-              },
-              ...prev,
-            ]);
-            playReminderChime();
-            showToast(`Stamped ${newStub.artist} onto your Ticket-Stub Wall.`);
-          }}
-          onToggleStubStatus={(id) => {
-            setStubs((prev) =>
-              prev.map((s) =>
-                s.id === id
-                  ? { ...s, status: s.status === 'attended' ? 'secured' : 'attended' }
-                  : s,
-              ),
-            );
-          }}
-          onRemoveStub={(id) => setStubs((prev) => prev.filter((s) => s.id !== id))}
-        />
-
         {/* Sydney & Melbourne Venue Directory + Sightline, Restricted-View & Bag/Merch Insider Guide */}
         <section className="venues-directory" aria-labelledby="venues-heading">
           <div className="section-header-row">
             <div>
               <span className="eyebrow-kicker">
-                03 · {availableVenues.length} Tracked Stages · Sightlines, Curfews &amp; Bag Rules
+                02 · {availableVenues.length} Tracked Stages · Sightlines, Curfews &amp; Bag Rules
               </span>
               <h2 id="venues-heading" className="section-heading">
                 {cityFilter === 'melbourne'
@@ -2830,7 +2874,6 @@ export const App: React.FC = () => {
             theme={theme}
             cityFilter={cityFilter}
             reminders={reminders}
-            stubs={stubs}
             monitoredSingers={monitoredSingers}
             savedWorldFestivals={savedWorldFestivals}
             customConcerts={customConcerts}
@@ -2838,7 +2881,6 @@ export const App: React.FC = () => {
               setTheme(backup.theme);
               setCityFilter(backup.cityFilter);
               setReminders(backup.reminders);
-              setStubs(backup.stubs);
               if (backup.monitoredSingers.length > 0) {
                 setMonitoredSingers(backup.monitoredSingers);
               }
@@ -2846,8 +2888,47 @@ export const App: React.FC = () => {
               setCustomConcerts(backup.customConcerts);
               playReminderChime();
               showToast(
-                `Restored OZ Amp profile (${backup.reminders.length} reminders, ${backup.stubs.length} stubs)!`,
+                `Restored OZ Amp profile (${backup.reminders.length} reminders, ${backup.monitoredSingers.length} singers)!`,
               );
+            }}
+            onShowToast={showToast}
+          />
+        </Suspense>
+      )}
+
+      {isAuthModalOpen && (
+        <Suspense fallback={null}>
+          <AccountAuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            csrfToken={csrfToken}
+            user={authUser}
+            cloudAccountsPersistent={cloudAccountsPersistent}
+            syncState={accountSyncState}
+            lastSavedIso={lastAccountSavedIso}
+            monitoredCount={monitoredSingers.length}
+            remindersCount={reminders.length}
+            worldFestivalsCount={savedWorldFestivals.length}
+            buildCurrentProfile={buildCurrentAccountProfile}
+            onAuthenticated={(user, profile, isRegistration) => {
+              setAuthUser(user);
+              if (profile) {
+                applySavedAccountProfile(profile);
+              }
+              playReminderChime();
+              showToast(
+                isRegistration
+                  ? `Welcome ${user.displayName}! Your OZ Amp choices are now saved to your account.`
+                  : `Welcome back, ${user.displayName}! Loaded your saved choices.`,
+              );
+            }}
+            onForceSaveNow={() => persistProfileToAccount(true)}
+            onLoggedOut={() => {
+              setAuthUser(null);
+              setAccountSyncState('idle');
+              setLastAccountSavedIso(null);
+              setIsAuthModalOpen(false);
+              window.location.reload();
             }}
             onShowToast={showToast}
           />

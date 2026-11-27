@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseTourAnnouncement } from '../server/parseAnnouncement.mjs';
@@ -295,5 +296,161 @@ test('BFF enforces security headers, HTTP method allow-list, CSRF, SSRF protecti
     assert.equal(ssrfRes.status, 400);
   } finally {
     await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('Email auth enforces password strength, HttpOnly session cookie, profile ownership, CSRF & full logout revocation', async () => {
+  const tmpAuthDir = await fs.mkdtemp(path.join(os.tmpdir(), 'oz-amp-auth-test-'));
+  const prevAuthDir = process.env.OZ_AMP_AUTH_DIR;
+  process.env.OZ_AMP_AUTH_DIR = tmpAuthDir;
+
+  const server = createAppServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  try {
+    // Obtain CSRF token
+    const sessionRes = await fetch(`${baseUrl}/api/session`);
+    const csrfCookie = (sessionRes.headers.get('set-cookie') || '').split(';')[0];
+    const { csrfToken } = await sessionRes.json();
+
+    // 1. Unauthenticated profile read must fail closed (401)
+    const unauthProf = await fetch(`${baseUrl}/api/account/profile`);
+    assert.equal(unauthProf.status, 401);
+
+    // 2. Weak password (<8 chars) rejected with 400
+    const weakReg = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: csrfCookie,
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify({ email: 'alice@example.com', password: 'short' }),
+    });
+    assert.equal(weakReg.status, 400);
+
+    // 3. Valid registration sets HttpOnly SameSite=Strict cookie & returns masked email
+    const regRes = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: csrfCookie,
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify({
+        email: 'alice@example.com',
+        password: 'correct-horse-battery-staple',
+        displayName: 'Alice',
+        profile: {
+          theme: 'light',
+          cityFilter: 'sydney',
+          monitoredSingers: [{ name: 'Dua Lipa', aliases: [], notifyOnAnnounce: true }],
+          reminders: [],
+          savedWorldFestivals: [],
+          customConcerts: [],
+        },
+      }),
+    });
+    assert.equal(regRes.status, 201);
+    const setSessCookie = regRes.headers.get('set-cookie') || '';
+    assert.ok(setSessCookie.includes('HttpOnly'), 'Session cookie must be HttpOnly');
+    assert.ok(setSessCookie.includes('SameSite=Strict'), 'Session cookie must be SameSite=Strict');
+    const sessCookiePair = setSessCookie.split(';')[0];
+    const regJson = await regRes.json();
+    assert.equal(regJson.user.displayName, 'Alice');
+    assert.equal(regJson.user.maskedEmail, 'a***e@example.com');
+    assert.ok(!('email' in regJson.user), 'Raw email must not be surfaced in UI user object');
+
+    // 4. Reloading /api/session with session cookie restores saved choices automatically
+    const restoredSessionRes = await fetch(`${baseUrl}/api/session`, {
+      headers: { Cookie: `${csrfCookie}; ${sessCookiePair}` },
+    });
+    assert.equal(restoredSessionRes.status, 200);
+    const restoredJson = await restoredSessionRes.json();
+    assert.equal(restoredJson.user.displayName, 'Alice');
+    assert.equal(restoredJson.savedProfile.cityFilter, 'sydney');
+    assert.equal(restoredJson.savedProfile.monitoredSingers[0].name, 'Dua Lipa');
+
+    // 5. Updating saved choices via POST /api/account/profile persists across subsequent login
+    const saveRes = await fetch(`${baseUrl}/api/account/profile`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `${csrfCookie}; ${sessCookiePair}`,
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify({
+        profile: {
+          theme: 'dark',
+          cityFilter: 'melbourne',
+          monitoredSingers: [
+            { name: 'Dua Lipa', aliases: [], notifyOnAnnounce: true },
+            { name: 'Fred again..', aliases: [], notifyOnAnnounce: true },
+          ],
+          reminders: [],
+          savedWorldFestivals: [],
+          customConcerts: [],
+        },
+      }),
+    });
+    assert.equal(saveRes.status, 200);
+
+    // 6. Second login succeeds and returns updated choices; wrong password returns generic 401
+    const badLogin = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: csrfCookie,
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify({ email: 'alice@example.com', password: 'wrong-password-123' }),
+    });
+    assert.equal(badLogin.status, 401);
+
+    const login2 = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: csrfCookie,
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify({
+        email: 'alice@example.com',
+        password: 'correct-horse-battery-staple',
+      }),
+    });
+    assert.equal(login2.status, 200);
+    const login2Cookie = (login2.headers.get('set-cookie') || '').split(';')[0];
+    const login2Json = await login2.json();
+    assert.equal(login2Json.profile.cityFilter, 'melbourne');
+    assert.equal(login2Json.profile.monitoredSingers.length, 2);
+
+    // 7. Logout invalidates ALL active sessions (both original cookie and second login cookie!)
+    const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `${csrfCookie}; ${login2Cookie}`,
+        'X-CSRF-Token': csrfToken,
+      },
+      body: '{}',
+    });
+    assert.equal(logoutRes.status, 200);
+
+    const stale1 = await fetch(`${baseUrl}/api/account/profile`, {
+      headers: { Cookie: sessCookiePair },
+    });
+    const stale2 = await fetch(`${baseUrl}/api/account/profile`, {
+      headers: { Cookie: login2Cookie },
+    });
+    assert.equal(stale1.status, 401);
+    assert.equal(stale2.status, 401);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    if (prevAuthDir === undefined) delete process.env.OZ_AMP_AUTH_DIR;
+    else process.env.OZ_AMP_AUTH_DIR = prevAuthDir;
+    await fs.rm(tmpAuthDir, { recursive: true, force: true });
   }
 });

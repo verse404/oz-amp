@@ -5189,3 +5189,211 @@ select option {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── EMAIL ACCOUNT SIGN-IN & CLOUD PROFILE SYNC MODAL ──────────────────────── */
+
+.auth-modal-panel {
+  max-width: 500px;
+}
+
+.auth-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.auth-mode-tabs {
+  width: 100%;
+  justify-content: space-between;
+  margin-inline-end: 0;
+}
+
+.auth-mode-tabs .page-mode-btn {
+  flex: 1;
+  text-align: center;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-icon {
+  position: absolute;
+  inset-inline-start: 0.78rem;
+  color: var(--fg-muted);
+  pointer-events: none;
+}
+
+.auth-text-input {
+  width: 100%;
+  padding-inline-start: 2.3rem;
+}
+
+.auth-security-footnote {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--fg-muted);
+}
+
+.auth-security-footnote svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--accent-sage);
+}
+
+.auth-signed-in-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.auth-profile-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 13px;
+  padding: 1rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.auth-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.auth-avatar-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent-primary) 18%, var(--bg-surface));
+  color: var(--accent-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.auth-display-name {
+  display: block;
+  font-size: 1rem;
+  color: var(--fg-primary);
+}
+
+.auth-masked-email {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  color: var(--fg-muted);
+}
+
+.auth-sync-badge {
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent-sage) 18%, transparent);
+  color: var(--accent-sage);
+}
+
+.auth-sync-badge--saving {
+  background: color-mix(in srgb, var(--accent-amber) 18%, transparent);
+  color: var(--accent-amber);
+}
+
+.auth-sync-badge--error {
+  background: color-mix(in srgb, var(--accent-crimson) 18%, transparent);
+  color: var(--accent-crimson);
+}
+
+.auth-saved-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.auth-metric-pill {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.auth-metric-pill strong {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.auth-metric-pill span {
+  font-size: 0.72rem;
+  color: var(--fg-muted);
+}
+
+.auth-sync-meta {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--fg-secondary);
+}
+
+.auth-sync-meta svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--accent-sage);
+}
+
+.auth-storage-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.72rem 0.85rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent-amber) 11%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 35%, var(--border-hairline));
+  font-size: 0.77rem;
+  line-height: 1.45;
+  color: var(--fg-secondary);
+}
+
+.auth-storage-notice svg {
+  flex-shrink: 0;
+  margin-top: 0.12rem;
+  color: var(--accent-amber);
+}
+
+.auth-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.auth-logout-btn {
+  border-color: color-mix(in srgb, var(--accent-crimson) 45%, var(--border-strong));
+  color: var(--accent-crimson);
+}

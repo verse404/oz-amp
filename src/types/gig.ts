@@ -183,19 +183,23 @@ export interface SingerMonitorCheckResult {
   auLinks: AuTicketingLinks;
 }
 
-export interface TicketStubRecord {
+export interface AuthUser {
   id: string;
-  concertId: string;
-  artist: string;
-  tourTitle?: string;
-  city: CityId;
-  venueName: string;
-  dateIso: string;
-  paidAud: number;
-  sectionNote: string;
-  venueRating: 1 | 2 | 3 | 4 | 5;
-  status: 'secured' | 'attended';
-  createdAtIso: string;
+  displayName: string;
+  maskedEmail: string;
+}
+
+export interface SavedAccountProfile {
+  schemaVersion: number;
+  updatedAtIso?: string;
+  theme: 'dark' | 'light';
+  cityFilter: 'all' | CityId;
+  monitoredSingers: MonitoredSinger[];
+  reminders: ReminderRule[];
+  savedWorldFestivals: WorldFestivalItem[];
+  customConcerts: ConcertEvent[];
+  dedicatedCustomSingers?: unknown[];
+  dedicatedMutedIds?: string[];
 }
 
 export interface MusicFestivalStop {

@@ -3,6 +3,7 @@ dist/
 .env
 .env.local
 server/cache/live-catalog.json
+server/data/
 start-cloudtop.sh
 deploy-*.sh
 *.log
