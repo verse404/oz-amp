@@ -183,10 +183,20 @@ export interface SingerMonitorCheckResult {
   auLinks: AuTicketingLinks;
 }
 
+export interface FirebasePublicConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  appId: string;
+  storageBucket?: string;
+  messagingSenderId?: string;
+}
+
 export interface AuthUser {
   id: string;
   displayName: string;
   maskedEmail: string;
+  provider?: 'firebase' | 'bff';
 }
 
 export interface SavedAccountProfile {

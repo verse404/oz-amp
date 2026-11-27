@@ -95,8 +95,26 @@ const SPA_SECURITY_HEADERS = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org data:; media-src 'self' https://audio-ssl.itunes.apple.com; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
+    "default-src 'self'; script-src 'self' https://apis.google.com; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org https://lh3.googleusercontent.com data:; media-src 'self' https://audio-ssl.itunes.apple.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://*.firebaseio.com https://www.googleapis.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
 };
+
+function getFirebasePublicConfig() {
+  const apiKey = String(process.env.FIREBASE_API_KEY || '').trim();
+  const authDomain = String(process.env.FIREBASE_AUTH_DOMAIN || '').trim();
+  const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
+  const appId = String(process.env.FIREBASE_APP_ID || '').trim();
+  if (!apiKey || !authDomain || !projectId || !appId) return null;
+  const storageBucket = String(process.env.FIREBASE_STORAGE_BUCKET || '').trim();
+  const messagingSenderId = String(process.env.FIREBASE_MESSAGING_SENDER_ID || '').trim();
+  return {
+    apiKey,
+    authDomain,
+    projectId,
+    appId,
+    ...(storageBucket ? { storageBucket } : {}),
+    ...(messagingSenderId ? { messagingSenderId } : {}),
+  };
+}
 
 function isAllowedOrigin(origin, requestHostHeader) {
   if (!origin) return true;
@@ -350,6 +368,7 @@ export function createAppServer() {
 
     if (pathname === '/api/session' && req.method === 'GET') {
       const cfg = getApiConfig();
+      const firebaseConfig = getFirebasePublicConfig();
       const user = await authenticateSessionToken(readSessionCookieToken(req));
       const savedProfile = user ? await getUserProfile(user.id) : null;
       writeJson(
@@ -361,7 +380,8 @@ export function createAppServer() {
           readonlyMode: PUBLIC_READONLY_MODE,
           ticketmasterConfigured: Boolean(cfg.ticketmasterApiKey),
           defaultWebhookMasked: maskUrl(cfg.reminderWebhookUrl),
-          cloudAccountsPersistent: isPersistentCloudAuthConfigured(),
+          cloudAccountsPersistent: Boolean(firebaseConfig) || isPersistentCloudAuthConfigured(),
+          firebaseConfig,
           user,
           savedProfile,
         },

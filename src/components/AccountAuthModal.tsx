@@ -12,13 +12,14 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
-import type { AuthUser, SavedAccountProfile } from '../types/gig';
+import type { AuthUser, FirebasePublicConfig, SavedAccountProfile } from '../types/gig';
 import { IS_STATIC_MODE } from '../config/runtimeMode';
 
 interface AccountAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   csrfToken: string;
+  firebaseConfig: FirebasePublicConfig | null;
   user: AuthUser | null;
   cloudAccountsPersistent: boolean;
   syncState: 'idle' | 'saving' | 'saved' | 'error';
@@ -41,6 +42,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
   isOpen,
   onClose,
   csrfToken,
+  firebaseConfig,
   user,
   cloudAccountsPersistent,
   syncState,
@@ -60,14 +62,59 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
   const [displayName, setDisplayName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const useFirebase = Boolean(firebaseConfig);
+  const authUnavailable = IS_STATIC_MODE && !useFirebase;
+
+  const handleGoogleSignIn = async () => {
+    if (!firebaseConfig) return;
+    setErrorMsg(null);
+    setInfoMsg(null);
+    setSubmitting(true);
+    try {
+      const fb = await import('../services/firebaseClient');
+      const result = await fb.firebaseSignInWithGoogle(firebaseConfig, buildCurrentProfile());
+      onAuthenticated(result.user, result.profile, result.isNewUser);
+      onClose();
+    } catch (err) {
+      const fb = await import('../services/firebaseClient');
+      setErrorMsg(fb.mapFirebaseAuthError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!firebaseConfig) return;
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail)) {
+      setErrorMsg('Enter your email address above first, then click Forgot Password.');
+      return;
+    }
+    setErrorMsg(null);
+    setInfoMsg(null);
+    setSubmitting(true);
+    try {
+      const fb = await import('../services/firebaseClient');
+      await fb.firebaseSendPasswordReset(firebaseConfig, cleanEmail);
+      setInfoMsg('Password reset email sent! Check your inbox (and spam folder).');
+    } catch (err) {
+      const fb = await import('../services/firebaseClient');
+      setErrorMsg(fb.mapFirebaseAuthError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    if (IS_STATIC_MODE) {
-      setErrorMsg('Email sign-in requires the live OZ Amp server.');
+    setInfoMsg(null);
+    if (authUnavailable) {
+      setErrorMsg('Email sign-in requires Firebase config or the live OZ Amp server.');
       return;
     }
 
@@ -83,6 +130,28 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
 
     setSubmitting(true);
     try {
+      if (firebaseConfig) {
+        const fb = await import('../services/firebaseClient');
+        if (mode === 'register') {
+          const res = await fb.firebaseRegisterWithEmail(
+            firebaseConfig,
+            cleanEmail,
+            password,
+            displayName.trim(),
+            buildCurrentProfile(),
+          );
+          setPassword('');
+          onAuthenticated(res.user, res.profile, true);
+          onClose();
+        } else {
+          const res = await fb.firebaseLoginWithEmail(firebaseConfig, cleanEmail, password);
+          setPassword('');
+          onAuthenticated(res.user, res.profile, false);
+          onClose();
+        }
+        return;
+      }
+
       const endpoint = mode === 'register' ? '/api/auth/register' : '/api/auth/login';
       const payload =
         mode === 'register'
@@ -113,10 +182,19 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
       }
 
       setPassword('');
-      onAuthenticated(data.user as AuthUser, (data.profile as SavedAccountProfile) || null, mode === 'register');
+      onAuthenticated(
+        data.user as AuthUser,
+        (data.profile as SavedAccountProfile) || null,
+        mode === 'register',
+      );
       onClose();
-    } catch {
-      setErrorMsg('Unable to reach the OZ Amp server right now. Please try again in a moment.');
+    } catch (err) {
+      if (firebaseConfig) {
+        const fb = await import('../services/firebaseClient');
+        setErrorMsg(fb.mapFirebaseAuthError(err));
+      } else {
+        setErrorMsg('Unable to reach the OZ Amp server right now. Please try again in a moment.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -126,18 +204,23 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
     setSubmitting(true);
     setErrorMsg(null);
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
-        },
-        body: '{}',
-      });
-      onShowToast('Signed out from all sessions.');
+      if (firebaseConfig && user?.provider === 'firebase') {
+        const fb = await import('../services/firebaseClient');
+        await fb.firebaseSignOut(firebaseConfig);
+      } else {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          body: '{}',
+        });
+      }
+      onShowToast('Signed out cleanly.');
       onLoggedOut();
     } catch {
-      setErrorMsg('Could not reach server to sign out. Please refresh and retry.');
+      setErrorMsg('Could not sign out right now. Please refresh and retry.');
       setSubmitting(false);
     }
   };
@@ -155,7 +238,11 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
       <div className="center-modal auth-modal-panel">
         <div className="modal-header">
           <div>
-            <span className="eyebrow-kicker">OZ AMP ACCOUNT · AUTO-SAVE ACROSS VISITS &amp; DEVICES</span>
+            <span className="eyebrow-kicker">
+              {useFirebase
+                ? 'FIREBASE CLOUD ACCOUNT · AUTO-SYNC ACROSS VISITS & DEVICES'
+                : 'OZ AMP ACCOUNT · AUTO-SAVE ACROSS VISITS & DEVICES'}
+            </span>
             <h2 id="account-auth-modal-title" className="modal-title">
               {user ? `Signed In as ${user.displayName}` : 'Sign In or Create Your Account'}
             </h2>
@@ -171,7 +258,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
         </div>
 
         <div className="modal-body auth-modal-body">
-          {IS_STATIC_MODE ? (
+          {authUnavailable ? (
             <div className="cloud-guide-card">
               <div className="cloud-guide-title">
                 <Info size={16} />
@@ -179,8 +266,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
               </div>
               <p className="sync-helper-copy">
                 This static preview saves your choices automatically in this browser’s local storage.
-                For email registration and cross-device cloud sync, open the live server or use{' '}
-                <strong>Sync / App</strong> to export your `.json` backup.
+                For cloud email &amp; Google sign-in, configure Firebase or open the live Render app.
               </p>
             </div>
           ) : user ? (
@@ -201,7 +287,9 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                         ? 'Saving…'
                         : syncState === 'error'
                           ? 'Sync Retry Needed'
-                          : 'Auto-Sync Active'}
+                          : useFirebase
+                            ? 'Firestore Synced'
+                            : 'Auto-Sync Active'}
                     </span>
                   </span>
                 </div>
@@ -231,7 +319,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                         minute: '2-digit',
                       })}{' '}
                       — your singers, reminders, Home City &amp; theme load automatically whenever
-                      you sign in.
+                      you open OZ Amp.
                     </span>
                   </p>
                 )}
@@ -241,10 +329,11 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                 <div className="auth-storage-notice">
                   <Info size={14} />
                   <span>
-                    <strong>Persistence tip (Render Free Tier):</strong> Accounts are currently saved
-                    on the server’s local disk. To keep accounts permanently across Render container
-                    redeploys at $0, add free <code>UPSTASH_REDIS_REST_URL</code> &amp;{' '}
-                    <code>UPSTASH_REDIS_REST_TOKEN</code> in Render → Environment.
+                    <strong>Permanent Cloud Persistence (\$0 on Render):</strong> Add your free
+                    Firebase Web App env vars (<code>FIREBASE_API_KEY</code>,{' '}
+                    <code>FIREBASE_AUTH_DOMAIN</code>, <code>FIREBASE_PROJECT_ID</code>,{' '}
+                    <code>FIREBASE_APP_ID</code>) in Render → Environment to enable permanent Cloud
+                    Firestore sync + Google Sign-In &amp; Password Reset emails.
                   </span>
                 </div>
               )}
@@ -270,12 +359,48 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                   onClick={() => void handleSignOut()}
                 >
                   <LogOut size={14} />
-                  <span>Sign Out (All Devices)</span>
+                  <span>{useFirebase ? 'Sign Out' : 'Sign Out (All Devices)'}</span>
                 </button>
               </div>
             </div>
           ) : (
             <>
+              {useFirebase && (
+                <>
+                  <button
+                    type="button"
+                    id="auth-google-signin-btn"
+                    className="btn-google-auth"
+                    disabled={submitting}
+                    onClick={() => void handleGoogleSignIn()}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        fill="#4285F4"
+                        d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.39 3.62v3.01h3.87c2.26-2.08 3.58-5.15 3.58-8.82z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.87-3.01c-1.07.72-2.45 1.15-4.08 1.15-3.14 0-5.8-2.12-6.75-4.97H1.25v3.1A12 12 0 0 0 12 24z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.25 14.26A7.2 7.2 0 0 1 4.88 12c0-.79.14-1.56.37-2.26v-3.1H1.25A12 12 0 0 0 0 12c0 1.94.46 3.77 1.25 5.36l4-3.1z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 4.77c1.76 0 3.35.61 4.59 1.8l3.44-3.44C17.95 1.19 15.23 0 12 0A12 12 0 0 0 1.25 6.64l4 3.1C6.2 6.89 8.86 4.77 12 4.77z"
+                      />
+                    </svg>
+                    <span>Continue with Google</span>
+                  </button>
+
+                  <div className="auth-divider" aria-hidden="true">
+                    <span>or use email &amp; password</span>
+                  </div>
+                </>
+              )}
+
               <div className="page-mode-switcher auth-mode-tabs" role="tablist">
                 <button
                   type="button"
@@ -285,6 +410,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                   onClick={() => {
                     setMode('login');
                     setErrorMsg(null);
+                    setInfoMsg(null);
                   }}
                 >
                   Sign In
@@ -297,6 +423,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                   onClick={() => {
                     setMode('register');
                     setErrorMsg(null);
+                    setInfoMsg(null);
                   }}
                 >
                   Register with Email
@@ -344,7 +471,19 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                 </label>
 
                 <label className="form-field">
-                  <span>Password</span>
+                  <div className="auth-label-row">
+                    <span>Password</span>
+                    {useFirebase && mode === 'login' && (
+                      <button
+                        type="button"
+                        className="auth-forgot-link"
+                        disabled={submitting}
+                        onClick={() => void handlePasswordReset()}
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
                   <div className="auth-input-wrap">
                     <KeyRound size={15} className="auth-input-icon" />
                     <input
@@ -367,6 +506,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                 </label>
 
                 {errorMsg && <p className="inline-error">{errorMsg}</p>}
+                {infoMsg && <p className="auth-info-msg">{infoMsg}</p>}
 
                 <button
                   type="submit"
@@ -390,8 +530,9 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
               <p className="auth-security-footnote">
                 <ShieldCheck size={13} />
                 <span>
-                  Secured with salted memory-hard <code>scrypt</code> password hashing and{' '}
-                  <code>HttpOnly</code> session cookies. Your email is never shown publicly.
+                  {useFirebase
+                    ? 'Powered by Firebase Authentication & owner-only Cloud Firestore rules. Your email is never shown publicly.'
+                    : 'Secured with salted memory-hard scrypt password hashing and HttpOnly session cookies. Your email is never shown publicly.'}
                 </span>
               </p>
             </>

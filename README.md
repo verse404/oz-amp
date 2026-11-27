@@ -45,5 +45,10 @@ Serves the app locally on `http://127.0.0.1:3102/` (or set `PORT=5182`).
 - **Daily Automated Sync**: GitHub Actions (`.github/workflows/daily-gig-sync.yml`) runs every morning at **7:30 AM AEDT**, pruning past shows, pulling fresh tour news, and pushing updates to trigger a clean Render redeploy. Even if GitHub Actions is paused, Render automatically refreshes its cache every 24 hours on demand.
 - **Recommended 2-Minute Setup for Perpetual 2028+ Concerts & Permanent Cloud Accounts on Render Free Tier**:
   - Add a free `TICKETMASTER_API_KEY` (5,000 calls/day from [Ticketmaster Developer Portal](https://developer.ticketmaster.com/)) to **GitHub → Settings → Secrets and variables → Actions** and/or **Render → Environment** so OZ Amp automatically ingests up to 160 newly listed Melbourne & Sydney concerts indefinitely.
-  - Add free **Upstash Redis** credentials (`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, `$0` permanent free tier at [Upstash](https://upstash.com/)) to **Render → Environment** so email accounts and saved preferences persist permanently across Render Free Tier container redeploys.
+  - **Permanent \$0 Cloud Accounts with Firebase Auth + Firestore (Recommended)**:
+    1. Create a free project at [Firebase Console](https://console.firebase.google.com/) (Spark Free Tier — \$0 forever, no credit card, never archives idle data).
+    2. Enable **Authentication → Sign-in method** (`Email/Password` and optionally `Google`), and add your Render domain (`oz-amp.onrender.com`) under **Authentication → Settings → Authorized domains**.
+    3. Create a **Firestore Database** in production mode, open **Rules**, and publish the owner-only rules from `firestore.rules`.
+    4. Register a **Web App** (`</>`) in Project Settings and add `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, and `FIREBASE_APP_ID` to **Render → Environment** (zero code changes needed!).
+  - *(Alternative)* Add free **Upstash Redis** credentials (`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`) to **Render → Environment**.
   - Optionally add `REMINDER_WEBHOOK_URL` (Discord, Slack, Telegram, or Bark iOS) for automated morning phone alerts.

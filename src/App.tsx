@@ -39,6 +39,7 @@ import type {
   CatalogPayload,
   CityId,
   ConcertEvent,
+  FirebasePublicConfig,
   LeadMinutes,
   MonitoredSinger,
   MusicFestivalDirectoryItem,
@@ -210,6 +211,15 @@ function concertMatchesArtistTerm(concert: ConcertEvent, rawTerm: string): boole
   return acts.some((a) => rx.test(a));
 }
 
+function readBuildTimeFirebaseConfig(): FirebasePublicConfig | null {
+  const apiKey = String(import.meta.env.VITE_FIREBASE_API_KEY || '').trim();
+  const authDomain = String(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '').trim();
+  const projectId = String(import.meta.env.VITE_FIREBASE_PROJECT_ID || '').trim();
+  const appId = String(import.meta.env.VITE_FIREBASE_APP_ID || '').trim();
+  if (!apiKey || !authDomain || !projectId || !appId) return null;
+  return { apiKey, authDomain, projectId, appId };
+}
+
 function safeReadJson<T>(key: string, fallback: T): T {
   try {
     const raw = window.localStorage.getItem(key);
@@ -284,9 +294,14 @@ export const App: React.FC = () => {
     safeReadJson<WorldFestivalItem[]>(STORAGE_KEYS.worldFestivalsExtra, []),
   );
 
-  // Email Account & Automatic Cloud Profile Sync State
+  // Email / Firebase Account & Automatic Cloud Profile Sync State
+  const [firebaseConfig, setFirebaseConfig] = useState<FirebasePublicConfig | null>(() =>
+    readBuildTimeFirebaseConfig(),
+  );
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const [cloudAccountsPersistent, setCloudAccountsPersistent] = useState(false);
+  const [cloudAccountsPersistent, setCloudAccountsPersistent] = useState<boolean>(() =>
+    Boolean(readBuildTimeFirebaseConfig()),
+  );
   const [accountSyncState, setAccountSyncState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastAccountSavedIso, setLastAccountSavedIso] = useState<string | null>(null);
   const skipNextAutoSaveRef = useRef(false);
@@ -562,9 +577,27 @@ export const App: React.FC = () => {
 
   const persistProfileToAccount = useCallback(
     async (manual = false) => {
-      if (!authUser || IS_STATIC_MODE || !csrfToken) return;
+      if (!authUser) return;
       setAccountSyncState('saving');
       try {
+        if (firebaseConfig && authUser.provider === 'firebase') {
+          const fb = await import('./services/firebaseClient');
+          const updatedAtIso = await fb.firebaseSaveProfile(
+            firebaseConfig,
+            authUser.id,
+            buildCurrentAccountProfile(),
+          );
+          setLastAccountSavedIso(updatedAtIso);
+          setAccountSyncState('saved');
+          if (manual) {
+            showToast('Saved all your choices to Firebase Cloud Firestore.');
+          }
+          return;
+        }
+        if (IS_STATIC_MODE || !csrfToken) {
+          setAccountSyncState('idle');
+          return;
+        }
         const res = await fetch('/api/account/profile', {
           method: 'POST',
           headers: {
@@ -589,12 +622,36 @@ export const App: React.FC = () => {
         if (manual) showToast('Network error while saving choices.');
       }
     },
-    [authUser, csrfToken, buildCurrentAccountProfile, showToast],
+    [authUser, firebaseConfig, csrfToken, buildCurrentAccountProfile, showToast],
   );
+
+  // Subscribe to Firebase Auth state whenever Firebase config is active
+  useEffect(() => {
+    if (!firebaseConfig) return;
+    let active = true;
+    let unsub: (() => void) | null = null;
+    void import('./services/firebaseClient').then((fb) => {
+      if (!active) return;
+      unsub = fb.subscribeFirebaseAuth(firebaseConfig, (fbUser, fbProfile) => {
+        if (!active) return;
+        setAuthUser(fbUser);
+        if (fbUser && fbProfile) {
+          applySavedAccountProfile(fbProfile);
+        }
+      });
+    });
+    return () => {
+      active = false;
+      if (unsub) unsub();
+    };
+  }, [firebaseConfig, applySavedAccountProfile]);
 
   // Auto-save choices to the signed-in user's account whenever preferences change
   useEffect(() => {
-    if (!authUser || IS_STATIC_MODE || !csrfToken) return;
+    if (!authUser) return;
+    const canSaveFirebase = Boolean(firebaseConfig && authUser.provider === 'firebase');
+    const canSaveBff = Boolean(!IS_STATIC_MODE && csrfToken && authUser.provider !== 'firebase');
+    if (!canSaveFirebase && !canSaveBff) return;
     if (skipNextAutoSaveRef.current) {
       skipNextAutoSaveRef.current = false;
       return;
@@ -605,6 +662,7 @@ export const App: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [
     authUser,
+    firebaseConfig,
     csrfToken,
     theme,
     cityFilter,
@@ -813,9 +871,13 @@ export const App: React.FC = () => {
           setCsrfToken(tok);
           setReadonlyMode(Boolean(sData.readonlyMode));
           setDefaultWebhookMasked(sData.defaultWebhookMasked || null);
-          setCloudAccountsPersistent(Boolean(sData.cloudAccountsPersistent));
-          if (sData.user) {
-            setAuthUser(sData.user as AuthUser);
+          setCloudAccountsPersistent(
+            Boolean(sData.cloudAccountsPersistent) || Boolean(readBuildTimeFirebaseConfig()),
+          );
+          if (sData.firebaseConfig) {
+            setFirebaseConfig(sData.firebaseConfig as FirebasePublicConfig);
+          } else if (sData.user) {
+            setAuthUser({ ...(sData.user as AuthUser), provider: 'bff' });
             if (sData.savedProfile) {
               applySavedAccountProfile(sData.savedProfile as SavedAccountProfile);
             }
@@ -2902,6 +2964,7 @@ export const App: React.FC = () => {
             isOpen={isAuthModalOpen}
             onClose={() => setIsAuthModalOpen(false)}
             csrfToken={csrfToken}
+            firebaseConfig={firebaseConfig}
             user={authUser}
             cloudAccountsPersistent={cloudAccountsPersistent}
             syncState={accountSyncState}

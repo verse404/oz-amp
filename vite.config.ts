@@ -10,7 +10,7 @@ const securityHeaders = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org data:; media-src 'self' https://audio-ssl.itunes.apple.com; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.dzcdn.net https://cdn-images.dzcdn.net https://e-cdns-images.dzcdn.net https://*.scdn.co https://*.mzstatic.com https://s1.ticketm.net https://*.wikimedia.org https://upload.wikimedia.org https://lh3.googleusercontent.com data:; media-src 'self' https://audio-ssl.itunes.apple.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://*.firebaseio.com https://www.googleapis.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self';",
 };
 
 export default defineConfig({
@@ -22,6 +22,9 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) {
             return 'vendor-react';
+          }
+          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+            return 'vendor-firebase';
           }
           if (id.includes('node_modules/lucide-react')) {
             return 'vendor-icons';

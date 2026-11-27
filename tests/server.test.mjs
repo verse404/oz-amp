@@ -447,6 +447,34 @@ test('Email auth enforces password strength, HttpOnly session cookie, profile ow
     });
     assert.equal(stale1.status, 401);
     assert.equal(stale2.status, 401);
+
+    // 8. /api/session exposes public firebaseConfig cleanly when FIREBASE_* env vars are configured
+    const prevFb = {
+      k: process.env.FIREBASE_API_KEY,
+      d: process.env.FIREBASE_AUTH_DOMAIN,
+      p: process.env.FIREBASE_PROJECT_ID,
+      a: process.env.FIREBASE_APP_ID,
+    };
+    process.env.FIREBASE_API_KEY = 'AIzaSyTestPublicKey12345';
+    process.env.FIREBASE_AUTH_DOMAIN = 'oz-amp-demo.firebaseapp.com';
+    process.env.FIREBASE_PROJECT_ID = 'oz-amp-demo';
+    process.env.FIREBASE_APP_ID = '1:123456:web:abcdef';
+    try {
+      const fbSession = await fetch(`${baseUrl}/api/session`);
+      const fbJson = await fbSession.json();
+      assert.equal(fbJson.cloudAccountsPersistent, true);
+      assert.equal(fbJson.firebaseConfig?.projectId, 'oz-amp-demo');
+      assert.equal(fbJson.firebaseConfig?.authDomain, 'oz-amp-demo.firebaseapp.com');
+    } finally {
+      if (prevFb.k === undefined) delete process.env.FIREBASE_API_KEY;
+      else process.env.FIREBASE_API_KEY = prevFb.k;
+      if (prevFb.d === undefined) delete process.env.FIREBASE_AUTH_DOMAIN;
+      else process.env.FIREBASE_AUTH_DOMAIN = prevFb.d;
+      if (prevFb.p === undefined) delete process.env.FIREBASE_PROJECT_ID;
+      else process.env.FIREBASE_PROJECT_ID = prevFb.p;
+      if (prevFb.a === undefined) delete process.env.FIREBASE_APP_ID;
+      else process.env.FIREBASE_APP_ID = prevFb.a;
+    }
   } finally {
     await new Promise((resolve) => server.close(resolve));
     if (prevAuthDir === undefined) delete process.env.OZ_AMP_AUTH_DIR;
