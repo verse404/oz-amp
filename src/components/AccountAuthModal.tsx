@@ -25,6 +25,7 @@ interface AccountAuthModalProps {
   syncState: 'idle' | 'saving' | 'saved' | 'error';
   lastSavedIso: string | null;
   monitoredCount: number;
+  mySingersCount: number;
   remindersCount: number;
   worldFestivalsCount: number;
   buildCurrentProfile: () => SavedAccountProfile;
@@ -48,6 +49,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
   syncState,
   lastSavedIso,
   monitoredCount,
+  mySingersCount,
   remindersCount,
   worldFestivalsCount,
   buildCurrentProfile,
@@ -296,8 +298,12 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
 
                 <div className="auth-saved-metrics">
                   <div className="auth-metric-pill">
+                    <strong>{mySingersCount}</strong>
+                    <span>My Singers</span>
+                  </div>
+                  <div className="auth-metric-pill">
                     <strong>{monitoredCount}</strong>
-                    <span>Favourite Singers</span>
+                    <span>Radar Singers</span>
                   </div>
                   <div className="auth-metric-pill">
                     <strong>{remindersCount}</strong>

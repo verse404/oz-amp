@@ -19,11 +19,13 @@ import type {
 import { formatAudPrice, sanitizeExternalHttpsUrl } from '../utils/formatters';
 import { FestivalAdvisorSection } from './FestivalAdvisorSection';
 import { ArtistAvatar } from './ArtistAvatar';
+import type { WatchlistSingerEntry } from '../data/userSingerList';
 
 interface MusicFestivalsSectionProps {
   festivals: MusicFestivalDirectoryItem[];
   advisorFestivals: FestivalAdvisorItem[];
   monitoredSingers: MonitoredSinger[];
+  watchlistSingers: WatchlistSingerEntry[];
   homeCity: CityId;
   cityFilter: 'all' | CityId;
   onChangeCityFilter: (city: 'all' | CityId) => void;
@@ -36,6 +38,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
   festivals,
   advisorFestivals,
   monitoredSingers,
+  watchlistSingers,
   homeCity,
   cityFilter,
   onChangeCityFilter,
@@ -406,6 +409,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
             <FestivalAdvisorSection
               festivals={advisorFestivals}
               monitoredSingers={monitoredSingers}
+              watchlistSingers={watchlistSingers}
               homeCity={homeCity}
             />
           </div>

@@ -2046,23 +2046,6 @@ body {
   white-space: nowrap;
 }
 
-/* Ticket-Stub Memory Wall */
-.stub-stats-strip {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-}
-
-.stub-stat-cell {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-hairline);
-  border-radius: 10px;
-  padding: 0.75rem 0.9rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
 .stat-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.69rem;
@@ -2075,7 +2058,7 @@ body {
   font-size: 1.2rem;
 }
 
-.stub-form-grid {
+.world-fest-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 0.65rem;
@@ -2089,102 +2072,15 @@ body {
   color: var(--fg-secondary);
 }
 
-.stub-wall-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-  gap: 0.85rem;
-}
-
-.thermal-stub-card {
-  display: flex;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.stub-perforation {
-  width: 14px;
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--accent-primary) 0,
-    var(--accent-primary) 6px,
-    transparent 6px,
-    transparent 12px
-  );
-  opacity: 0.75;
-  flex-shrink: 0;
-}
-
-.stub-main {
-  flex: 1;
-  padding: 0.9rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.stub-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.stub-stamp {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--accent-sage);
-}
-
-.stub-artist {
-  margin: 0.1rem 0 0;
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 1.18rem;
-}
-
-.stub-venue {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--fg-secondary);
-}
-
-.stub-note {
-  margin: 0.15rem 0;
-  font-size: 0.79rem;
-  font-style: italic;
-  color: var(--fg-muted);
-}
-
-.stub-footer {
-  margin-top: auto;
-  padding-top: 0.45rem;
-  border-top: 1px dashed var(--border-hairline);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.stub-stars {
-  display: inline-flex;
-  gap: 0.12rem;
-  color: var(--accent-amber);
-}
-
 @media (max-width: 980px) {
-  .festival-verdict-grid,
-  .stub-stats-strip {
+  .festival-verdict-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 640px) {
   .singer-search-form,
-  .festival-verdict-grid,
-  .stub-stats-strip {
+  .festival-verdict-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -3254,23 +3150,7 @@ body {
   padding-inline-start: 0.32rem;
 }
 
-/* Stub Archive & Reminder Drawer Portraits */
-.stub-artist-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0.25rem 0;
-}
-
-.stub-artist-row .stub-artist,
-.stub-artist-row .stub-venue {
-  margin: 0;
-}
-
-.stub-artist-row .stub-venue {
-  margin-top: 0.15rem;
-}
-
+/* Reminder Drawer Portraits */
 .reminder-item-visual {
   display: flex;
   align-items: center;
@@ -5285,34 +5165,7 @@ select option {
   margin-inline-start: auto;
 }
 
-/* Ticket-Stub Mode Switcher, Clickable Stamp & Calendar Mobile Hint */
-.stub-mode-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.75rem;
-}
-
-.stub-stamp--btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  cursor: pointer;
-  background: transparent;
-  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
-}
-
-.stub-stamp--btn:hover {
-  background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-}
-
-.stub-stamp--btn.is-attended {
-  border-color: var(--accent-sage);
-  color: var(--accent-sage);
-  background: color-mix(in srgb, var(--accent-sage) 14%, transparent);
-}
-
+/* Calendar Mobile Hint */
 .calendar-mobile-hint {
   display: none;
   margin: 0;
@@ -5466,7 +5319,7 @@ select option {
 
 .auth-saved-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
 }
 

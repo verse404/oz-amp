@@ -1,5 +1,5 @@
 // OZ Amp Offline Service Worker
-// Provides offline access to saved gigs, set times, venue sightlines, and ticket stubs
+// Provides offline access to saved gigs, set times, and venue sightlines
 // inside low-signal stadiums/basements while keeping live catalog & builds fresh online.
 
 const CACHE_NAME = 'oz-amp-offline-v2';

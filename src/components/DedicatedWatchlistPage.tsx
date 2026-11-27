@@ -627,7 +627,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
         <div className="watchlist-hero-grid">
           <div>
             <h1 id="watchlist-page-title" className="hero-headline watchlist-headline">
-              My Uploaded Singers — Ticket Sessions &amp; Upcoming Concerts
+              My Singers — Ticket Sessions &amp; Upcoming Concerts
             </h1>
             <p className="hero-lede">
               Tracking all <strong>{allSingers.length}</strong> singers and bands from your personal
@@ -1188,12 +1188,12 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
         onToggleApacReminder={onToggleApacReminder}
       />
 
-      {/* SECTION 4: FULL 275+ UPLOADED SINGERS ROSTER (A-Z + CHINESE ARTISTS) */}
+      {/* SECTION 4: COMPLETE SINGER ROSTER (A-Z + CHINESE ARTISTS) */}
       <section className="feature-section" aria-labelledby="watchlist-roster-heading">
         <div className="section-header-row">
           <div>
             <span className="eyebrow-kicker">
-              03 · Complete Uploaded Singer Directory · A–Z &amp; Chinese Artists
+              03 · Complete Singer Directory · A–Z &amp; Chinese Artists
             </span>
             <h2 id="watchlist-roster-heading" className="section-heading">
               All Monitored Singers in Your Watchlist ({filteredRoster.length} of {allSingers.length})

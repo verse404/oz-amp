@@ -170,6 +170,28 @@ function splitPackedDedicatedMutedIds(rawList: unknown): {
   };
 }
 
+function serializeProfileForCompare(profile: SavedAccountProfile): string {
+  const { mutedIds, removedIds } = splitPackedDedicatedMutedIds(profile.dedicatedMutedIds);
+  return JSON.stringify({
+    theme: profile.theme === 'light' ? 'light' : 'dark',
+    cityFilter:
+      profile.cityFilter === 'sydney' || profile.cityFilter === 'all'
+        ? profile.cityFilter
+        : 'melbourne',
+    monitoredSingers: Array.isArray(profile.monitoredSingers) ? profile.monitoredSingers : [],
+    reminders: Array.isArray(profile.reminders) ? profile.reminders : [],
+    savedWorldFestivals: Array.isArray(profile.savedWorldFestivals)
+      ? profile.savedWorldFestivals
+      : [],
+    customConcerts: Array.isArray(profile.customConcerts) ? profile.customConcerts : [],
+    dedicatedCustomSingers: Array.isArray(profile.dedicatedCustomSingers)
+      ? profile.dedicatedCustomSingers
+      : [],
+    dedicatedMutedIds: mutedIds,
+    dedicatedRemovedIds: removedIds,
+  });
+}
+
 const USER_REQUESTED_SINGERS: MonitoredSinger[] = [
   {
     name: 'Fred again..',
@@ -334,19 +356,30 @@ export const App: React.FC = () => {
     return Array.from(new Set([...explicit, ...legacyPacked]));
   });
 
-  const activeWatchlistCount = useMemo(() => {
+  const activeWatchlistSingers = useMemo(() => {
     const removedSet = new Set(dedicatedRemovedIds);
     const seen = new Set<string>();
+    const combined: WatchlistSingerEntry[] = [];
     for (const s of dedicatedCustomSingers) {
-      if (s?.displayName) seen.add(s.displayName.toLowerCase());
-    }
-    for (const s of UPLOADED_WATCHLIST_SINGERS) {
-      if (!removedSet.has(s.id)) {
-        seen.add(s.displayName.toLowerCase());
+      if (!s?.displayName) continue;
+      const key = s.displayName.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push(s);
       }
     }
-    return seen.size;
+    for (const s of UPLOADED_WATCHLIST_SINGERS) {
+      if (removedSet.has(s.id)) continue;
+      const key = s.displayName.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push(s);
+      }
+    }
+    return combined;
   }, [dedicatedCustomSingers, dedicatedRemovedIds]);
+
+  const activeWatchlistCount = activeWatchlistSingers.length;
 
   // Email / Firebase Account & Automatic Cloud Profile Sync State
   const [firebaseConfig, setFirebaseConfig] = useState<FirebasePublicConfig | null>(() =>
@@ -358,7 +391,7 @@ export const App: React.FC = () => {
   );
   const [accountSyncState, setAccountSyncState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastAccountSavedIso, setLastAccountSavedIso] = useState<string | null>(null);
-  const skipNextAutoSaveRef = useRef(false);
+  const lastSyncedProfileHashRef = useRef<string | null>(null);
 
   // Live Singer Monitor Check State
   const [monitorResults, setMonitorResults] = useState<Record<string, SingerMonitorCheckResult>>({});
@@ -634,30 +667,59 @@ export const App: React.FC = () => {
   ]);
 
   const applySavedAccountProfile = useCallback((profile: SavedAccountProfile) => {
-    skipNextAutoSaveRef.current = true;
-    setTheme(profile.theme === 'light' ? 'light' : 'dark');
-    setCityFilter(
+    const nextTheme: 'dark' | 'light' = profile.theme === 'light' ? 'light' : 'dark';
+    const nextCityFilter: CityFilter =
       profile.cityFilter === 'sydney' || profile.cityFilter === 'all'
         ? profile.cityFilter
-        : 'melbourne',
-    );
-    if (Array.isArray(profile.monitoredSingers) && profile.monitoredSingers.length > 0) {
-      setMonitoredSingers(profile.monitoredSingers);
+        : 'melbourne';
+    const nextMonitored = Array.isArray(profile.monitoredSingers)
+      ? profile.monitoredSingers
+      : [];
+    const nextReminders = Array.isArray(profile.reminders) ? profile.reminders : [];
+    const nextWorldFestivals = Array.isArray(profile.savedWorldFestivals)
+      ? profile.savedWorldFestivals
+      : [];
+    const nextCustomConcerts = Array.isArray(profile.customConcerts)
+      ? profile.customConcerts
+      : [];
+    const nextDedicatedCustom = Array.isArray(profile.dedicatedCustomSingers)
+      ? (profile.dedicatedCustomSingers as WatchlistSingerEntry[])
+      : [];
+    const { mutedIds, removedIds } = splitPackedDedicatedMutedIds(profile.dedicatedMutedIds);
+
+    lastSyncedProfileHashRef.current = serializeProfileForCompare({
+      schemaVersion: 2,
+      theme: nextTheme,
+      cityFilter: nextCityFilter,
+      monitoredSingers: nextMonitored,
+      reminders: nextReminders,
+      savedWorldFestivals: nextWorldFestivals,
+      customConcerts: nextCustomConcerts,
+      dedicatedCustomSingers: nextDedicatedCustom,
+      dedicatedMutedIds: [
+        ...mutedIds,
+        ...removedIds.map((id) => `${REMOVED_WATCHLIST_PREFIX}${id}`),
+      ],
+    });
+
+    setTheme(nextTheme);
+    setCityFilter(nextCityFilter);
+    if (Array.isArray(profile.monitoredSingers)) {
+      setMonitoredSingers(nextMonitored);
     }
     if (Array.isArray(profile.reminders)) {
-      setReminders(profile.reminders);
+      setReminders(nextReminders);
     }
     if (Array.isArray(profile.savedWorldFestivals)) {
-      setSavedWorldFestivals(profile.savedWorldFestivals);
+      setSavedWorldFestivals(nextWorldFestivals);
     }
     if (Array.isArray(profile.customConcerts)) {
-      setCustomConcerts(profile.customConcerts);
+      setCustomConcerts(nextCustomConcerts);
     }
     if (Array.isArray(profile.dedicatedCustomSingers)) {
-      setDedicatedCustomSingers(profile.dedicatedCustomSingers as WatchlistSingerEntry[]);
+      setDedicatedCustomSingers(nextDedicatedCustom);
     }
     if (Array.isArray(profile.dedicatedMutedIds)) {
-      const { mutedIds, removedIds } = splitPackedDedicatedMutedIds(profile.dedicatedMutedIds);
       setDedicatedMutedIds(mutedIds);
       setDedicatedRemovedIds(removedIds);
     }
@@ -670,6 +732,8 @@ export const App: React.FC = () => {
   const persistProfileToAccount = useCallback(
     async (manual = false) => {
       if (!authUser) return;
+      const snapshot = buildCurrentAccountProfile();
+      const snapshotHash = serializeProfileForCompare(snapshot);
       setAccountSyncState('saving');
       try {
         if (firebaseConfig && authUser.provider === 'firebase') {
@@ -677,8 +741,9 @@ export const App: React.FC = () => {
           const updatedAtIso = await fb.firebaseSaveProfile(
             firebaseConfig,
             authUser.id,
-            buildCurrentAccountProfile(),
+            snapshot,
           );
+          lastSyncedProfileHashRef.current = snapshotHash;
           setLastAccountSavedIso(updatedAtIso);
           setAccountSyncState('saved');
           if (manual) {
@@ -696,10 +761,11 @@ export const App: React.FC = () => {
             'Content-Type': 'application/json',
             'X-CSRF-Token': csrfToken,
           },
-          body: JSON.stringify({ profile: buildCurrentAccountProfile() }),
+          body: JSON.stringify({ profile: snapshot }),
         });
         if (res.ok) {
           const data = await res.json();
+          lastSyncedProfileHashRef.current = snapshotHash;
           setLastAccountSavedIso(data.updatedAtIso || new Date().toISOString());
           setAccountSyncState('saved');
           if (manual) {
@@ -744,8 +810,8 @@ export const App: React.FC = () => {
     const canSaveFirebase = Boolean(firebaseConfig && authUser.provider === 'firebase');
     const canSaveBff = Boolean(!IS_STATIC_MODE && csrfToken && authUser.provider !== 'firebase');
     if (!canSaveFirebase && !canSaveBff) return;
-    if (skipNextAutoSaveRef.current) {
-      skipNextAutoSaveRef.current = false;
+    const currentHash = serializeProfileForCompare(buildCurrentAccountProfile());
+    if (lastSyncedProfileHashRef.current === currentHash) {
       return;
     }
     const timer = window.setTimeout(() => {
@@ -756,15 +822,7 @@ export const App: React.FC = () => {
     authUser,
     firebaseConfig,
     csrfToken,
-    theme,
-    cityFilter,
-    monitoredSingers,
-    reminders,
-    savedWorldFestivals,
-    customConcerts,
-    dedicatedCustomSingers,
-    dedicatedMutedIds,
-    dedicatedRemovedIds,
+    buildCurrentAccountProfile,
     persistProfileToAccount,
   ]);
 
@@ -1806,6 +1864,7 @@ export const App: React.FC = () => {
               musicFestivals={cityScopedFestivals}
               worldFestivals={[...CORE_WORLD_FESTIVALS, ...savedWorldFestivals]}
               monitoredSingers={monitoredSingers}
+              watchlistSingers={activeWatchlistSingers}
               cityFilter={cityFilter}
               onToggleMonitorArtist={(artistName, artworkUrl, genre) =>
                 handleAddOrToggleSinger({ name: artistName, artworkUrl, genre })
@@ -1848,6 +1907,7 @@ export const App: React.FC = () => {
               showToast('Reset World Festivals page to your 6 core festivals.');
             }}
             monitoredSingers={monitoredSingers}
+            watchlistSingers={activeWatchlistSingers}
             onToggleMonitorArtist={(artistName) => handleAddOrToggleSinger({ name: artistName })}
             reminders={cityScopedReminders}
             onToggleFestivalReminder={(fest) => {
@@ -2927,6 +2987,7 @@ export const App: React.FC = () => {
           festivals={catalog.musicFestivals || FALLBACK_CATALOG.musicFestivals}
           advisorFestivals={catalog.festivals || FALLBACK_CATALOG.festivals}
           monitoredSingers={monitoredSingers}
+          watchlistSingers={activeWatchlistSingers}
           homeCity={homeCity}
           cityFilter={cityFilter}
           onChangeCityFilter={(next) => {
@@ -3082,6 +3143,7 @@ export const App: React.FC = () => {
             syncState={accountSyncState}
             lastSavedIso={lastAccountSavedIso}
             monitoredCount={monitoredSingers.length}
+            mySingersCount={activeWatchlistCount}
             remindersCount={reminders.length}
             worldFestivalsCount={savedWorldFestivals.length}
             buildCurrentProfile={buildCurrentAccountProfile}
@@ -3099,10 +3161,18 @@ export const App: React.FC = () => {
             }}
             onForceSaveNow={() => persistProfileToAccount(true)}
             onLoggedOut={() => {
+              lastSyncedProfileHashRef.current = null;
               setAuthUser(null);
               setAccountSyncState('idle');
               setLastAccountSavedIso(null);
               setIsAuthModalOpen(false);
+              try {
+                for (const key of Object.values(STORAGE_KEYS)) {
+                  window.localStorage.removeItem(key);
+                }
+              } catch {
+                // Ignore storage access errors
+              }
               window.location.reload();
             }}
             onShowToast={showToast}

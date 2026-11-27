@@ -1,7 +1,7 @@
 {
   "name": "OZ Amp — Concert, Singer & World Festival Guide",
   "short_name": "OZ Amp",
-  "description": "Melbourne & Sydney live concerts, 275-singer session reminders, Asia-Pacific short-flight gig radar, Trending Popular Music, and iconic World Music Festivals.",
+  "description": "Melbourne & Sydney live concerts, customizable singer session alerts, Asia-Pacific short-flight gig radar, Trending Popular Music, and iconic World Music Festivals.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

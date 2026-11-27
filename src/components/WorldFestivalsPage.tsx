@@ -37,7 +37,7 @@ import {
   CORE_WORLD_FESTIVALS,
   DISCOVERABLE_WORLD_FESTIVALS,
 } from '../data/worldFestivals';
-import { UPLOADED_WATCHLIST_SINGERS } from '../data/userSingerList';
+import type { WatchlistSingerEntry } from '../data/userSingerList';
 import {
   buildGoogleCalendarWorldFestivalUrl,
   computeCountdown,
@@ -100,6 +100,7 @@ interface WorldFestivalsPageProps {
   onRemoveExtraFestival: (festivalId: string) => void;
   onResetExtraFestivals: () => void;
   monitoredSingers: MonitoredSinger[];
+  watchlistSingers: WatchlistSingerEntry[];
   onToggleMonitorArtist: (artistName: string) => void;
   reminders: ReminderRule[];
   onToggleFestivalReminder: (festival: WorldFestivalItem) => void;
@@ -210,6 +211,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
   onRemoveExtraFestival,
   onResetExtraFestivals,
   monitoredSingers,
+  watchlistSingers,
   onToggleMonitorArtist,
   reminders,
   onToggleFestivalReminder,
@@ -263,10 +265,10 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
     return set;
   }, [myFestivals]);
 
-  // Build normalized lookup of user's 275 watchlist singers + monitored radar singers
+  // Build normalized lookup of user's live My Singers roster + monitored radar singers
   const watchedArtistSet = useMemo(() => {
     const set = new Set<string>();
-    for (const entry of UPLOADED_WATCHLIST_SINGERS) {
+    for (const entry of watchlistSingers) {
       const main = normalizeToken(entry.displayName);
       if (main) set.add(main);
       for (const term of entry.matchTerms) {
@@ -283,7 +285,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
       }
     }
     return set;
-  }, [monitoredSingers]);
+  }, [monitoredSingers, watchlistSingers]);
 
   const monitoredNameSet = useMemo(
     () => new Set(monitoredSingers.map((s) => normalizeToken(s.name))),
@@ -1177,7 +1179,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         {/* Custom Festival Builder Form */}
         {showCustomForm && (
           <form className="world-custom-form" onSubmit={handleCustomFestivalSubmit}>
-            <div className="stub-form-grid">
+            <div className="world-fest-form-grid">
               <label className="form-field">
                 <span>Festival Name *</span>
                 <input

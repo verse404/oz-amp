@@ -27,7 +27,7 @@ import type {
   TrendingTrackItem,
   WorldFestivalItem,
 } from '../types/gig';
-import { UPLOADED_WATCHLIST_SINGERS } from '../data/userSingerList';
+import type { WatchlistSingerEntry } from '../data/userSingerList';
 import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
 import { formatConcertDate } from '../utils/formatters';
 import { ArtistAvatar } from './ArtistAvatar';
@@ -38,6 +38,7 @@ interface TrendingMusicPageProps {
   musicFestivals: MusicFestivalDirectoryItem[];
   worldFestivals: WorldFestivalItem[];
   monitoredSingers: MonitoredSinger[];
+  watchlistSingers: WatchlistSingerEntry[];
   cityFilter: 'all' | CityId;
   onToggleMonitorArtist: (artistName: string, artworkUrl?: string, genre?: string) => void;
   onJumpToAuConcert: (artistName: string) => void;
@@ -89,6 +90,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
   musicFestivals,
   worldFestivals,
   monitoredSingers,
+  watchlistSingers,
   cityFilter,
   onToggleMonitorArtist,
   onJumpToAuConcert,
@@ -217,15 +219,15 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
     );
   };
 
-  // Lookup sets for Watchlist & Monitored Radar
+  // Lookup sets for live My Singers Watchlist & Monitored Radar
   const watchlistSet = useMemo(() => {
     const set = new Set<string>();
-    for (const entry of UPLOADED_WATCHLIST_SINGERS) {
+    for (const entry of watchlistSingers) {
       set.add(normalizeTerm(entry.displayName));
       entry.matchTerms.forEach((t) => set.add(normalizeTerm(t)));
     }
     return set;
-  }, []);
+  }, [watchlistSingers]);
 
   const monitoredSet = useMemo(
     () => new Set(monitoredSingers.map((s) => normalizeTerm(s.name))),

@@ -3,7 +3,7 @@ import { AlertTriangle, Check, ExternalLink, Sparkles } from 'lucide-react';
 import type { CityId, FestivalAdvisorItem, MonitoredSinger } from '../types/gig';
 import { analyzeFestivalDecision } from '../utils/auMarketTools';
 import { formatAudPrice, sanitizeExternalHttpsUrl } from '../utils/formatters';
-import { UPLOADED_WATCHLIST_SINGERS } from '../data/userSingerList';
+import type { WatchlistSingerEntry } from '../data/userSingerList';
 
 function matchesWatchTerm(actName: string, rawTerm: string): boolean {
   const act = actName.trim().toLowerCase();
@@ -20,12 +20,14 @@ function matchesWatchTerm(actName: string, rawTerm: string): boolean {
 interface FestivalAdvisorSectionProps {
   festivals: FestivalAdvisorItem[];
   monitoredSingers: MonitoredSinger[];
+  watchlistSingers: WatchlistSingerEntry[];
   homeCity: CityId;
 }
 
 export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
   festivals,
   monitoredSingers,
+  watchlistSingers,
   homeCity,
 }) => {
   const [selectedFestivalId, setSelectedFestivalId] = useState<string>(
@@ -56,7 +58,7 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
     for (const m of monitoredSingers) {
       watchTerms.push(m.name, ...m.aliases);
     }
-    for (const w of UPLOADED_WATCHLIST_SINGERS) {
+    for (const w of watchlistSingers) {
       watchTerms.push(w.displayName, ...w.matchTerms);
     }
     const matched = festival.slots

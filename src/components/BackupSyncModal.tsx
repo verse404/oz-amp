@@ -399,7 +399,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
                 </div>
                 <p className="sync-helper-copy">
                   Your repository (<code>verse404/oz-amp</code>) runs an automated morning radar
-                  check across all <strong>275 watchlist singers</strong> and{' '}
+                  check across <strong>all your tracked singers</strong> and{' '}
                   <strong>6 World Festivals</strong> even when your laptop and browser tabs are
                   closed. Add two optional free secrets in GitHub{' '}
                   <strong>Settings → Secrets and variables → Actions</strong>:
