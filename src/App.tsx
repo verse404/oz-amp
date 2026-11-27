@@ -1830,27 +1830,6 @@ export const App: React.FC = () => {
 
             <button
               type="button"
-              id="open-account-auth-btn"
-              className={authUser ? 'btn-armed-sm' : 'btn-outline-sm'}
-              onClick={() => setIsAuthModalOpen(true)}
-              title={
-                authUser
-                  ? tr(
-                      `Signed in (${authUser.maskedEmail}) — choices auto-save`,
-                      `已登录 (${authUser.maskedEmail}) — 您的偏好会自动云端保存`,
-                    )
-                  : tr(
-                      'Sign in or register to save your choices across visits',
-                      '登录或注册账号，跨设备自动保存您的选择',
-                    )
-              }
-            >
-              {authUser ? <UserCheck size={15} /> : <UserCircle size={15} />}
-              <span>{authUser ? authUser.displayName : tr('Sign In', '登录')}</span>
-            </button>
-
-            <button
-              type="button"
               id="toggle-language-btn"
               className="lang-toggle-btn"
               onClick={toggleLocale}
@@ -1874,6 +1853,27 @@ export const App: React.FC = () => {
               }
             >
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
+
+            <button
+              type="button"
+              id="open-account-auth-btn"
+              className={`${authUser ? 'btn-armed-sm' : 'btn-outline-sm'} masthead-signin-btn`}
+              onClick={() => setIsAuthModalOpen(true)}
+              title={
+                authUser
+                  ? tr(
+                      `Signed in (${authUser.maskedEmail}) — choices auto-save`,
+                      `已登录 (${authUser.maskedEmail}) — 您的偏好会自动云端保存`,
+                    )
+                  : tr(
+                      'Sign in or register to save your choices across visits',
+                      '登录或注册账号，跨设备自动保存您的选择',
+                    )
+              }
+            >
+              {authUser ? <UserCheck size={15} /> : <UserCircle size={15} />}
+              <span>{authUser ? authUser.displayName : tr('Sign In', '登录')}</span>
             </button>
           </div>
         </div>
