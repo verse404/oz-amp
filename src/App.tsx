@@ -72,7 +72,7 @@ import { SingerMonitorSection } from './components/SingerMonitorSection';
 import { MusicFestivalsSection } from './components/MusicFestivalsSection';
 import { ArtistAvatar, ConcertMediaBanner } from './components/ArtistAvatar';
 import { PriceRangeSlider } from './components/PriceRangeSlider';
-import { UPLOADED_WATCHLIST_SINGERS } from './data/userSingerList';
+import { UPLOADED_WATCHLIST_SINGERS, type WatchlistSingerEntry } from './data/userSingerList';
 import { CORE_WORLD_FESTIVALS } from './data/worldFestivals';
 import { VENUE_INSIDER_TIPS } from './data/venueInsiderTips';
 import { buildArtistPreviewLinks } from './utils/musicPreviewLinks';
@@ -142,7 +142,33 @@ const STORAGE_KEYS = {
   worldFestivalsExtra: 'oz_amp_world_festivals_saved_v1',
   dedicatedCustomSingers: 'southern_amp_dedicated_custom_singers_v1',
   dedicatedMutedIds: 'southern_amp_dedicated_muted_ids_v1',
+  dedicatedRemovedIds: 'southern_amp_dedicated_removed_ids_v1',
 };
+
+const REMOVED_WATCHLIST_PREFIX = '__removed__:';
+
+function splitPackedDedicatedMutedIds(rawList: unknown): {
+  mutedIds: string[];
+  removedIds: string[];
+} {
+  if (!Array.isArray(rawList)) return { mutedIds: [], removedIds: [] };
+  const mutedIds: string[] = [];
+  const removedIds: string[] = [];
+  for (const item of rawList) {
+    const str = String(item || '').trim();
+    if (!str) continue;
+    if (str.startsWith(REMOVED_WATCHLIST_PREFIX)) {
+      const bare = str.slice(REMOVED_WATCHLIST_PREFIX.length);
+      if (bare) removedIds.push(bare);
+    } else {
+      mutedIds.push(str);
+    }
+  }
+  return {
+    mutedIds: Array.from(new Set(mutedIds)),
+    removedIds: Array.from(new Set(removedIds)),
+  };
+}
 
 const USER_REQUESTED_SINGERS: MonitoredSinger[] = [
   {
@@ -293,6 +319,34 @@ export const App: React.FC = () => {
   const [savedWorldFestivals, setSavedWorldFestivals] = useState<WorldFestivalItem[]>(() =>
     safeReadJson<WorldFestivalItem[]>(STORAGE_KEYS.worldFestivalsExtra, []),
   );
+  const [dedicatedCustomSingers, setDedicatedCustomSingers] = useState<WatchlistSingerEntry[]>(() =>
+    safeReadJson<WatchlistSingerEntry[]>(STORAGE_KEYS.dedicatedCustomSingers, []),
+  );
+  const [dedicatedMutedIds, setDedicatedMutedIds] = useState<string[]>(() => {
+    const raw = safeReadJson<string[]>(STORAGE_KEYS.dedicatedMutedIds, []);
+    return splitPackedDedicatedMutedIds(raw).mutedIds;
+  });
+  const [dedicatedRemovedIds, setDedicatedRemovedIds] = useState<string[]>(() => {
+    const explicit = safeReadJson<string[]>(STORAGE_KEYS.dedicatedRemovedIds, []);
+    const legacyPacked = splitPackedDedicatedMutedIds(
+      safeReadJson<string[]>(STORAGE_KEYS.dedicatedMutedIds, []),
+    ).removedIds;
+    return Array.from(new Set([...explicit, ...legacyPacked]));
+  });
+
+  const activeWatchlistCount = useMemo(() => {
+    const removedSet = new Set(dedicatedRemovedIds);
+    const seen = new Set<string>();
+    for (const s of dedicatedCustomSingers) {
+      if (s?.displayName) seen.add(s.displayName.toLowerCase());
+    }
+    for (const s of UPLOADED_WATCHLIST_SINGERS) {
+      if (!removedSet.has(s.id)) {
+        seen.add(s.displayName.toLowerCase());
+      }
+    }
+    return seen.size;
+  }, [dedicatedCustomSingers, dedicatedRemovedIds]);
 
   // Email / Firebase Account & Automatic Cloud Profile Sync State
   const [firebaseConfig, setFirebaseConfig] = useState<FirebasePublicConfig | null>(() =>
@@ -395,12 +449,12 @@ export const App: React.FC = () => {
   useEffect(() => {
     const titles: Record<typeof activePage, string> = {
       guide: 'OZ Amp — Melbourne & Sydney Live Concert & Ticket-Drop Guide',
-      watchlist: 'OZ Amp — My 275 Singer Sessions & Tour Alerts',
+      watchlist: `OZ Amp — My ${activeWatchlistCount} Singer Sessions & Tour Alerts`,
       'world-festivals': 'OZ Amp — Iconic World Music Festivals & Trip Budgets',
       trending: 'OZ Amp — Trending Popular Music & Live Tour Radar',
     };
     document.title = titles[activePage];
-  }, [activePage]);
+  }, [activePage, activeWatchlistCount]);
 
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   // Minute-granular clock prevents 1-second memo thrashing across 145+ concert cards
@@ -521,6 +575,39 @@ export const App: React.FC = () => {
     }
   }, [savedWorldFestivals]);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        STORAGE_KEYS.dedicatedCustomSingers,
+        JSON.stringify(dedicatedCustomSingers),
+      );
+    } catch {
+      // Ignore
+    }
+  }, [dedicatedCustomSingers]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        STORAGE_KEYS.dedicatedMutedIds,
+        JSON.stringify(dedicatedMutedIds),
+      );
+    } catch {
+      // Ignore
+    }
+  }, [dedicatedMutedIds]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        STORAGE_KEYS.dedicatedRemovedIds,
+        JSON.stringify(dedicatedRemovedIds),
+      );
+    } catch {
+      // Ignore
+    }
+  }, [dedicatedRemovedIds]);
+
   const buildCurrentAccountProfile = useCallback((): SavedAccountProfile => ({
     schemaVersion: 2,
     theme,
@@ -529,9 +616,22 @@ export const App: React.FC = () => {
     reminders,
     savedWorldFestivals,
     customConcerts,
-    dedicatedCustomSingers: safeReadJson<unknown[]>(STORAGE_KEYS.dedicatedCustomSingers, []),
-    dedicatedMutedIds: safeReadJson<string[]>(STORAGE_KEYS.dedicatedMutedIds, []),
-  }), [theme, cityFilter, monitoredSingers, reminders, savedWorldFestivals, customConcerts]);
+    dedicatedCustomSingers,
+    dedicatedMutedIds: [
+      ...dedicatedMutedIds,
+      ...dedicatedRemovedIds.map((id) => `${REMOVED_WATCHLIST_PREFIX}${id}`),
+    ],
+  }), [
+    theme,
+    cityFilter,
+    monitoredSingers,
+    reminders,
+    savedWorldFestivals,
+    customConcerts,
+    dedicatedCustomSingers,
+    dedicatedMutedIds,
+    dedicatedRemovedIds,
+  ]);
 
   const applySavedAccountProfile = useCallback((profile: SavedAccountProfile) => {
     skipNextAutoSaveRef.current = true;
@@ -553,21 +653,13 @@ export const App: React.FC = () => {
     if (Array.isArray(profile.customConcerts)) {
       setCustomConcerts(profile.customConcerts);
     }
-    try {
-      if (Array.isArray(profile.dedicatedCustomSingers)) {
-        window.localStorage.setItem(
-          STORAGE_KEYS.dedicatedCustomSingers,
-          JSON.stringify(profile.dedicatedCustomSingers),
-        );
-      }
-      if (Array.isArray(profile.dedicatedMutedIds)) {
-        window.localStorage.setItem(
-          STORAGE_KEYS.dedicatedMutedIds,
-          JSON.stringify(profile.dedicatedMutedIds),
-        );
-      }
-    } catch {
-      // Ignore storage quota issues
+    if (Array.isArray(profile.dedicatedCustomSingers)) {
+      setDedicatedCustomSingers(profile.dedicatedCustomSingers as WatchlistSingerEntry[]);
+    }
+    if (Array.isArray(profile.dedicatedMutedIds)) {
+      const { mutedIds, removedIds } = splitPackedDedicatedMutedIds(profile.dedicatedMutedIds);
+      setDedicatedMutedIds(mutedIds);
+      setDedicatedRemovedIds(removedIds);
     }
     if (profile.updatedAtIso) {
       setLastAccountSavedIso(profile.updatedAtIso);
@@ -670,6 +762,9 @@ export const App: React.FC = () => {
     reminders,
     savedWorldFestivals,
     customConcerts,
+    dedicatedCustomSingers,
+    dedicatedMutedIds,
+    dedicatedRemovedIds,
     persistProfileToAccount,
   ]);
 
@@ -1577,7 +1672,7 @@ export const App: React.FC = () => {
                 className={`page-mode-btn ${activePage === 'watchlist' ? 'is-active' : ''}`}
                 onClick={() => switchPage('watchlist')}
               >
-                My Singers ({UPLOADED_WATCHLIST_SINGERS.length})
+                My Singers ({activeWatchlistCount})
               </button>
               <button
                 type="button"
@@ -1806,11 +1901,18 @@ export const App: React.FC = () => {
           />
           </Suspense>
         ) : activePage === 'watchlist' ? (
-          <Suspense fallback={<div className="lazy-page-loader">Loading Your 275 Singer Sessions…</div>}>
+          <Suspense fallback={<div className="lazy-page-loader">Loading Your Singer Sessions…</div>}>
             <DedicatedWatchlistPage
             concerts={allConcerts}
             festivals={cityScopedFestivals}
+            presetSingers={catalog.presetSingers}
             reminders={cityScopedReminders}
+            customEntries={dedicatedCustomSingers}
+            mutedIds={dedicatedMutedIds}
+            removedBuiltInIds={dedicatedRemovedIds}
+            onChangeCustomEntries={setDedicatedCustomSingers}
+            onChangeMutedIds={setDedicatedMutedIds}
+            onChangeRemovedBuiltInIds={setDedicatedRemovedIds}
             nowMs={nowMs}
             cityFilter={cityFilter}
             onChangeCityFilter={(next) => {
@@ -1941,15 +2043,15 @@ export const App: React.FC = () => {
         <section className="dedicated-sessions-banner" aria-label="Dedicated singer sessions hub">
           <div>
             <span className="eyebrow-kicker">
-              Personal Roster · {UPLOADED_WATCHLIST_SINGERS.length} Uploaded Singers (A–Z &amp; Chinese Artists)
+              Personal Roster · {activeWatchlistCount} Tracked Singers (A–Z &amp; Chinese Artists)
             </span>
             <h2 className="dedicated-banner-title">
               Dedicated Ticket Sessions &amp; Upcoming Concert Reminders
             </h2>
             <p className="dedicated-banner-desc">
-              Open your standalone reminder page for Gracie Abrams, J. Cole, Swae Lee, FKJ, Jordan
-              Rakei, Jungle, Anderson .Paak, Major Lazer, Flight Facilities, Roger Sanchez,
-              Elderbrook, and all {UPLOADED_WATCHLIST_SINGERS.length} uploaded singers.
+              Open your standalone reminder page to add or remove singers, track Melbourne &amp;
+              Sydney ticket drops, and manage all {activeWatchlistCount} artists in your personal
+              roster.
             </p>
           </div>
           <button
@@ -2948,6 +3050,16 @@ export const App: React.FC = () => {
               }
               setSavedWorldFestivals(backup.savedWorldFestivals);
               setCustomConcerts(backup.customConcerts);
+              if (Array.isArray(backup.dedicatedCustomSingers)) {
+                setDedicatedCustomSingers(backup.dedicatedCustomSingers as WatchlistSingerEntry[]);
+              }
+              if (Array.isArray(backup.dedicatedMutedIds)) {
+                const { mutedIds, removedIds } = splitPackedDedicatedMutedIds(
+                  backup.dedicatedMutedIds,
+                );
+                setDedicatedMutedIds(mutedIds);
+                setDedicatedRemovedIds(removedIds);
+              }
               playReminderChime();
               showToast(
                 `Restored OZ Amp profile (${backup.reminders.length} reminders, ${backup.monitoredSingers.length} singers)!`,

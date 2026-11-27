@@ -12,12 +12,15 @@ import {
   Headphones,
   ListMusic,
   MapPin,
+  Plus,
   Radio,
+  RotateCcw,
   Search,
   Sparkles,
   Ticket,
   Trash2,
   Upload,
+  UserPlus,
 } from 'lucide-react';
 import type {
   ApacTourStop,
@@ -25,6 +28,7 @@ import type {
   ConcertEvent,
   LeadMinutes,
   MusicFestivalDirectoryItem,
+  PresetSinger,
   ReminderRule,
   TicketDropWindow,
 } from '../types/gig';
@@ -56,7 +60,14 @@ import { ApacRadarSection } from './ApacRadarSection';
 interface DedicatedWatchlistPageProps {
   concerts: ConcertEvent[];
   festivals: MusicFestivalDirectoryItem[];
+  presetSingers: PresetSinger[];
   reminders: ReminderRule[];
+  customEntries: WatchlistSingerEntry[];
+  mutedIds: string[];
+  removedBuiltInIds: string[];
+  onChangeCustomEntries: React.Dispatch<React.SetStateAction<WatchlistSingerEntry[]>>;
+  onChangeMutedIds: React.Dispatch<React.SetStateAction<string[]>>;
+  onChangeRemovedBuiltInIds: React.Dispatch<React.SetStateAction<string[]>>;
   nowMs: number;
   cityFilter: 'all' | CityId;
   onChangeCityFilter: (city: 'all' | CityId) => void;
@@ -78,9 +89,6 @@ interface DedicatedWatchlistPageProps {
   onBackToMainGuide: () => void;
   onShowToast: (msg: string) => void;
 }
-
-const CUSTOM_WATCHLIST_STORAGE_KEY = 'southern_amp_dedicated_custom_singers_v1';
-const MUTED_WATCHLIST_STORAGE_KEY = 'southern_amp_dedicated_muted_ids_v1';
 
 function normalizeArtistToken(s: string): string {
   return s
@@ -111,19 +119,17 @@ function extractPerformerTokens(rawAct: string): string[] {
   return Array.from(tokens);
 }
 
-function safeReadStorage<T>(key: string, fallback: T): T {
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
   concerts,
   festivals,
+  presetSingers,
   reminders,
+  customEntries,
+  mutedIds,
+  removedBuiltInIds,
+  onChangeCustomEntries,
+  onChangeMutedIds,
+  onChangeRemovedBuiltInIds,
   nowMs,
   cityFilter,
   onChangeCityFilter,
@@ -134,23 +140,31 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
   onBackToMainGuide,
   onShowToast,
 }) => {
-  const [customEntries, setCustomEntries] = useState<WatchlistSingerEntry[]>(() =>
-    safeReadStorage<WatchlistSingerEntry[]>(CUSTOM_WATCHLIST_STORAGE_KEY, []),
-  );
-  const [mutedIds, setMutedIds] = useState<string[]>(() =>
-    safeReadStorage<string[]>(MUTED_WATCHLIST_STORAGE_KEY, []),
-  );
-
   const [groupFilter, setGroupFilter] = useState<'all' | 'active-au' | WatchlistGroupKey>('all');
   const [rosterSearch, setRosterSearch] = useState('');
+  const [addSingerInput, setAddSingerInput] = useState('');
   const [showUploadDrawer, setShowUploadDrawer] = useState(false);
+  const [showRemovedTray, setShowRemovedTray] = useState(false);
   const [pasteInput, setPasteInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const addSingerInputRef = useRef<HTMLInputElement | null>(null);
+
+  const removedBuiltInSet = useMemo(() => new Set(removedBuiltInIds), [removedBuiltInIds]);
+
+  const activeBuiltInSingers = useMemo(
+    () => UPLOADED_WATCHLIST_SINGERS.filter((s) => !removedBuiltInSet.has(s.id)),
+    [removedBuiltInSet],
+  );
+
+  const removedBuiltInSingers = useMemo(
+    () => UPLOADED_WATCHLIST_SINGERS.filter((s) => removedBuiltInSet.has(s.id)),
+    [removedBuiltInSet],
+  );
 
   const allSingers = useMemo(() => {
     const seen = new Set<string>();
     const combined: WatchlistSingerEntry[] = [];
-    for (const item of [...customEntries, ...UPLOADED_WATCHLIST_SINGERS]) {
+    for (const item of [...customEntries, ...activeBuiltInSingers]) {
       const key = item.displayName.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
@@ -158,20 +172,61 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
       }
     }
     return combined;
-  }, [customEntries]);
+  }, [customEntries, activeBuiltInSingers]);
 
   const mutedSet = useMemo(() => new Set(mutedIds), [mutedIds]);
 
+  const addSuggestions = useMemo(() => {
+    const q = addSingerInput.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const activeLower = new Set(allSingers.map((s) => s.displayName.toLowerCase()));
+    const seen = new Set<string>();
+    const list: Array<{ label: string; badge: string; isRestore?: boolean }> = [];
+
+    for (const rem of removedBuiltInSingers) {
+      if (
+        rem.displayName.toLowerCase().includes(q) ||
+        rem.matchTerms.some((t) => t.toLowerCase().includes(q))
+      ) {
+        const key = rem.displayName.toLowerCase();
+        if (!seen.has(key) && !activeLower.has(key)) {
+          seen.add(key);
+          list.push({ label: rem.displayName, badge: 'Restore', isRestore: true });
+        }
+      }
+    }
+
+    for (const c of concerts) {
+      const key = c.artist.toLowerCase();
+      if (key.includes(q) && !seen.has(key) && !activeLower.has(key)) {
+        seen.add(key);
+        list.push({
+          label: c.artist,
+          badge: c.city === 'melbourne' ? 'Touring MEL' : 'Touring SYD',
+        });
+      }
+    }
+
+    for (const p of presetSingers) {
+      const key = p.name.toLowerCase();
+      if (
+        (key.includes(q) || p.aliases.some((a) => a.toLowerCase().includes(q))) &&
+        !seen.has(key) &&
+        !activeLower.has(key)
+      ) {
+        seen.add(key);
+        list.push({ label: p.name, badge: p.genre });
+      }
+    }
+
+    return list.slice(0, 6);
+  }, [addSingerInput, allSingers, removedBuiltInSingers, concerts, presetSingers]);
+
   const toggleMuteSinger = (entry: WatchlistSingerEntry) => {
-    setMutedIds((prev) => {
+    onChangeMutedIds((prev) => {
       const next = prev.includes(entry.id)
         ? prev.filter((id) => id !== entry.id)
         : [...prev, entry.id];
-      try {
-        window.localStorage.setItem(MUTED_WATCHLIST_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignore storage quota issues
-      }
       onShowToast(
         next.includes(entry.id)
           ? `Muted session alerts for ${entry.displayName}.`
@@ -181,41 +236,99 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
     });
   };
 
-  const removeCustomSinger = (id: string, name: string) => {
-    setCustomEntries((prev) => {
-      const next = prev.filter((item) => item.id !== id);
-      try {
-        window.localStorage.setItem(CUSTOM_WATCHLIST_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignore
-      }
-      onShowToast(`Removed ${name} from custom uploads.`);
-      return next;
-    });
+  const handleRemoveSinger = (entry: WatchlistSingerEntry) => {
+    const isCustomEntry = customEntries.some((item) => item.id === entry.id);
+    if (isCustomEntry) {
+      onChangeCustomEntries((prev) => prev.filter((item) => item.id !== entry.id));
+    } else {
+      onChangeRemovedBuiltInIds((prev) =>
+        prev.includes(entry.id) ? prev : [...prev, entry.id],
+      );
+    }
+    onChangeMutedIds((prev) => prev.filter((id) => id !== entry.id));
+    onShowToast(`Removed ${entry.displayName} from My Singers.`);
   };
 
-  const handleAppendSingers = (rawText: string) => {
+  const handleRestoreSinger = (entry: WatchlistSingerEntry) => {
+    onChangeRemovedBuiltInIds((prev) => prev.filter((id) => id !== entry.id));
+    onShowToast(`Restored ${entry.displayName} to My Singers.`);
+  };
+
+  const handleRestoreAllRemoved = () => {
+    const count = removedBuiltInSingers.length;
+    onChangeRemovedBuiltInIds([]);
+    setShowRemovedTray(false);
+    onShowToast(`Restored ${count} removed singer${count === 1 ? '' : 's'} to My Singers.`);
+  };
+
+  const handleAppendSingers = (rawText: string, clearSource: 'quick' | 'bulk' | 'none' = 'bulk') => {
     const parsed = parseCustomWatchlistInput(rawText);
     if (parsed.length === 0) {
-      onShowToast('No valid singer names found in input.');
+      onShowToast('Enter a valid singer or band name (at least 2 characters).');
       return;
     }
-    const existingLower = new Set(allSingers.map((s) => s.displayName.toLowerCase()));
-    const fresh = parsed.filter((p) => !existingLower.has(p.displayName.toLowerCase()));
-    if (fresh.length === 0) {
-      onShowToast('All uploaded singers are already in your dedicated watchlist.');
+
+    const activeLower = new Set(allSingers.map((s) => s.displayName.toLowerCase()));
+    const removedByLower = new Map<string, WatchlistSingerEntry>();
+    for (const rem of removedBuiltInSingers) {
+      removedByLower.set(rem.displayName.toLowerCase(), rem);
+    }
+
+    const toRestoreIds: string[] = [];
+    const freshCustom: WatchlistSingerEntry[] = [];
+    const addedNames = new Set<string>();
+
+    for (const entry of parsed) {
+      const lower = entry.displayName.toLowerCase();
+      if (activeLower.has(lower) || addedNames.has(lower)) continue;
+      addedNames.add(lower);
+
+      const removedMatch = removedByLower.get(lower);
+      if (removedMatch) {
+        toRestoreIds.push(removedMatch.id);
+      } else {
+        freshCustom.push(entry);
+      }
+    }
+
+    if (toRestoreIds.length === 0 && freshCustom.length === 0) {
+      onShowToast(
+        parsed.length === 1
+          ? `${parsed[0].displayName} is already in My Singers.`
+          : 'All entered singers are already in My Singers.',
+      );
       return;
     }
-    const nextCustom = [...fresh, ...customEntries];
-    setCustomEntries(nextCustom);
-    try {
-      window.localStorage.setItem(CUSTOM_WATCHLIST_STORAGE_KEY, JSON.stringify(nextCustom));
-    } catch {
-      // Ignore
+
+    if (toRestoreIds.length > 0) {
+      const restoreSet = new Set(toRestoreIds);
+      onChangeRemovedBuiltInIds((prev) => prev.filter((id) => !restoreSet.has(id)));
     }
-    setPasteInput('');
-    setShowUploadDrawer(false);
-    onShowToast(`Added ${fresh.length} singer${fresh.length === 1 ? '' : 's'} to your dedicated session radar.`);
+    if (freshCustom.length > 0) {
+      onChangeCustomEntries((prev) => [...freshCustom, ...prev]);
+    }
+
+    if (clearSource === 'quick') {
+      setAddSingerInput('');
+    } else if (clearSource === 'bulk') {
+      setPasteInput('');
+      setShowUploadDrawer(false);
+    }
+
+    const totalAdded = toRestoreIds.length + freshCustom.length;
+    if (totalAdded === 1) {
+      const onlyName =
+        freshCustom[0]?.displayName ||
+        removedBuiltInSingers.find((r) => r.id === toRestoreIds[0])?.displayName ||
+        parsed[0].displayName;
+      onShowToast(
+        toRestoreIds.length === 1
+          ? `Restored ${onlyName} to My Singers.`
+          : `Added ${onlyName} to My Singers.`,
+      );
+    } else {
+      onShowToast(`Added ${totalAdded} singers to My Singers.`);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -551,7 +664,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                 onClick={() => setShowUploadDrawer((v) => !v)}
               >
                 <Upload size={15} />
-                <span>{showUploadDrawer ? 'Hide Uploader' : 'Upload / Add Singers'}</span>
+                <span>{showUploadDrawer ? 'Hide Bulk Import' : 'Bulk Import (.txt / .csv)'}</span>
               </button>
 
               <button
@@ -563,12 +676,61 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                 <span>View Armed Alarms ({reminders.length})</span>
               </button>
             </div>
+
+            {/* Inline Quick-Add Singer Bar (syncs automatically to account) */}
+            <form
+              className="watchlist-quick-add-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAppendSingers(addSingerInput, 'quick');
+              }}
+            >
+              <div className="watchlist-quick-add-field">
+                <UserPlus size={15} className="search-icon" />
+                <input
+                  ref={addSingerInputRef}
+                  type="text"
+                  id="watchlist-quick-add-input"
+                  className="search-input"
+                  placeholder="Add a singer or band to My Singers (e.g. Taylor Swift, SZA, 周杰倫 — comma-separated supported)…"
+                  value={addSingerInput}
+                  onChange={(e) => setAddSingerInput(e.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                id="watchlist-quick-add-submit-btn"
+                className="btn-primary-sm"
+                disabled={addSingerInput.trim().length < 2}
+              >
+                <Plus size={15} />
+                <span>Add Singer</span>
+              </button>
+            </form>
+
+            {addSuggestions.length > 0 && (
+              <div className="watchlist-quick-picks" aria-label="Suggested singers to add">
+                <span className="watchlist-quick-picks-label">Quick add:</span>
+                {addSuggestions.map((sug) => (
+                  <button
+                    key={sug.label}
+                    type="button"
+                    className={`watchlist-quick-pick-chip ${sug.isRestore ? 'is-restore' : ''}`}
+                    onClick={() => handleAppendSingers(sug.label, 'quick')}
+                  >
+                    {sug.isRestore ? <RotateCcw size={12} /> : <Plus size={12} />}
+                    <span>{sug.label}</span>
+                    <em>{sug.badge}</em>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="watchlist-stat-grid">
             <div className="watchlist-stat-tile">
               <span className="watchlist-stat-num">{allSingers.length}</span>
-              <span className="watchlist-stat-label">Uploaded Singers Tracked</span>
+              <span className="watchlist-stat-label">Singers Tracked</span>
             </div>
             <div className="watchlist-stat-tile is-accent">
               <span className="watchlist-stat-num">{upcomingWatchlistSessions.length}</span>
@@ -1043,17 +1205,78 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
         </div>
 
         <div className="watchlist-roster-controls">
-          <div className="search-field-wrap">
-            <Search size={16} className="search-icon" />
-            <input
-              type="search"
-              id="watchlist-roster-search-input"
-              className="search-input"
-              placeholder="Filter your 275+ uploaded singers (e.g. Gracie Abrams, bbno$, FKJ, 袁娅维, 橘子海)…"
-              value={rosterSearch}
-              onChange={(e) => setRosterSearch(e.target.value)}
-            />
+          <div className="watchlist-roster-top-bar">
+            <div className="search-field-wrap">
+              <Search size={16} className="search-icon" />
+              <input
+                type="search"
+                id="watchlist-roster-search-input"
+                className="search-input"
+                placeholder={`Filter your ${allSingers.length} singers (e.g. Gracie Abrams, bbno$, FKJ, 袁娅维, 橘子海)…`}
+                value={rosterSearch}
+                onChange={(e) => setRosterSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="watchlist-roster-actions">
+              <button
+                type="button"
+                className="btn-primary-sm"
+                onClick={() => {
+                  addSingerInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  window.setTimeout(() => addSingerInputRef.current?.focus(), 220);
+                }}
+              >
+                <Plus size={14} />
+                <span>Add New Singer</span>
+              </button>
+
+              {removedBuiltInSingers.length > 0 && (
+                <button
+                  type="button"
+                  id="toggle-removed-singers-btn"
+                  className={`btn-outline-sm ${showRemovedTray ? 'is-active' : ''}`}
+                  onClick={() => setShowRemovedTray((v) => !v)}
+                >
+                  <RotateCcw size={14} />
+                  <span>Removed ({removedBuiltInSingers.length})</span>
+                </button>
+              )}
+            </div>
           </div>
+
+          {showRemovedTray && removedBuiltInSingers.length > 0 && (
+            <div className="watchlist-removed-drawer" aria-label="Removed singers you can restore">
+              <div className="watchlist-removed-header">
+                <span>
+                  Removed from your roster ({removedBuiltInSingers.length}) — click any singer to
+                  restore them:
+                </span>
+                <button
+                  type="button"
+                  className="btn-ghost-xs"
+                  onClick={handleRestoreAllRemoved}
+                >
+                  <RotateCcw size={12} />
+                  <span>Restore All</span>
+                </button>
+              </div>
+              <div className="watchlist-removed-chips">
+                {removedBuiltInSingers.map((rem) => (
+                  <button
+                    key={rem.id}
+                    type="button"
+                    className="watchlist-removed-chip"
+                    onClick={() => handleRestoreSinger(rem)}
+                    title={`Restore ${rem.displayName} to My Singers`}
+                  >
+                    <RotateCcw size={12} />
+                    <span>{rem.displayName}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="genre-pill-row" role="tablist" aria-label="Singer alphabetical groups">
             <button
@@ -1101,17 +1324,36 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
         {filteredRoster.length === 0 ? (
           <div className="empty-box">
             <Radio size={22} />
-            <p className="empty-title">No singers match "{rosterSearch}"</p>
-            <button
-              type="button"
-              className="btn-outline-sm"
-              onClick={() => {
-                setGroupFilter('all');
-                setRosterSearch('');
-              }}
-            >
-              Reset Roster Filter
-            </button>
+            <p className="empty-title">
+              {rosterSearch.trim()
+                ? `"${rosterSearch.trim()}" is not in My Singers yet`
+                : 'No singers under this filter'}
+            </p>
+            <div className="empty-box-actions">
+              {rosterSearch.trim().length >= 2 && (
+                <button
+                  type="button"
+                  className="btn-primary-sm"
+                  onClick={() => {
+                    handleAppendSingers(rosterSearch.trim(), 'none');
+                    setGroupFilter('all');
+                  }}
+                >
+                  <Plus size={14} />
+                  <span>Add &ldquo;{rosterSearch.trim()}&rdquo; to My Singers</span>
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-outline-sm"
+                onClick={() => {
+                  setGroupFilter('all');
+                  setRosterSearch('');
+                }}
+              >
+                Reset Roster Filter
+              </button>
+            </div>
           </div>
         ) : (
           <div className="watchlist-directory-grid">
@@ -1121,7 +1363,6 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
               const matchedFests = m?.festivals || [];
               const isTouring = matchedShows.length > 0 || matchedFests.length > 0;
               const isMuted = mutedSet.has(singer.id);
-              const isCustom = singer.id.startsWith('wl-custom-');
 
               const primarySearchName = singer.matchTerms[0] || singer.displayName;
               const qEnc = encodeURIComponent(primarySearchName);
@@ -1186,16 +1427,15 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       >
                         {isMuted ? <BellOff size={14} /> : <Bell size={14} />}
                       </button>
-                      {isCustom && (
-                        <button
-                          type="button"
-                          className="icon-btn icon-btn--danger"
-                          onClick={() => removeCustomSinger(singer.id, singer.displayName)}
-                          aria-label={`Remove ${singer.displayName}`}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className="icon-btn icon-btn--danger"
+                        onClick={() => handleRemoveSinger(singer)}
+                        title={`Remove ${singer.displayName} from My Singers`}
+                        aria-label={`Remove ${singer.displayName} from My Singers`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
 

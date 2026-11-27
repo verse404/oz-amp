@@ -47,6 +47,8 @@ interface BackupSyncModalProps {
 
 const CUSTOM_WATCHLIST_STORAGE_KEY = 'southern_amp_dedicated_custom_singers_v1';
 const MUTED_WATCHLIST_STORAGE_KEY = 'southern_amp_dedicated_muted_ids_v1';
+const REMOVED_WATCHLIST_STORAGE_KEY = 'southern_amp_dedicated_removed_ids_v1';
+const REMOVED_WATCHLIST_PREFIX = '__removed__:';
 
 function safeParseStorageArray<T>(key: string): T[] {
   try {
@@ -145,7 +147,7 @@ function validateAndSanitizeBackup(rawText: string): OzAmpProfileBackup {
       ? parsed.dedicatedCustomSingers.slice(0, 300)
       : undefined,
     dedicatedMutedIds: Array.isArray(parsed.dedicatedMutedIds)
-      ? parsed.dedicatedMutedIds.slice(0, 400).map((x: unknown) => String(x).slice(0, 80))
+      ? parsed.dedicatedMutedIds.slice(0, 700).map((x: unknown) => String(x).slice(0, 96))
       : undefined,
   };
 }
@@ -180,7 +182,12 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
     savedWorldFestivals,
     customConcerts,
     dedicatedCustomSingers: safeParseStorageArray(CUSTOM_WATCHLIST_STORAGE_KEY),
-    dedicatedMutedIds: safeParseStorageArray<string>(MUTED_WATCHLIST_STORAGE_KEY),
+    dedicatedMutedIds: [
+      ...safeParseStorageArray<string>(MUTED_WATCHLIST_STORAGE_KEY),
+      ...safeParseStorageArray<string>(REMOVED_WATCHLIST_STORAGE_KEY).map(
+        (id) => `${REMOVED_WATCHLIST_PREFIX}${id}`,
+      ),
+    ],
   });
 
   const handleDownloadJson = () => {

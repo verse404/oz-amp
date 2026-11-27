@@ -306,7 +306,7 @@ export function sanitizeSavedProfile(rawProfile) {
 
   const dedicatedCustomSingers = Array.isArray(rawProfile.dedicatedCustomSingers)
     ? rawProfile.dedicatedCustomSingers
-        .slice(0, 200)
+        .slice(0, 300)
         .filter((s) => s && typeof s === 'object' && typeof s.displayName === 'string')
         .map((s) => ({
           id: String(s.id || '').slice(0, 80),
@@ -320,7 +320,7 @@ export function sanitizeSavedProfile(rawProfile) {
     : [];
 
   const dedicatedMutedIds = Array.isArray(rawProfile.dedicatedMutedIds)
-    ? rawProfile.dedicatedMutedIds.slice(0, 400).map((x) => String(x).slice(0, 80))
+    ? rawProfile.dedicatedMutedIds.slice(0, 700).map((x) => String(x).slice(0, 96))
     : [];
 
   return {

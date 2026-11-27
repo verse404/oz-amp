@@ -122,10 +122,10 @@ function sanitizeProfileForFirestore(profile: SavedAccountProfile): SavedAccount
         }))
       : [],
     dedicatedCustomSingers: Array.isArray(profile.dedicatedCustomSingers)
-      ? profile.dedicatedCustomSingers.slice(0, 200)
+      ? profile.dedicatedCustomSingers.slice(0, 300)
       : [],
     dedicatedMutedIds: Array.isArray(profile.dedicatedMutedIds)
-      ? profile.dedicatedMutedIds.slice(0, 400).map((x) => String(x).slice(0, 80))
+      ? profile.dedicatedMutedIds.slice(0, 700).map((x) => String(x).slice(0, 96))
       : [],
   };
 }
