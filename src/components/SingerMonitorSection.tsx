@@ -48,9 +48,9 @@ interface SingerMonitorSectionProps {
 
 const CATEGORIES: Array<PresetSinger['category']> = [
   'Global Pop',
+  'Indie, Rock & Electronic',
   'Mandopop & Cantopop',
   'K-Pop & J-Pop',
-  'Indie, Rock & Electronic',
 ];
 
 export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
@@ -76,7 +76,7 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
       : cityFilter === 'sydney'
         ? 'Sydney'
         : 'Melbourne / Sydney';
-  const [activeCategory, setActiveCategory] = useState<PresetSinger['category']>('Mandopop & Cantopop');
+  const [activeCategory, setActiveCategory] = useState<PresetSinger['category']>('Global Pop');
   const [searchTerm, setSearchTerm] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<ArtistSearchProfile[] | null>(null);
