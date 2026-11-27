@@ -150,12 +150,6 @@ body {
   align-items: center;
   gap: 0.55rem;
   flex-wrap: wrap;
-  flex: 1 1 100%;
-  width: 100%;
-}
-
-.masthead-signin-btn {
-  margin-inline-start: auto;
 }
 
 /* Hero Section */
