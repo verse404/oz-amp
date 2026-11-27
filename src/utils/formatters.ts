@@ -5,6 +5,11 @@ import type {
   ReminderRule,
   WorldFestivalItem,
 } from '../types/gig';
+import { getActiveLocale, type AppLocale } from '../i18n/LocaleContext';
+
+function resolveIntlLocale(locale?: AppLocale): 'en-AU' | 'zh-CN' {
+  return (locale ?? getActiveLocale()) === 'zh' ? 'zh-CN' : 'en-AU';
+}
 
 const audFormatterWhole = new Intl.NumberFormat('en-AU', {
   style: 'currency',
@@ -36,20 +41,22 @@ export function formatAudRange(minAud: number, maxAud: number): string {
 export function formatConcertDate(
   dateIso: string,
   timeZone: 'Australia/Sydney' | 'Australia/Melbourne' = 'Australia/Sydney',
+  locale?: AppLocale,
 ): { weekday: string; dayMonth: string; fullLabel: string; monthKey: string } {
+  const intlLoc = resolveIntlLocale(locale);
   // Parse YYYY-MM-DD at noon UTC so date never shifts across Australian +10/+11 offsets
   const safeDate = new Date(`${dateIso}T02:00:00Z`);
-  const weekday = new Intl.DateTimeFormat('en-AU', {
+  const weekday = new Intl.DateTimeFormat(intlLoc, {
     weekday: 'short',
     timeZone,
   }).format(safeDate);
-  const dayMonth = new Intl.DateTimeFormat('en-AU', {
+  const dayMonth = new Intl.DateTimeFormat(intlLoc, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
     timeZone,
   }).format(safeDate);
-  const fullLabel = new Intl.DateTimeFormat('en-AU', {
+  const fullLabel = new Intl.DateTimeFormat(intlLoc, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -68,11 +75,13 @@ export function formatConcertDate(
 export function formatAuTimestamp(
   isoString: string,
   city: CityId = 'sydney',
+  locale?: AppLocale,
 ): string {
+  const intlLoc = resolveIntlLocale(locale);
   const timeZone = city === 'melbourne' ? 'Australia/Melbourne' : 'Australia/Sydney';
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return isoString;
-  return new Intl.DateTimeFormat('en-AU', {
+  return new Intl.DateTimeFormat(intlLoc, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -87,7 +96,9 @@ export function formatAuTime24To12(
   time24: string,
   dateIso: string,
   timeZone: 'Australia/Sydney' | 'Australia/Melbourne',
+  locale?: AppLocale,
 ): string {
+  const intlLoc = resolveIntlLocale(locale);
   const [hStr, mStr] = time24.split(':');
   const hour = Number(hStr || 19);
   const minute = Number(mStr || 0);
@@ -96,7 +107,7 @@ export function formatAuTime24To12(
   const iso = `${dateIso}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00${offset}`;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return time24;
-  return new Intl.DateTimeFormat('en-AU', {
+  return new Intl.DateTimeFormat(intlLoc, {
     hour: 'numeric',
     minute: '2-digit',
     timeZoneName: 'short',
@@ -120,7 +131,12 @@ export interface CountdownParts {
   compact: string;
 }
 
-export function computeCountdown(targetIso: string, nowMs: number): CountdownParts {
+export function computeCountdown(
+  targetIso: string,
+  nowMs: number,
+  locale?: AppLocale,
+): CountdownParts {
+  const isZh = (locale ?? getActiveLocale()) === 'zh';
   const targetMs = new Date(targetIso).getTime();
   const diff = targetMs - nowMs;
   if (Number.isNaN(targetMs) || diff <= 0) {
@@ -128,7 +144,7 @@ export function computeCountdown(targetIso: string, nowMs: number): CountdownPar
       isPast: true,
       isImminent: false,
       totalMs: 0,
-      compact: 'Live now',
+      compact: isZh ? '开票中' : 'Live now',
     };
   }
   const totalSec = Math.floor(diff / 1000);
@@ -138,8 +154,11 @@ export function computeCountdown(targetIso: string, nowMs: number): CountdownPar
   const secs = totalSec % 60;
 
   const pad = (n: number) => String(n).padStart(2, '0');
-  const compact =
-    days > 0
+  const compact = isZh
+    ? days > 0
+      ? `${days}天 ${pad(hours)}时 ${pad(mins)}分`
+      : `${pad(hours)}时 ${pad(mins)}分 ${pad(secs)}秒`
+    : days > 0
       ? `${days}d ${pad(hours)}h ${pad(mins)}m ${pad(secs)}s`
       : `${pad(hours)}h ${pad(mins)}m ${pad(secs)}s`;
 

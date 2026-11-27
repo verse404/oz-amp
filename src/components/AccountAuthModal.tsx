@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { AuthUser, FirebasePublicConfig, SavedAccountProfile } from '../types/gig';
 import { IS_STATIC_MODE } from '../config/runtimeMode';
+import { useLocale } from '../i18n/LocaleContext';
 
 interface AccountAuthModalProps {
   isOpen: boolean;
@@ -58,6 +59,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
   onLoggedOut,
   onShowToast,
 }) => {
+  const { intlLocale, tr } = useLocale();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -242,11 +244,19 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
           <div>
             <span className="eyebrow-kicker">
               {useFirebase
-                ? 'FIREBASE CLOUD ACCOUNT · AUTO-SYNC ACROSS VISITS & DEVICES'
-                : 'OZ AMP ACCOUNT · AUTO-SAVE ACROSS VISITS & DEVICES'}
+                ? tr(
+                    'FIREBASE CLOUD ACCOUNT · AUTO-SYNC ACROSS VISITS & DEVICES',
+                    'FIREBASE 云端账号 · 跨浏览器与跨设备自动同步',
+                  )
+                : tr(
+                    'OZ AMP ACCOUNT · AUTO-SAVE ACROSS VISITS & DEVICES',
+                    'OZ AMP 账号 · 跨访问自动保存',
+                  )}
             </span>
             <h2 id="account-auth-modal-title" className="modal-title">
-              {user ? `Signed In as ${user.displayName}` : 'Sign In or Create Your Account'}
+              {user
+                ? tr(`Signed In as ${user.displayName}`, `已登录：${user.displayName}`)
+                : tr('Sign In or Create Your Account', '登录或创建您的账号')}
             </h2>
           </div>
           <button
@@ -286,12 +296,12 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                     <Cloud size={12} />
                     <span>
                       {syncState === 'saving'
-                        ? 'Saving…'
+                        ? tr('Saving…', '保存中…')
                         : syncState === 'error'
-                          ? 'Sync Retry Needed'
+                          ? tr('Sync Retry Needed', '需重试同步')
                           : useFirebase
-                            ? 'Firestore Synced'
-                            : 'Auto-Sync Active'}
+                            ? tr('Firestore Synced', '已同步至云端')
+                            : tr('Auto-Sync Active', '自动同步已开启')}
                     </span>
                   </span>
                 </div>
@@ -299,19 +309,19 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                 <div className="auth-saved-metrics">
                   <div className="auth-metric-pill">
                     <strong>{mySingersCount}</strong>
-                    <span>My Singers</span>
+                    <span>{tr('My Singers', '我的歌手')}</span>
                   </div>
                   <div className="auth-metric-pill">
                     <strong>{monitoredCount}</strong>
-                    <span>Radar Singers</span>
+                    <span>{tr('Radar Singers', '雷达歌手')}</span>
                   </div>
                   <div className="auth-metric-pill">
                     <strong>{remindersCount}</strong>
-                    <span>Saved Alerts</span>
+                    <span>{tr('Saved Alerts', '已存提醒')}</span>
                   </div>
                   <div className="auth-metric-pill">
                     <strong>{worldFestivalsCount}</strong>
-                    <span>Custom Festivals</span>
+                    <span>{tr('Custom Festivals', '自选音乐节')}</span>
                   </div>
                 </div>
 
@@ -319,13 +329,16 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                   <p className="auth-sync-meta">
                     <CheckCircle2 size={13} />
                     <span>
-                      Last saved at{' '}
-                      {new Date(lastSavedIso).toLocaleTimeString('en-AU', {
+                      {tr('Last saved at', '上次保存时间')}{' '}
+                      {new Date(lastSavedIso).toLocaleTimeString(intlLocale, {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}{' '}
-                      — your singers, reminders, Home City &amp; theme load automatically whenever
-                      you open OZ Amp.
+                      —{' '}
+                      {tr(
+                        'your singers, reminders, Home City & theme load automatically whenever you open OZ Amp.',
+                        '每次打开 OZ Amp 都会自动加载您保存的歌手、提醒、常驻城市和主题。',
+                      )}
                     </span>
                   </p>
                 )}
@@ -354,7 +367,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                   onClick={() => void onForceSaveNow()}
                 >
                   <RefreshCw size={14} className={syncState === 'saving' ? 'spin-icon' : ''} />
-                  <span>Save Choices Now</span>
+                  <span>{tr('Save Choices Now', '立即保存至云端')}</span>
                 </button>
 
                 <button
@@ -365,7 +378,11 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                   onClick={() => void handleSignOut()}
                 >
                   <LogOut size={14} />
-                  <span>{useFirebase ? 'Sign Out' : 'Sign Out (All Devices)'}</span>
+                  <span>
+                    {useFirebase
+                      ? tr('Sign Out', '退出登录')
+                      : tr('Sign Out (All Devices)', '退出全部设备')}
+                  </span>
                 </button>
               </div>
             </div>
@@ -398,11 +415,11 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                         d="M12 4.77c1.76 0 3.35.61 4.59 1.8l3.44-3.44C17.95 1.19 15.23 0 12 0A12 12 0 0 0 1.25 6.64l4 3.1C6.2 6.89 8.86 4.77 12 4.77z"
                       />
                     </svg>
-                    <span>Continue with Google</span>
+                    <span>{tr('Continue with Google', '使用 Google 账号一键登录')}</span>
                   </button>
 
                   <div className="auth-divider" aria-hidden="true">
-                    <span>or use email &amp; password</span>
+                    <span>{tr('or use email & password', '或使用邮箱与密码')}</span>
                   </div>
                 </>
               )}
@@ -419,7 +436,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                     setInfoMsg(null);
                   }}
                 >
-                  Sign In
+                  {tr('Sign In', '登录')}
                 </button>
                 <button
                   type="button"
@@ -432,26 +449,32 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                     setInfoMsg(null);
                   }}
                 >
-                  Register with Email
+                  {tr('Register with Email', '邮箱注册')}
                 </button>
               </div>
 
               <p className="panel-subtext">
                 {mode === 'register'
-                  ? 'Create a free account to automatically save your favourite singers, ticket-drop reminders, custom festivals, and Home City across visits and devices.'
-                  : 'Sign in with your email to immediately load your saved favourite singers, saved alerts, and preferences.'}
+                  ? tr(
+                      'Create a free account to automatically save your favourite singers, ticket-drop reminders, custom festivals, and Home City across visits and devices.',
+                      '创建免费账号，自动保存您关注的歌手、开票提醒、自定义音乐节和常驻城市，换设备也不用重新设置。',
+                    )
+                  : tr(
+                      'Sign in with your email to immediately load your saved favourite singers, saved alerts, and preferences.',
+                      '使用邮箱登录，立即加载您保存的歌手列表、已存提醒和个性化偏好。',
+                    )}
               </p>
 
               <form className="auth-form" onSubmit={(e) => void handleSubmit(e)}>
                 {mode === 'register' && (
                   <label className="form-field">
-                    <span>Display Name (Optional)</span>
+                    <span>{tr('Display Name (Optional)', '显示昵称（选填）')}</span>
                     <input
                       type="text"
                       maxLength={40}
                       autoComplete="name"
                       className="text-input"
-                      placeholder="e.g., Alex"
+                      placeholder={tr('e.g., Alex', '例如：小明 / Alex')}
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                     />
@@ -459,7 +482,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                 )}
 
                 <label className="form-field">
-                  <span>Email Address</span>
+                  <span>{tr('Email Address', '电子邮箱')}</span>
                   <div className="auth-input-wrap">
                     <Mail size={15} className="auth-input-icon" />
                     <input
@@ -478,7 +501,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
 
                 <label className="form-field">
                   <div className="auth-label-row">
-                    <span>Password</span>
+                    <span>{tr('Password', '密码')}</span>
                     {useFirebase && mode === 'login' && (
                       <button
                         type="button"
@@ -486,7 +509,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                         disabled={submitting}
                         onClick={() => void handlePasswordReset()}
                       >
-                        Forgot password?
+                        {tr('Forgot password?', '忘记密码？')}
                       </button>
                     )}
                   </div>
@@ -502,8 +525,8 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                       className="text-input auth-text-input"
                       placeholder={
                         mode === 'register'
-                          ? 'At least 8 characters (12+ recommended)'
-                          : 'Enter your password'
+                          ? tr('At least 8 characters (12+ recommended)', '至少 8 位字符（建议 12 位以上）')
+                          : tr('Enter your password', '请输入密码')
                       }
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -524,11 +547,11 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                   <span>
                     {submitting
                       ? mode === 'register'
-                        ? 'Creating Account…'
-                        : 'Signing In…'
+                        ? tr('Creating Account…', '正在创建账号…')
+                        : tr('Signing In…', '正在登录…')
                       : mode === 'register'
-                        ? 'Create Account & Save My Choices'
-                        : 'Sign In & Load My Choices'}
+                        ? tr('Create Account & Save My Choices', '创建账号并保存我的选择')
+                        : tr('Sign In & Load My Choices', '登录并加载我的选择')}
                   </span>
                 </button>
               </form>
@@ -537,8 +560,14 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                 <ShieldCheck size={13} />
                 <span>
                   {useFirebase
-                    ? 'Powered by Firebase Authentication & owner-only Cloud Firestore rules. Your email is never shown publicly.'
-                    : 'Secured with salted memory-hard scrypt password hashing and HttpOnly session cookies. Your email is never shown publicly.'}
+                    ? tr(
+                        'Powered by Firebase Authentication & owner-only Cloud Firestore rules. Your email is never shown publicly.',
+                        '由 Firebase 身份认证与仅本人可读写的 Cloud Firestore 安全规则保护，您的邮箱绝不公开显示。',
+                      )
+                    : tr(
+                        'Secured with salted memory-hard scrypt password hashing and HttpOnly session cookies. Your email is never shown publicly.',
+                        '采用加盐 scrypt 密码哈希与 HttpOnly 会话 Cookie 保护，您的邮箱绝不公开显示。',
+                      )}
                 </span>
               </p>
             </>

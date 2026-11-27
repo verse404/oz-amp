@@ -1,5 +1,6 @@
 import React from 'react';
 import { RotateCcw } from 'lucide-react';
+import { useLocale } from '../i18n/LocaleContext';
 
 interface PriceRangeSliderProps {
   minBound: number;
@@ -16,6 +17,7 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
   value,
   onChange,
 }) => {
+  const { tr } = useLocale();
   const [minVal, maxVal] = value;
   const span = Math.max(1, maxBound - minBound);
   const leftPercent = ((minVal - minBound) / span) * 100;
@@ -26,9 +28,12 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
     isUpper && amount >= maxBound ? `A$${amount}+` : `A$${amount}`;
 
   return (
-    <div className="price-range-control" aria-label="Filter concerts by entry ticket price range">
+    <div
+      className="price-range-control"
+      aria-label={tr('Filter concerts by entry ticket price range', '按入门票价区间筛选演出')}
+    >
       <div className="price-range-header">
-        <span className="price-range-title">Price Range (AUD):</span>
+        <span className="price-range-title">{tr('Price Range (AUD):', '票价区间 (澳元):')}</span>
         <strong className={`price-range-readout ${isFiltered ? 'is-filtered' : ''}`}>
           {formatLabel(minVal)} – {formatLabel(maxVal, true)}
         </strong>
@@ -37,10 +42,10 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
             type="button"
             className="price-reset-btn"
             onClick={() => onChange([minBound, maxBound])}
-            title="Reset price range"
+            title={tr('Reset price range', '重置票价区间')}
           >
             <RotateCcw size={11} />
-            <span>Reset</span>
+            <span>{tr('Reset', '重置')}</span>
           </button>
         )}
       </div>

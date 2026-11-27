@@ -4,6 +4,7 @@ import type { CityId, FestivalAdvisorItem, MonitoredSinger } from '../types/gig'
 import { analyzeFestivalDecision } from '../utils/auMarketTools';
 import { formatAudPrice, sanitizeExternalHttpsUrl } from '../utils/formatters';
 import type { WatchlistSingerEntry } from '../data/userSingerList';
+import { useLocale } from '../i18n/LocaleContext';
 
 function matchesWatchTerm(actName: string, rawTerm: string): boolean {
   const act = actName.trim().toLowerCase();
@@ -30,6 +31,7 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
   watchlistSingers,
   homeCity,
 }) => {
+  const { tr } = useLocale();
   const [selectedFestivalId, setSelectedFestivalId] = useState<string>(
     festivals[0]?.id || 'laneway-2027',
   );
@@ -87,10 +89,16 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
       <div className="section-header-row">
         <div>
           <span className="eyebrow-kicker">
-            Australian Festival vs. Headline Sideshow Calculator
+            {tr(
+              'Australian Festival vs. Headline Sideshow Calculator',
+              '澳洲音乐节通票 vs 剧场专场（Sideshow）性价比对比',
+            )}
           </span>
           <h2 id="festival-advisor-heading" className="section-heading">
-            Festival Pass vs. Sydney/Melbourne Sideshows &amp; Clash Advisor
+            {tr(
+              'Festival Pass vs. Sydney/Melbourne Sideshows & Clash Advisor',
+              '音乐节通票 vs 墨尔本/悉尼专场与时间冲突计算器',
+            )}
           </h2>
         </div>
 

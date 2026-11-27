@@ -24,6 +24,7 @@ import { sanitizeExternalHttpsUrl } from '../utils/formatters';
 import { ArtistAvatar } from './ArtistAvatar';
 import { IS_STATIC_MODE } from '../config/runtimeMode';
 import { UPLOADED_WATCHLIST_SINGERS } from '../data/userSingerList';
+import { useLocale } from '../i18n/LocaleContext';
 
 interface SingerMonitorSectionProps {
   monitoredSingers: MonitoredSinger[];
@@ -68,14 +69,19 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
   onRemoveSinger,
   onJumpToArtistConcerts,
 }) => {
+  const { intlLocale, isZh, tr, cityLabel, genreLabel } = useLocale();
   const cityCodeLabel =
-    cityFilter === 'melbourne' ? 'MEL' : cityFilter === 'sydney' ? 'SYD' : 'AU';
+    cityFilter === 'melbourne'
+      ? cityLabel('melbourne', 'short')
+      : cityFilter === 'sydney'
+        ? cityLabel('sydney', 'short')
+        : tr('AU', '澳洲');
   const cityHeadingLabel =
     cityFilter === 'melbourne'
-      ? 'Melbourne'
+      ? cityLabel('melbourne')
       : cityFilter === 'sydney'
-        ? 'Sydney'
-        : 'Melbourne / Sydney';
+        ? cityLabel('sydney')
+        : tr('Melbourne / Sydney', '墨尔本 / 悉尼');
   const [activeCategory, setActiveCategory] = useState<PresetSinger['category']>('Global Pop');
   const [searchTerm, setSearchTerm] = useState('');
   const [searching, setSearching] = useState(false);
@@ -208,10 +214,15 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
       <div className="section-header-row">
         <div>
           <span className="eyebrow-kicker">
-            01 · Favourite Singers Radar · Apple Music AU + MusicBrainz Bilingual Monitor
+            {tr(
+              '01 · Favourite Singers Radar · Apple Music AU + MusicBrainz Bilingual Monitor',
+              '01 · 喜爱歌手雷达 · Apple Music AU + MusicBrainz 中英双语监控',
+            )}
           </span>
           <h2 id="singer-monitor-heading" className="section-heading">
-            Select &amp; Monitor Favourite Singers for {cityHeadingLabel} Announcements
+            {isZh
+              ? `选择并关注喜爱的歌手，第一时间获取${cityHeadingLabel}巡演官宣`
+              : `Select & Monitor Favourite Singers for ${cityHeadingLabel} Announcements`}
           </h2>
         </div>
 
@@ -223,7 +234,11 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
             onClick={() => setShowBulkBox((v) => !v)}
           >
             <ListPlus size={14} />
-            <span>{showBulkBox ? 'Hide Bulk List' : 'Paste My Singer List'}</span>
+            <span>
+              {showBulkBox
+                ? tr('Hide Bulk List', '收起批量导入')
+                : tr('Paste My Singer List', '批量粘贴歌手名单')}
+            </span>
           </button>
 
           <button
@@ -234,23 +249,39 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
             disabled={checkingRadar}
           >
             <RefreshCw size={14} className={checkingRadar ? 'spin-icon' : ''} />
-            <span>{checkingRadar ? 'Scanning AU Radar…' : 'Check AU Announcements Now'}</span>
+            <span>
+              {checkingRadar
+                ? tr('Scanning AU Radar…', '正在扫描澳洲巡演…')
+                : tr('Check AU Announcements Now', '立即检查澳洲巡演动态')}
+            </span>
           </button>
         </div>
       </div>
 
       <p className="section-sublead">
-        Pick favourite singers below, paste your own list, or search any artist worldwide (supports
-        English, Chinese <code>周杰伦 / 陈奕迅</code>, Japanese <code>藤井風</code>, and Korean names).
-        Monitored artists automatically trigger browser &amp; chime alerts as soon as a Sydney or
-        Melbourne tour date lands.
+        {isZh ? (
+          <>
+            点击下方喜爱的歌手、批量粘贴歌单，或搜索全球任意艺人（支持英文、中文{' '}
+            <code>周杰伦 / 陈奕迅</code>、日文 <code>藤井風</code> 与韩文）。一旦墨尔本或悉尼官宣巡演，将自动触发浏览器与铃声提醒。
+          </>
+        ) : (
+          <>
+            Pick favourite singers below, paste your own list, or search any artist worldwide
+            (supports English, Chinese <code>周杰伦 / 陈奕迅</code>, Japanese <code>藤井風</code>,
+            and Korean names). Monitored artists automatically trigger browser &amp; chime alerts as
+            soon as a Sydney or Melbourne tour date lands.
+          </>
+        )}
       </p>
 
       {/* Bulk Singer List Importer */}
       {showBulkBox && (
         <form className="bulk-singer-box" onSubmit={handleBulkSubmit}>
           <label htmlFor="bulk-singer-textarea" className="panel-heading">
-            Paste Your Favourite Singers List (comma, slash, or line-separated)
+            {tr(
+              'Paste Your Favourite Singers List (comma, slash, or line-separated)',
+              '粘贴您喜爱的歌手名单（支持逗号、斜杠或换行分隔）',
+            )}
           </label>
           <textarea
             id="bulk-singer-textarea"
@@ -263,7 +294,7 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
           <div className="panel-actions">
             <button type="submit" id="submit-bulk-singers-btn" className="btn-primary-sm">
               <Sparkles size={14} />
-              <span>Monitor All &amp; Turn On Alerts</span>
+              <span>{tr('Monitor All & Turn On Alerts', '全部加入关注并开启提醒')}</span>
             </button>
           </div>
         </form>
@@ -278,7 +309,10 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
               type="search"
               id="global-singer-search-input"
               className="search-input"
-              placeholder="Search any new singer or band (e.g., Eason Chan, 陈奕迅, Sabrina Carpenter, Fujii Kaze, Turnstile)…"
+              placeholder={tr(
+                'Search any new singer or band (e.g., Eason Chan, 陈奕迅, Sabrina Carpenter, Fujii Kaze, Turnstile)…',
+                '搜索任意新歌手或乐队（如：陈奕迅、周杰伦、Sabrina Carpenter、藤井風）…',
+              )}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -290,7 +324,9 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
             disabled={searching || !searchTerm.trim()}
           >
             <Search size={14} />
-            <span>{searching ? 'Searching…' : 'Search Artist'}</span>
+            <span>
+              {searching ? tr('Searching…', '搜索中…') : tr('Search Artist', '搜索歌手')}
+            </span>
           </button>
           {searchResults !== null && (
             <button
@@ -301,7 +337,7 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                 setSearchTerm('');
               }}
             >
-              Clear
+              {tr('Clear', '清除')}
             </button>
           )}
         </form>
@@ -309,7 +345,9 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
         {searchResults && (
           <div className="live-artist-results">
             {searchResults.length === 0 ? (
-              <p className="panel-subtext">No profiles returned — try another spelling.</p>
+              <p className="panel-subtext">
+                {tr('No profiles returned — try another spelling.', '未找到相关艺人，请尝试其他拼写。')}
+              </p>
             ) : (
               <div className="artist-result-grid">
                 {searchResults.map((prof) => {
@@ -322,7 +360,7 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                     origin: prof.origin,
                   });
                   const badgeLoc =
-                    cityCodeLabel === 'AU' ? 'MEL/SYD' : cityCodeLabel;
+                    cityFilter === 'all' ? cityLabel('all', 'short') : cityCodeLabel;
                   return (
                     <div key={prof.name} className="artist-search-tile">
                       <div className="artist-tile-head">
@@ -349,8 +387,12 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                           className={`au-count-pill ${scopedShowCount > 0 ? 'has-shows' : ''}`}
                         >
                           {scopedShowCount > 0
-                            ? `${scopedShowCount} ${badgeLoc} show${scopedShowCount === 1 ? '' : 's'} live!`
-                            : `No ${badgeLoc} date yet`}
+                            ? isZh
+                              ? `${badgeLoc} ${scopedShowCount} 场演出进行中`
+                              : `${scopedShowCount} ${badgeLoc} show${scopedShowCount === 1 ? '' : 's'} live!`
+                            : isZh
+                              ? `暂无${badgeLoc}场次`
+                              : `No ${badgeLoc} date yet`}
                         </span>
 
                         <button
@@ -366,7 +408,11 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                           }
                         >
                           {following ? <Check size={13} /> : <Plus size={13} />}
-                          <span>{following ? 'Monitoring' : 'Monitor & Alert'}</span>
+                          <span>
+                            {following
+                              ? tr('Monitoring', '已关注')
+                              : tr('Monitor & Alert', '关注并提醒')}
+                          </span>
                         </button>
                       </div>
                     </div>
@@ -380,7 +426,7 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
 
       {/* Quick-Select Favourite Singers by Category */}
       <div className="preset-picker-block">
-        <div className="category-tabs" role="tablist" aria-label="Singer categories">
+        <div className="category-tabs" role="tablist" aria-label={tr('Singer categories', '歌手分类')}>
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
@@ -390,7 +436,7 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
               className={`genre-pill ${activeCategory === cat ? 'is-active' : ''}`}
               onClick={() => setActiveCategory(cat)}
             >
-              {cat}
+              {genreLabel(cat)}
             </button>
           ))}
         </div>
@@ -435,12 +481,15 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
       <div className="monitored-radar-board">
         <div className="utility-panel-row">
           <h3 className="panel-heading">
-            Your Monitored Singers &amp; Announcement Alerts ({monitoredSingers.length})
+            {tr(
+              `Your Monitored Singers & Announcement Alerts (${monitoredSingers.length})`,
+              `我关注的雷达歌手与官宣提醒 (${monitoredSingers.length})`,
+            )}
           </h3>
           {lastCheckedIso && (
             <span className="sync-source-label">
-              Last radar sweep:{' '}
-              {new Intl.DateTimeFormat('en-AU', {
+              {tr('Last radar sweep:', '上次扫描:')}{' '}
+              {new Intl.DateTimeFormat(intlLocale, {
                 hour: 'numeric',
                 minute: '2-digit',
                 second: '2-digit',
@@ -454,10 +503,14 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
         {monitoredSingers.length === 0 ? (
           <div className="empty-box">
             <Radio size={22} />
-            <p className="empty-title">No singers in your radar yet</p>
+            <p className="empty-title">
+              {tr('No singers in your radar yet', '雷达中暂无关注歌手')}
+            </p>
             <p className="empty-desc">
-              Click any singer chip above, paste your list, or search above to start automatic
-              Sydney &amp; Melbourne tour announcement monitoring.
+              {tr(
+                'Click any singer chip above, paste your list, or search above to start automatic Sydney & Melbourne tour announcement monitoring.',
+                '点击上方任意歌手标签、批量粘贴或搜索歌手，即可自动监控墨尔本与悉尼的巡演官宣。',
+              )}
             </p>
           </div>
         ) : (
@@ -509,12 +562,18 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                           }`}
                         >
                           {hasAnnounced
-                            ? `Announced (${matchedSummaries.length} ${cityCodeLabel === 'AU' ? 'MEL/SYD' : cityCodeLabel} ${matchedSummaries.length === 1 ? 'show' : 'shows'})`
+                            ? isZh
+                              ? `已官宣 (${matchedSummaries.length} 场${cityFilter === 'all' ? '墨/悉' : cityCodeLabel})`
+                              : `Announced (${matchedSummaries.length} ${cityFilter === 'all' ? 'MEL/SYD' : cityCodeLabel} ${matchedSummaries.length === 1 ? 'show' : 'shows'})`
                             : hasNews
-                              ? 'Spotted in AU Tour Press!'
+                              ? tr('Spotted in AU Tour Press!', '澳洲巡演媒体已报道！')
                               : singer.notifyOnAnnounce
-                                ? `Watching ${cityCodeLabel} Radar · Auto-Alert ON`
-                                : `Watching ${cityCodeLabel} Radar (Muted)`}
+                                ? isZh
+                                  ? `正在监控${cityCodeLabel} · 自动提醒已开`
+                                  : `Watching ${cityCodeLabel} Radar · Auto-Alert ON`
+                                : isZh
+                                  ? `正在监控${cityCodeLabel}（已静音）`
+                                  : `Watching ${cityCodeLabel} Radar (Muted)`}
                         </span>
                       </div>
                     </div>
@@ -526,8 +585,8 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                         onClick={() => onToggleNotifySinger(singer.name)}
                         title={
                           singer.notifyOnAnnounce
-                            ? 'Announcement alert on (click to mute)'
-                            : 'Click to turn on announcement alert'
+                            ? tr('Announcement alert on (click to mute)', '官宣提醒已开（点击静音）')
+                            : tr('Click to turn on announcement alert', '点击开启官宣提醒')
                         }
                         aria-label={`Toggle announcement reminder for ${singer.name}`}
                       >

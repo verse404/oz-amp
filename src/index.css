@@ -5323,6 +5323,47 @@ select option {
   gap: 0.55rem;
 }
 
+/* EN / 中文 Language Switcher Pill */
+.lang-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem 0.48rem;
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--fg-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease;
+}
+
+.lang-toggle-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--fg-primary);
+}
+
+.lang-toggle-seg {
+  padding: 0.12rem 0.34rem;
+  border-radius: 999px;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.lang-toggle-seg.is-active {
+  background: var(--accent-primary);
+  color: #161311;
+  font-weight: 700;
+}
+
+.lang-toggle-sep {
+  opacity: 0.35;
+  font-size: 0.7rem;
+}
+
 .auth-metric-pill {
   background: var(--bg-surface);
   border: 1px solid var(--border-hairline);

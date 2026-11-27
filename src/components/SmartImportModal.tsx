@@ -4,6 +4,7 @@ import type { ConcertEvent } from '../types/gig';
 import { formatAudRange, formatAuTimestamp, formatConcertDate } from '../utils/formatters';
 import { IS_STATIC_MODE } from '../config/runtimeMode';
 import { parseTourAnnouncement } from '../../server/parseAnnouncement.mjs';
+import { useLocale } from '../i18n/LocaleContext';
 
 interface SmartImportModalProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
   csrfToken,
   onImportConcerts,
 }) => {
+  const { locale, tr, cityLabel } = useLocale();
   const [rawText, setRawText] = useState('');
   const [preview, setPreview] = useState<ConcertEvent[] | null>(null);
   const [autoRemind, setAutoRemind] = useState(true);
@@ -115,7 +117,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
           <div>
             <span className="eyebrow-kicker">Frontier · Live Nation · Ticketek · Instagram</span>
             <h2 id="smart-import-title" className="modal-title">
-              Paste Tour or Pre-Sale Announcement
+              {tr('Paste Tour or Pre-Sale Announcement', '粘贴巡演官宣或预售公告')}
             </h2>
           </div>
           <button
@@ -123,7 +125,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
             id="close-import-modal-btn"
             className="icon-btn"
             onClick={onClose}
-            aria-label="Close announcement importer"
+            aria-label={tr('Close announcement importer', '关闭导入弹窗')}
           >
             <X size={18} />
           </button>
@@ -131,9 +133,10 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
 
         <div className="modal-body">
           <p className="panel-subtext">
-            Paste any Australian tour press release, Frontier Touring email, or social caption. We
-            automatically extract Sydney &amp; Melbourne venues, dates, AUD pricing, and Telstra /
-            Frontier / General On-Sale windows.
+            {tr(
+              'Paste any Australian tour press release, Frontier Touring email, or social caption. We automatically extract Sydney & Melbourne venues, dates, AUD pricing, and Telstra / Frontier / General On-Sale windows.',
+              '粘贴任意澳洲巡演新闻稿、Frontier 邮件或社媒官宣文案，系统将自动提取墨尔本与悉尼场馆、日期、澳元票价及各阶段预售/公售时间。',
+            )}
           </p>
 
           <div className="sample-bar">
@@ -148,7 +151,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
               }}
             >
               <Sparkles size={14} />
-              <span>Try Sample Frontier / Telstra Tour Drop</span>
+              <span>{tr('Try Sample Frontier / Telstra Tour Drop', '试试示例巡演文案')}</span>
             </button>
           </div>
 
@@ -158,7 +161,10 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
             rows={7}
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
-            placeholder="Paste tour dates, Sydney/Melbourne venues, and pre-sale times here..."
+            placeholder={tr(
+              'Paste tour dates, Sydney/Melbourne venues, and pre-sale times here...',
+              '在此粘贴巡演日期、墨尔本/悉尼场馆和预售时间…',
+            )}
           />
 
           {errorMsg && <p className="inline-error">{errorMsg}</p>}
@@ -172,7 +178,11 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
               onClick={() => void handleParse(rawText)}
             >
               <FileText size={16} />
-              <span>{loading ? 'Extracting Dates…' : 'Extract Sydney & Melbourne Dates'}</span>
+              <span>
+                {loading
+                  ? tr('Extracting Dates…', '正在识别日期…')
+                  : tr('Extract Sydney & Melbourne Dates', '智能识别墨尔本与悉尼场次')}
+              </span>
             </button>
           </div>
 
@@ -180,7 +190,10 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
             <div className="preview-box">
               <div className="preview-header">
                 <h3 className="panel-heading">
-                  Extracted {preview.length} Tour Stop{preview.length === 1 ? '' : 's'}
+                  {tr(
+                    `Extracted ${preview.length} Tour Stop${preview.length === 1 ? '' : 's'}`,
+                    `已识别 ${preview.length} 场演出`,
+                  )}
                 </h3>
                 <label className="checkbox-label">
                   <input
@@ -188,18 +201,23 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
                     checked={autoRemind}
                     onChange={(e) => setAutoRemind(e.target.checked)}
                   />
-                  <span>Auto-set 15m Queue Reminders for all extracted pre-sales</span>
+                  <span>
+                    {tr(
+                      'Auto-set 15m Queue Reminders for all extracted pre-sales',
+                      '自动为所有预售场次开启提前 15 分钟开票提醒',
+                    )}
+                  </span>
                 </label>
               </div>
 
               <ul className="preview-list">
                 {preview.map((c) => {
-                  const formattedDate = formatConcertDate(c.dateIso, c.timeZone);
+                  const formattedDate = formatConcertDate(c.dateIso, c.timeZone, locale);
                   return (
                     <li key={c.id} className="preview-card">
                       <div>
                         <span className={`city-pill city-pill--${c.city}`}>
-                          {c.city === 'sydney' ? 'Sydney · NSW' : 'Melbourne · VIC'}
+                          {cityLabel(c.city, 'state')}
                         </span>
                         <strong className="preview-artist">
                           {c.artist} — {c.venueName}
@@ -212,7 +230,8 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
                           <ul className="preview-drops">
                             {c.ticketDrops.map((d) => (
                               <li key={d.id}>
-                                <strong>{d.kind}:</strong> {formatAuTimestamp(d.opensAtIso, c.city)}
+                                <strong>{d.kind}:</strong>{' '}
+                                {formatAuTimestamp(d.opensAtIso, c.city, locale)}
                               </li>
                             ))}
                           </ul>
@@ -230,7 +249,11 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
                 onClick={handleConfirmImport}
               >
                 <PlusCircle size={16} />
-                <span>Add to My Gig Guide{autoRemind ? ' & Save Alerts' : ''}</span>
+                <span>
+                  {autoRemind
+                    ? tr('Add to My Gig Guide & Save Alerts', '添加到演出列表并保存提醒')
+                    : tr('Add to My Gig Guide', '添加到演出列表')}
+                </span>
               </button>
             </div>
           )}

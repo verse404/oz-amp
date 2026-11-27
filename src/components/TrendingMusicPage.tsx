@@ -32,6 +32,7 @@ import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
 import { formatConcertDate } from '../utils/formatters';
 import { ArtistAvatar } from './ArtistAvatar';
 import { IS_STATIC_MODE } from '../config/runtimeMode';
+import { useLocale } from '../i18n/LocaleContext';
 
 interface TrendingMusicPageProps {
   concerts: ConcertEvent[];
@@ -99,6 +100,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
   onBackToMainGuide,
   onShowToast,
 }) => {
+  const { locale, intlLocale, isZh, tr, cityLabel, genreLabel } = useLocale();
   const [region, setRegion] = useState<TrendingRegion>('au');
   const [tracks, setTracks] = useState<TrendingTrackItem[]>([]);
   const [chartSource, setChartSource] = useState<string>('Apple Music Live Charts');
@@ -356,28 +358,39 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
         <div className="watchlist-hero-top">
           <button type="button" className="btn-outline-sm" onClick={onBackToMainGuide}>
             <ArrowLeft size={14} />
-            <span>Back to Melbourne &amp; Sydney Gig Guide</span>
+            <span>{tr('Back to Melbourne & Sydney Gig Guide', '返回墨尔本与悉尼全部演出')}</span>
           </button>
           <span className="eyebrow-kicker">
-            LIVE TRENDING CHARTS · 30S AUDIO PREVIEWS · AU TOUR CROSSOVER
+            {tr(
+              'LIVE TRENDING CHARTS · 30S AUDIO PREVIEWS · AU TOUR CROSSOVER',
+              '实时热门音乐榜单 · 30 秒试听 · 澳洲巡演与音乐节联动',
+            )}
           </span>
         </div>
 
         <div className="watchlist-hero-grid">
           <div>
             <h1 id="trending-title" className="hero-headline watchlist-headline">
-              Trending Popular Music &amp; Live Tour Radar.
+              {tr('Trending Popular Music & Live Tour Radar.', '全球热门音乐榜与演出雷达')}
             </h1>
             <p className="hero-lede">
-              Discover what’s surging right now across <strong>Australia</strong>,{' '}
-              <strong>Global / US</strong>, <strong>UK</strong>, and <strong>Japan</strong>—play
-              instant 30-second song previews, spot which chart-toppers are playing{' '}
-              <strong>Melbourne or Sydney</strong> soon, and add rising artists straight to your OZ
-              Amp tour monitor.
+              {isZh ? (
+                <>
+                  探索<strong>澳洲</strong>、<strong>全球 / 美国</strong>、<strong>英国</strong>和<strong>日本</strong>实时飙升热歌 — 即点即听 30 秒原声试听，一眼看出哪些当红歌手即将在<strong>墨尔本或悉尼</strong>演出，并一键加入巡演雷达。
+                </>
+              ) : (
+                <>
+                  Discover what’s surging right now across <strong>Australia</strong>,{' '}
+                  <strong>Global / US</strong>, <strong>UK</strong>, and <strong>Japan</strong>—play
+                  instant 30-second song previews, spot which chart-toppers are playing{' '}
+                  <strong>Melbourne or Sydney</strong> soon, and add rising artists straight to your
+                  OZ Amp tour monitor.
+                </>
+              )}
             </p>
 
             <div className="watchlist-cta-row">
-              <div className="city-tab-bar" role="tablist" aria-label="Select chart region">
+              <div className="city-tab-bar" role="tablist" aria-label={tr('Select chart region', '选择榜单地区')}>
                 {REGION_OPTIONS.map((opt) => (
                   <button
                     key={opt.id}
@@ -388,7 +401,15 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                     onClick={() => setRegion(opt.id)}
                   >
                     <span className="trending-flag-badge">{opt.flag}</span>
-                    <span>{opt.label}</span>
+                    <span>
+                      {opt.id === 'au'
+                        ? tr('Australia Top 25', '澳洲 Top 25')
+                        : opt.id === 'us'
+                          ? tr('Global / US Top 25', '欧美 Top 25')
+                          : opt.id === 'gb'
+                            ? tr('UK Top 25', '英国 Top 25')
+                            : tr('Japan Top 25', '日本 Top 25')}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -400,7 +421,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                 disabled={loading}
               >
                 <RefreshCw size={14} className={loading ? 'spin-icon' : ''} />
-                <span>{loading ? 'Refreshing…' : 'Refresh Charts'}</span>
+                <span>{loading ? tr('Refreshing…', '刷新中…') : tr('Refresh Charts', '刷新榜单')}</span>
               </button>
             </div>
           </div>
@@ -408,19 +429,27 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
           <div className="watchlist-stat-grid">
             <div className="watchlist-stat-tile is-accent">
               <span className="watchlist-stat-num">{tracks.length}</span>
-              <span className="watchlist-stat-label">Live Chart Tracks ({region.toUpperCase()})</span>
+              <span className="watchlist-stat-label">
+                {tr(`Live Chart Tracks (${region.toUpperCase()})`, `实时上榜曲目 (${region.toUpperCase()})`)}
+              </span>
             </div>
             <div className="watchlist-stat-tile">
               <span className="watchlist-stat-num">{liveCrossoversCount}</span>
-              <span className="watchlist-stat-label">AU Shows &amp; Festival Crossovers</span>
+              <span className="watchlist-stat-label">
+                {tr('AU Shows & Festival Crossovers', '澳洲巡演 / 音乐节联动')}
+              </span>
             </div>
             <div className="watchlist-stat-tile">
               <span className="watchlist-stat-num">{watchlistCrossoversCount}</span>
-              <span className="watchlist-stat-label">On Your 275-Singer Watchlist</span>
+              <span className="watchlist-stat-label">
+                {tr('In Your My Singers List', '命中“我的歌手”清单')}
+              </span>
             </div>
             <div className="watchlist-stat-tile">
               <span className="watchlist-stat-num">{tracks.filter((t) => Boolean(t.previewUrl)).length}</span>
-              <span className="watchlist-stat-label">30s Audio Previews Ready</span>
+              <span className="watchlist-stat-label">
+                {tr('30s Audio Previews Ready', '支持 30 秒试听')}
+              </span>
             </div>
           </div>
         </div>
@@ -432,13 +461,18 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
               <div className="now-playing-info">
                 <Volume2 size={16} className="now-playing-icon" />
                 <span>
-                  <strong>Now Previewing #{activePlayingTrack.rank}:</strong>{' '}
+                  <strong>
+                    {tr(
+                      `Now Previewing #${activePlayingTrack.rank}:`,
+                      `正在试听 #${activePlayingTrack.rank}:`,
+                    )}
+                  </strong>{' '}
                   {activePlayingTrack.title} — {activePlayingTrack.artist}
                 </span>
               </div>
               <button type="button" className="btn-outline-sm" onClick={stopAudio}>
                 <Pause size={13} />
-                <span>Stop Preview</span>
+                <span>{tr('Stop Preview', '停止试听')}</span>
               </button>
             </div>
             <div className="now-playing-progress" aria-hidden="true">
@@ -457,10 +491,13 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
           <div>
             <span className="eyebrow-kicker">
               {chartSource}
-              {updatedAtIso ? ` · Synced ${new Date(updatedAtIso).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}` : ''}
+              {updatedAtIso
+                ? ` · ${tr('Synced', '同步于')} ${new Date(updatedAtIso).toLocaleTimeString(intlLocale, { hour: '2-digit', minute: '2-digit' })}`
+                : ''}
             </span>
             <h2 id="trending-list-heading" className="section-heading">
-              <Flame size={19} className="trending-flame-icon" /> Top Trending Tracks ({enrichedTracks.length})
+              <Flame size={19} className="trending-flame-icon" />{' '}
+              {tr(`Top Trending Tracks (${enrichedTracks.length})`, `热门单曲榜 (${enrichedTracks.length})`)}
             </h2>
           </div>
 
@@ -473,8 +510,14 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
             <Ticket size={14} />
             <span>
               {onlyLiveEvents
-                ? `✓ Touring / Festivals (${liveCrossoversCount})`
-                : `Filter: Touring / Festivals (${liveCrossoversCount})`}
+                ? tr(
+                    `✓ Touring / Festivals (${liveCrossoversCount})`,
+                    `✓ 仅看有演出/音乐节 (${liveCrossoversCount})`,
+                  )
+                : tr(
+                    `Filter: Touring / Festivals (${liveCrossoversCount})`,
+                    `筛选：有巡演 / 音乐节 (${liveCrossoversCount})`,
+                  )}
             </span>
           </button>
         </div>
@@ -486,13 +529,16 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
               type="search"
               id="trending-music-search-input"
               className="search-input"
-              placeholder="Search trending song, artist, album, or genre..."
+              placeholder={tr(
+                'Search trending song, artist, album, or genre...',
+                '搜索热门歌曲、歌手、专辑或曲风…',
+              )}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="genre-scroll-row" role="group" aria-label="Filter trending songs by genre">
+          <div className="genre-scroll-row" role="group" aria-label={tr('Filter trending songs by genre', '按曲风筛选热门歌曲')}>
             {availableGenres.map((g) => (
               <button
                 key={g}
@@ -500,18 +546,20 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                 className={`genre-pill ${genreFilter === g ? 'is-active' : ''}`}
                 onClick={() => setGenreFilter(g)}
               >
-                {g}
+                {genreLabel(g)}
               </button>
             ))}
           </div>
         </div>
 
         {loading && tracks.length === 0 ? (
-          <div className="lazy-page-loader">Loading live {region.toUpperCase()} trending music…</div>
+          <div className="lazy-page-loader">
+            {tr(`Loading live ${region.toUpperCase()} trending music…`, `正在加载 ${region.toUpperCase()} 实时热门音乐…`)}
+          </div>
         ) : enrichedTracks.length === 0 ? (
           <div className="empty-state-box">
             <Sparkles size={22} />
-            <p>No trending tracks match your current filter.</p>
+            <p>{tr('No trending tracks match your current filter.', '当前筛选下暂无匹配歌曲。')}</p>
             <button
               type="button"
               className="btn-outline-sm"
@@ -521,7 +569,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                 setOnlyLiveEvents(false);
               }}
             >
-              Reset Chart Filters
+              {tr('Reset Chart Filters', '重置榜单筛选')}
             </button>
           </div>
         ) : (
@@ -543,7 +591,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                 const firstAuFest = matchedAuFests[0];
                 const firstWorldFest = matchedWorldFests[0];
                 const showDateLabel = firstShow
-                  ? formatConcertDate(firstShow.dateIso, firstShow.timeZone).dayMonth
+                  ? formatConcertDate(firstShow.dateIso, firstShow.timeZone, locale).dayMonth
                   : '';
 
                 return (
@@ -555,16 +603,16 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                   >
                     <div className="trending-card-top">
                       <span className="trending-rank-pill">#{track.rank}</span>
-                      <span className="presale-kind-badge">{track.genre}</span>
+                      <span className="presale-kind-badge">{genreLabel(track.genre)}</span>
                       {isWatched && (
                         <span className="watched-match-pill">
                           <Star size={11} />
-                          <span>Watchlist</span>
+                          <span>{tr('Watchlist', '已关注')}</span>
                         </span>
                       )}
                       {firstShow && (
                         <span className={`city-pill city-pill--${firstShow.city}`}>
-                          {firstShow.city === 'sydney' ? 'SYD' : 'MEL'} · {showDateLabel}
+                          {cityLabel(firstShow.city, 'short')} · {showDateLabel}
                         </span>
                       )}
                       {firstAuFest && (
@@ -627,7 +675,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                           onClick={() => toggleAudioPreview(track)}
                         >
                           {isPlaying ? <Pause size={12} /> : <Play size={12} />}
-                          <span>{isPlaying ? 'Playing 30s' : '30s Preview'}</span>
+                          <span>{isPlaying ? tr('Playing 30s', '试听中') : tr('30s Preview', '30秒试听')}</span>
                         </button>
                       )}
                       <a
@@ -672,7 +720,9 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                         }
                       >
                         {isMonitored ? <Check size={14} /> : <BellPlus size={14} />}
-                        <span>{isMonitored ? 'Monitoring' : 'Monitor Artist'}</span>
+                        <span>
+                          {isMonitored ? tr('Monitoring', '已关注') : tr('Monitor Artist', '关注歌手')}
+                        </span>
                       </button>
 
                       <div className="trending-footer-actions">
@@ -683,7 +733,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                             onClick={() => onJumpToAuConcert(firstShow.artist)}
                           >
                             <Ticket size={13} />
-                            <span>AU Show</span>
+                            <span>{tr('AU Show', '澳洲专场')}</span>
                           </button>
                         )}
                         {firstAuFest && (
@@ -693,7 +743,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                             onClick={onJumpToAuFestival}
                           >
                             <Ticket size={13} />
-                            <span>AU Fest</span>
+                            <span>{tr('AU Fest', '澳洲音乐节')}</span>
                           </button>
                         )}
                         {firstWorldFest && (
@@ -703,7 +753,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                             onClick={onJumpToWorldFestivals}
                           >
                             <Globe size={13} />
-                            <span>World Fest</span>
+                            <span>{tr('World Fest', '全球音乐节')}</span>
                           </button>
                         )}
                         <a
@@ -712,7 +762,7 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
                           rel="noopener noreferrer"
                           className="btn-subtle-sm"
                         >
-                          <span>Open Track</span>
+                          <span>{tr('Open Track', '打开歌曲')}</span>
                           <ExternalLink size={12} />
                         </a>
                       </div>

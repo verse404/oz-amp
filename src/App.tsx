@@ -77,6 +77,7 @@ import { CORE_WORLD_FESTIVALS } from './data/worldFestivals';
 import { VENUE_INSIDER_TIPS } from './data/venueInsiderTips';
 import { buildArtistPreviewLinks } from './utils/musicPreviewLinks';
 import { IS_STATIC_MODE } from './config/runtimeMode';
+import { useLocale } from './i18n/LocaleContext';
 
 const ConcertCalendarView = lazy(() =>
   import('./components/ConcertCalendarView').then((m) => ({ default: m.ConcertCalendarView })),
@@ -279,6 +280,7 @@ function safeReadJson<T>(key: string, fallback: T): T {
 }
 
 export const App: React.FC = () => {
+  const { locale, intlLocale, isZh, toggleLocale, tr, cityLabel, genreLabel, dropKindLabel, statusLabel: localizeStatus } = useLocale();
   const [theme, setTheme] = useState<'dark' | 'light'>(() =>
     safeReadJson<'dark' | 'light'>(STORAGE_KEYS.theme, 'dark'),
   );
@@ -478,16 +480,23 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  // Keep browser tab title synced with the active standalone view
+  // Keep browser tab title synced with the active standalone view and language
   useEffect(() => {
-    const titles: Record<typeof activePage, string> = {
-      guide: 'OZ Amp — Melbourne & Sydney Live Concert & Ticket-Drop Guide',
-      watchlist: `OZ Amp — My ${activeWatchlistCount} Singer Sessions & Tour Alerts`,
-      'world-festivals': 'OZ Amp — Iconic World Music Festivals & Trip Budgets',
-      trending: 'OZ Amp — Trending Popular Music & Live Tour Radar',
-    };
+    const titles: Record<typeof activePage, string> = isZh
+      ? {
+          guide: 'OZ Amp — 墨尔本 & 悉尼演唱会与开票抢票日历',
+          watchlist: `OZ Amp — 我的 ${activeWatchlistCount} 位关注歌手与巡演提醒`,
+          'world-festivals': 'OZ Amp — 全球标志性音乐节与出行预算指南',
+          trending: 'OZ Amp — 全球热门音乐榜与巡演雷达',
+        }
+      : {
+          guide: 'OZ Amp — Melbourne & Sydney Live Concert & Ticket-Drop Guide',
+          watchlist: `OZ Amp — My ${activeWatchlistCount} Singer Sessions & Tour Alerts`,
+          'world-festivals': 'OZ Amp — Iconic World Music Festivals & Trip Budgets',
+          trending: 'OZ Amp — Trending Popular Music & Live Tour Radar',
+        };
     document.title = titles[activePage];
-  }, [activePage, activeWatchlistCount]);
+  }, [activePage, activeWatchlistCount, isZh]);
 
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   // Minute-granular clock prevents 1-second memo thrashing across 145+ concert cards
@@ -1508,7 +1517,7 @@ export const App: React.FC = () => {
       const key = c.dateIso.slice(0, 7);
       if (!map.has(key)) {
         const d = new Date(`${c.dateIso}T02:00:00Z`);
-        const label = new Intl.DateTimeFormat('en-AU', {
+        const label = new Intl.DateTimeFormat(intlLocale, {
           month: 'short',
           year: 'numeric',
           timeZone: 'Australia/Sydney',
@@ -1517,7 +1526,7 @@ export const App: React.FC = () => {
       }
     }
     return Array.from(map.entries());
-  }, [cityScopedConcerts]);
+  }, [cityScopedConcerts, intlLocale]);
 
   const remindedConcertIds = useMemo(
     () => new Set(reminders.map((r) => r.concertId)),
@@ -1689,8 +1698,10 @@ export const App: React.FC = () => {
         <div className="offline-status-banner" role="status">
           <WifiOff size={14} />
           <span>
-            Offline Mode — Viewing cached gigs, set times, venue sightlines &amp; your saved
-            reminders.
+            {tr(
+              'Offline Mode — Viewing cached gigs, set times, venue sightlines & your saved alerts.',
+              '离线模式 — 正在查看已缓存的演出、开演时间、场馆视野攻略与已保存提醒。',
+            )}
           </span>
         </div>
       )}
@@ -1699,7 +1710,9 @@ export const App: React.FC = () => {
       <header className="masthead">
         <div className="container masthead-inner">
           <div className="brand-cluster">
-            <span className="brand-edition">VIC &amp; NSW LIVE GIG RADAR · AEDT / AEST</span>
+            <span className="brand-edition">
+              {tr('VIC & NSW LIVE GIG RADAR · AEDT / AEST', '维州 & 新州演唱会雷达 · 澳东时间')}
+            </span>
             <button
               type="button"
               className="brand-home-btn"
@@ -1710,8 +1723,8 @@ export const App: React.FC = () => {
             </button>
           </div>
 
-          <nav className="section-jump-nav" aria-label="Primary pages">
-            <div className="page-mode-switcher" role="tablist" aria-label="Switch page view">
+          <nav className="section-jump-nav" aria-label={tr('Primary pages', '主导航')}>
+            <div className="page-mode-switcher" role="tablist" aria-label={tr('Switch page view', '切换页面视图')}>
               <button
                 type="button"
                 id="nav-page-guide-btn"
@@ -1720,7 +1733,7 @@ export const App: React.FC = () => {
                 className={`page-mode-btn ${activePage === 'guide' ? 'is-active' : ''}`}
                 onClick={() => switchPage('guide')}
               >
-                All Gigs ({cityScopedConcerts.length})
+                {tr(`All Gigs (${cityScopedConcerts.length})`, `全部演出 (${cityScopedConcerts.length})`)}
               </button>
               <button
                 type="button"
@@ -1730,7 +1743,7 @@ export const App: React.FC = () => {
                 className={`page-mode-btn ${activePage === 'watchlist' ? 'is-active' : ''}`}
                 onClick={() => switchPage('watchlist')}
               >
-                My Singers ({activeWatchlistCount})
+                {tr(`My Singers (${activeWatchlistCount})`, `我的歌手 (${activeWatchlistCount})`)}
               </button>
               <button
                 type="button"
@@ -1740,7 +1753,10 @@ export const App: React.FC = () => {
                 className={`page-mode-btn ${activePage === 'world-festivals' ? 'is-active' : ''}`}
                 onClick={() => switchPage('world-festivals')}
               >
-                World Festivals ({CORE_WORLD_FESTIVALS.length + savedWorldFestivals.length})
+                {tr(
+                  `World Festivals (${CORE_WORLD_FESTIVALS.length + savedWorldFestivals.length})`,
+                  `全球音乐节 (${CORE_WORLD_FESTIVALS.length + savedWorldFestivals.length})`,
+                )}
               </button>
               <button
                 type="button"
@@ -1750,7 +1766,7 @@ export const App: React.FC = () => {
                 className={`page-mode-btn ${activePage === 'trending' ? 'is-active' : ''}`}
                 onClick={() => switchPage('trending')}
               >
-                Trending Music
+                {tr('Trending Music', '热门音乐榜')}
               </button>
             </div>
           </nav>
@@ -1758,7 +1774,7 @@ export const App: React.FC = () => {
           <div className="masthead-actions">
             <label className="home-base-picker" htmlFor="home-city-select">
               <Plane size={13} />
-              <span>Home:</span>
+              <span>{tr('Home:', '常驻:')}</span>
               <select
                 id="home-city-select"
                 value={cityFilter}
@@ -1767,9 +1783,9 @@ export const App: React.FC = () => {
                   setVenueFilter('all');
                 }}
               >
-                <option value="melbourne">Melbourne (VIC)</option>
-                <option value="sydney">Sydney (NSW)</option>
-                <option value="all">Both Cities</option>
+                <option value="melbourne">{tr('Melbourne (VIC)', '墨尔本 (VIC)')}</option>
+                <option value="sydney">{tr('Sydney (NSW)', '悉尼 (NSW)')}</option>
+                <option value="all">{tr('Both Cities', '墨尔本 & 悉尼')}</option>
               </select>
             </label>
 
@@ -1780,7 +1796,7 @@ export const App: React.FC = () => {
               onClick={() => setIsImportModalOpen(true)}
             >
               <FilePlus2 size={15} />
-              <span>Paste Tour</span>
+              <span>{tr('Paste Tour', '导入巡演')}</span>
             </button>
 
             <button
@@ -1788,10 +1804,13 @@ export const App: React.FC = () => {
               id="open-sync-modal-btn"
               className="btn-outline-sm"
               onClick={() => setIsSyncModalOpen(true)}
-              title="Sync profile across laptop & phone or set up background push alerts"
+              title={tr(
+                'Sync profile across laptop & phone or set up background push alerts',
+                '在电脑与手机间同步备份，或设置后台推送提醒',
+              )}
             >
               <Smartphone size={15} />
-              <span>Sync / App</span>
+              <span>{tr('Sync / App', '备份 / 同步')}</span>
             </button>
 
             <button
@@ -1801,7 +1820,12 @@ export const App: React.FC = () => {
               onClick={() => setIsReminderDrawerOpen(true)}
             >
               <Bell size={15} />
-              <span>Saved Alerts ({cityScopedReminders.length})</span>
+              <span>
+                {tr(
+                  `Saved Alerts (${cityScopedReminders.length})`,
+                  `已存提醒 (${cityScopedReminders.length})`,
+                )}
+              </span>
             </button>
 
             <button
@@ -1811,12 +1835,31 @@ export const App: React.FC = () => {
               onClick={() => setIsAuthModalOpen(true)}
               title={
                 authUser
-                  ? `Signed in (${authUser.maskedEmail}) — choices auto-save`
-                  : 'Sign in or register with email to save your choices across visits'
+                  ? tr(
+                      `Signed in (${authUser.maskedEmail}) — choices auto-save`,
+                      `已登录 (${authUser.maskedEmail}) — 您的偏好会自动云端保存`,
+                    )
+                  : tr(
+                      'Sign in or register to save your choices across visits',
+                      '登录或注册账号，跨设备自动保存您的选择',
+                    )
               }
             >
               {authUser ? <UserCheck size={15} /> : <UserCircle size={15} />}
-              <span>{authUser ? authUser.displayName : 'Sign In'}</span>
+              <span>{authUser ? authUser.displayName : tr('Sign In', '登录')}</span>
+            </button>
+
+            <button
+              type="button"
+              id="toggle-language-btn"
+              className="lang-toggle-btn"
+              onClick={toggleLocale}
+              aria-label={isZh ? 'Switch language to English' : '切换语言为简体中文'}
+              title={isZh ? 'Switch to English' : '切换为简体中文 (Mandarin)'}
+            >
+              <span className={`lang-toggle-seg ${!isZh ? 'is-active' : ''}`}>EN</span>
+              <span className="lang-toggle-sep" aria-hidden="true">/</span>
+              <span className={`lang-toggle-seg ${isZh ? 'is-active' : ''}`}>中文</span>
             </button>
 
             <button
@@ -1825,7 +1868,9 @@ export const App: React.FC = () => {
               className="icon-btn"
               onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
               aria-label={
-                theme === 'dark' ? 'Switch to Broadsheet Day theme' : 'Switch to Stage Warm theme'
+                theme === 'dark'
+                  ? tr('Switch to Broadsheet Day theme', '切换为浅色主题')
+                  : tr('Switch to Stage Warm theme', '切换为暗色舞台主题')
               }
             >
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
@@ -1835,22 +1880,22 @@ export const App: React.FC = () => {
       </header>
 
       {activePage === 'guide' && (
-        <nav className="section-subnav-ribbon" aria-label="Jump to guide section">
+        <nav className="section-subnav-ribbon" aria-label={tr('Jump to guide section', '快捷跳转')}>
           <div className="container subnav-inner">
             <a href="#drops" className="subnav-pill">
-              Ticket Drops ({upcomingDrops.length})
+              {tr(`Ticket Drops (${upcomingDrops.length})`, `即将开票 (${upcomingDrops.length})`)}
             </a>
             <a href="#singers-monitor" className="subnav-pill">
-              Singer Radar ({monitoredSingers.length})
+              {tr(`Singer Radar (${monitoredSingers.length})`, `歌手雷达 (${monitoredSingers.length})`)}
             </a>
             <a href="#gigs" className="subnav-pill">
-              Concerts ({filteredConcerts.length})
+              {tr(`Concerts (${filteredConcerts.length})`, `演唱会列表 (${filteredConcerts.length})`)}
             </a>
             <a href="#venues-heading" className="subnav-pill">
-              Venue Sightlines ({availableVenues.length})
+              {tr(`Venue Sightlines (${availableVenues.length})`, `场馆攻略 (${availableVenues.length})`)}
             </a>
             <a href="#music-festivals" className="subnav-pill">
-              AU Festivals ({cityScopedFestivals.length})
+              {tr(`AU Festivals (${cityScopedFestivals.length})`, `澳洲音乐节 (${cityScopedFestivals.length})`)}
             </a>
           </div>
         </nav>
@@ -1999,18 +2044,25 @@ export const App: React.FC = () => {
         <section className="hero-section">
           <div className="hero-copy">
             <p className="eyebrow-kicker">
-              Ticketek · Ticketmaster · Frontier · Live Nation · Tixel +10% Legal Cap
+              {tr(
+                'Ticketek · Ticketmaster · Frontier · Live Nation · Tixel +10% Legal Cap',
+                'Ticketek · Ticketmaster · Frontier · Live Nation · Tixel 官方转售 +10% 法定上限',
+              )}
             </p>
             <h1 className="hero-headline">
-              Every band, singer &amp; ticket drop across Melbourne and Sydney.
+              {tr(
+                'Every band, singer & ticket drop across Melbourne and Sydney.',
+                '墨尔本与悉尼全部乐队、歌手演唱会与开票抢票日历。',
+              )}
             </h1>
             <p className="hero-lede">
-              Monitor favourite singers for instant tour-announcement alerts, catch Telstra Plus
-              &amp; Frontier pre-sales, compare festival passes against theatre sideshows, and plan
-              interstate MEL ↔ SYD gig trips before dynamic hotel prices surge.
+              {tr(
+                'Monitor favourite singers for instant tour-announcement alerts, catch Telstra Plus & Frontier pre-sales, compare festival passes against theatre sideshows, and plan interstate MEL ↔ SYD gig trips before dynamic hotel prices surge.',
+                '关注喜爱的歌手第一时间获取巡演官宣提醒，不错过 Telstra Plus 与 Frontier 预售，对比音乐节通票与剧场专场（Sideshow），并在酒店涨价前规划墨尔本 ↔ 悉尼跨城看演出行程。',
+              )}
             </p>
 
-            <div className="city-tab-bar" role="tablist" aria-label="Filter by Australian city">
+            <div className="city-tab-bar" role="tablist" aria-label={tr('Filter by Australian city', '按澳洲城市筛选')}>
               <button
                 type="button"
                 id="city-tab-all"
@@ -2022,7 +2074,7 @@ export const App: React.FC = () => {
                   setVenueFilter('all');
                 }}
               >
-                <span>Both Cities</span>
+                <span>{cityLabel('all')}</span>
                 <span className="tab-count">{allConcerts.length}</span>
               </button>
               <button
@@ -2036,7 +2088,7 @@ export const App: React.FC = () => {
                   setVenueFilter('all');
                 }}
               >
-                <span>Melbourne · VIC</span>
+                <span>{cityLabel('melbourne', 'state')}</span>
                 <span className="tab-count">{melbourneCount}</span>
               </button>
               <button
@@ -2050,7 +2102,7 @@ export const App: React.FC = () => {
                   setVenueFilter('all');
                 }}
               >
-                <span>Sydney · NSW</span>
+                <span>{cityLabel('sydney', 'state')}</span>
                 <span className="tab-count">{sydneyCount}</span>
               </button>
             </div>
@@ -2072,7 +2124,7 @@ export const App: React.FC = () => {
                 className="stage-plate-img"
               />
               <div className="stage-plate-caption">
-                <span className="plate-tag">MELBOURNE · NAARM</span>
+                <span className="plate-tag">{tr('MELBOURNE · NAARM', '墨尔本 · 维多利亚州')}</span>
                 <strong>Forum, Rod Laver, Marvel, Music Bowl, Corner &amp; Northcote</strong>
               </div>
             </button>
@@ -2092,26 +2144,33 @@ export const App: React.FC = () => {
                 className="stage-plate-img"
               />
               <div className="stage-plate-caption">
-                <span className="plate-tag">SYDNEY · EORA</span>
+                <span className="plate-tag">{tr('SYDNEY · EORA', '悉尼 · 新南威尔士州')}</span>
                 <strong>Opera House Forecourt, Accor, Qudos, Hordern &amp; Enmore</strong>
               </div>
             </button>
           </div>
         </section>
 
-        {/* Dedicated Uploaded Singer Sessions & Concert Reminder Page Callout */}
-        <section className="dedicated-sessions-banner" aria-label="Dedicated singer sessions hub">
+        {/* Dedicated Singer Sessions & Concert Reminder Page Callout */}
+        <section className="dedicated-sessions-banner" aria-label={tr('Dedicated singer sessions hub', '我的歌手专属提醒中心')}>
           <div>
             <span className="eyebrow-kicker">
-              Personal Roster · {activeWatchlistCount} Tracked Singers (A–Z &amp; Chinese Artists)
+              {tr(
+                `Personal Roster · ${activeWatchlistCount} Tracked Singers (A–Z & Chinese Artists)`,
+                `个人歌单雷达 · 共追踪 ${activeWatchlistCount} 位歌手（欧美 & 华语）`,
+              )}
             </span>
             <h2 className="dedicated-banner-title">
-              Dedicated Ticket Sessions &amp; Upcoming Concert Reminders
+              {tr(
+                'Dedicated Ticket Sessions & Upcoming Concert Reminders',
+                '我的歌手专属抢票场次与演出提醒',
+              )}
             </h2>
             <p className="dedicated-banner-desc">
-              Open your standalone reminder page to add or remove singers, track Melbourne &amp;
-              Sydney ticket drops, and manage all {activeWatchlistCount} artists in your personal
-              roster.
+              {tr(
+                `Open your standalone reminder page to add or remove singers, track Melbourne & Sydney ticket drops, and manage all ${activeWatchlistCount} artists in your personal roster.`,
+                `打开专属页面自由增删关注歌手、追踪墨尔本与悉尼开票场次，一站式管理您关注的全部 ${activeWatchlistCount} 位艺人。`,
+              )}
             </p>
           </div>
           <button
@@ -2121,7 +2180,7 @@ export const App: React.FC = () => {
             onClick={() => switchPage('watchlist')}
           >
             <BellPlus size={15} />
-            <span>Open Dedicated Sessions Page →</span>
+            <span>{tr('Open My Singers Page →', '打开我的歌手页面 →')}</span>
           </button>
         </section>
 
@@ -2130,15 +2189,22 @@ export const App: React.FC = () => {
           <section id="drops" className="drop-radar-section" aria-labelledby="drop-radar-heading">
             <div className="section-header-row">
               <div>
-                <span className="eyebrow-kicker">Queue Watch · Live Countdown</span>
+                <span className="eyebrow-kicker">
+                  {tr('Queue Watch · Live Countdown', '抢票倒计时 · 实时监控')}
+                </span>
                 <h2 id="drop-radar-heading" className="section-heading">
-                  Upcoming Pre-Sales &amp; Ticket Drops ({upcomingDrops.length})
+                  {tr(
+                    `Upcoming Pre-Sales & Ticket Drops (${upcomingDrops.length})`,
+                    `即将到来的预售与开票场次 (${upcomingDrops.length})`,
+                  )}
                 </h2>
               </div>
               <div className="header-cta-group">
                 <span className="sync-caption">
-                  Queue tip: Ticketek &amp; Ticketmaster waiting lounges open 15 minutes before the
-                  hour.
+                  {tr(
+                    'Queue tip: Ticketek & Ticketmaster waiting lounges open 15 minutes before the hour.',
+                    '抢票贴士：Ticketek 与 Ticketmaster 候票大厅通常在整点前 15 分钟开放。',
+                  )}
                 </span>
                 {upcomingDrops.length > 12 && (
                   <button
@@ -2149,8 +2215,11 @@ export const App: React.FC = () => {
                   >
                     <span>
                       {showAllDrops
-                        ? 'Show Next 12 Drops'
-                        : `Show All ${upcomingDrops.length} Drops`}
+                        ? tr('Show Next 12 Drops', '仅看最近 12 场')
+                        : tr(
+                            `Show All ${upcomingDrops.length} Drops`,
+                            `展开全部 ${upcomingDrops.length} 场开票`,
+                          )}
                     </span>
                   </button>
                 )}
@@ -2159,7 +2228,7 @@ export const App: React.FC = () => {
 
             <div className="drop-strip">
               {(showAllDrops ? upcomingDrops : upcomingDrops.slice(0, 12)).map(({ concert, drop }) => {
-                const cd = computeCountdown(drop.opensAtIso, nowMs);
+                const cd = computeCountdown(drop.opensAtIso, nowMs, locale);
                 const ruleId15 = `${concert.id}::${drop.id}::15`;
                 const isArmed = reminders.some((r) => r.id === ruleId15);
                 const resolvedDropUrl = sanitizeExternalHttpsUrl(drop.bookingUrl, concert.artist);
@@ -2170,9 +2239,9 @@ export const App: React.FC = () => {
                     <div className="drop-card-top">
                       <div className="drop-card-badges">
                         <span className={`city-pill city-pill--${concert.city}`}>
-                          {concert.city === 'sydney' ? 'SYD' : 'MEL'}
+                          {cityLabel(concert.city, 'short')}
                         </span>
-                        <span className="presale-kind-badge">{drop.kind}</span>
+                        <span className="presale-kind-badge">{dropKindLabel(drop.kind)}</span>
                       </div>
                       <span className={`mono-countdown ${cd.isImminent ? 'is-urgent' : ''}`}>
                         {cd.compact}
@@ -2194,7 +2263,8 @@ export const App: React.FC = () => {
                     <div className="drop-session-body">
                       <p className="drop-label">{drop.label}</p>
                       <p className="drop-venue">
-                        Opens {formatAuTimestamp(drop.opensAtIso, concert.city)}
+                        {tr('Opens', '开票时间')}{' '}
+                        {formatAuTimestamp(drop.opensAtIso, concert.city, locale)}
                       </p>
                       {drop.codeHint && <p className="drop-hint">{drop.codeHint}</p>}
                     </div>
@@ -2206,7 +2276,9 @@ export const App: React.FC = () => {
                         onClick={() => addOrToggleReminder(concert, 15, drop)}
                       >
                         {isArmed ? <Check size={13} /> : <BellPlus size={13} />}
-                        <span>{isArmed ? 'Alert On' : 'T-15m Alert'}</span>
+                        <span>
+                          {isArmed ? tr('Alert On', '已设提醒') : tr('T-15m Alert', '提前15分提醒')}
+                        </span>
                       </button>
 
                       <a
@@ -2214,10 +2286,10 @@ export const App: React.FC = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-ghost-xs"
-                        title="Add pre-sale queue block to Google Calendar"
+                        title={tr('Add pre-sale queue block to Google Calendar', '添加到 Google 日历')}
                       >
                         <Calendar size={12} />
-                        <span>GCal</span>
+                        <span>{tr('GCal', '日历')}</span>
                       </a>
 
                       <a
@@ -2269,10 +2341,10 @@ export const App: React.FC = () => {
 
         {/* Tour News Wire */}
         {cityScopedTourNews.length > 0 && (
-          <section className="news-ticker-bar" aria-label="Australian tour dispatches">
+          <section className="news-ticker-bar" aria-label={tr('Australian tour dispatches', '澳洲巡演快讯')}>
             <span className="ticker-badge">
               <Radio size={13} />
-              <span>AU TOUR WIRE</span>
+              <span>{tr('AU TOUR WIRE', '澳洲巡演快讯')}</span>
             </span>
             <div className="ticker-items">
               {cityScopedTourNews.slice(0, 4).map((item) => (
@@ -2291,7 +2363,7 @@ export const App: React.FC = () => {
         )}
 
         {/* Filter & Search Controls */}
-        <section id="gigs" className="filter-panel" aria-label="Search and filter concerts">
+        <section id="gigs" className="filter-panel" aria-label={tr('Search and filter concerts', '搜索与筛选演唱会')}>
           <div className="filter-top-row">
             <div className="search-field-wrap">
               <Search size={16} className="search-icon" />
@@ -2299,7 +2371,10 @@ export const App: React.FC = () => {
                 type="search"
                 id="concert-search-input"
                 className="search-input"
-                placeholder="Search band, singer, support act, festival, suburb, or venue…"
+                placeholder={tr(
+                  'Search band, singer, support act, festival, suburb, or venue…',
+                  '搜索乐队、歌手、嘉宾、音乐节、区域或场馆…',
+                )}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -2308,15 +2383,16 @@ export const App: React.FC = () => {
             <select
               id="venue-filter-select"
               className="filter-select"
-              aria-label="Filter by venue"
+              aria-label={tr('Filter by venue', '按场馆筛选')}
               value={venueFilter}
               onChange={(e) => setVenueFilter(e.target.value)}
             >
-              <option value="all">All Venues ({availableVenues.length})</option>
+              <option value="all">
+                {tr(`All Venues (${availableVenues.length})`, `全部场馆 (${availableVenues.length})`)}
+              </option>
               {availableVenues.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.city === 'sydney' ? '[SYD] ' : '[MEL] '}
-                  {v.name} ({v.suburb})
+                  [{cityLabel(v.city, 'short')}] {v.name} ({v.suburb})
                 </option>
               ))}
             </select>
@@ -2324,11 +2400,11 @@ export const App: React.FC = () => {
             <select
               id="month-filter-select"
               className="filter-select"
-              aria-label="Filter by month"
+              aria-label={tr('Filter by month', '按月份筛选')}
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
             >
-              <option value="all">All Upcoming Months</option>
+              <option value="all">{tr('All Upcoming Months', '全部未来月份')}</option>
               {availableMonths.map(([key, label]) => (
                 <option key={key} value={key}>
                   {label}
@@ -2339,39 +2415,47 @@ export const App: React.FC = () => {
             <select
               id="status-filter-select"
               className="filter-select"
-              aria-label="Filter by ticket status"
+              aria-label={tr('Filter by ticket status', '按售票状态筛选')}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             >
-              <option value="all">All Ticket Statuses</option>
-              <option value="watched">My Monitored Singers ({monitoredSingers.length})</option>
-              <option value="drops">Has Pre-Sale / Upcoming Drop</option>
-              <option value="selling-fast">Selling Fast</option>
-              <option value="on-sale">On Sale Now</option>
-              <option value="waitlist">Waitlist / Resale Only</option>
+              <option value="all">{tr('All Ticket Statuses', '全部售票状态')}</option>
+              <option value="watched">
+                {tr(
+                  `My Monitored Singers (${monitoredSingers.length})`,
+                  `我关注的雷达歌手 (${monitoredSingers.length})`,
+                )}
+              </option>
+              <option value="drops">{tr('Has Pre-Sale / Upcoming Drop', '有预售 / 即将开票')}</option>
+              <option value="selling-fast">{tr('Selling Fast', '余票紧张')}</option>
+              <option value="on-sale">{tr('On Sale Now', '公开售票中')}</option>
+              <option value="waitlist">{tr('Waitlist / Resale Only', '仅候补 / 官方转售')}</option>
               <option value="interstate-excl">
                 {cityFilter === 'melbourne'
-                  ? 'Melbourne Exclusives (No Sydney Show)'
+                  ? tr('Melbourne Exclusives (No Sydney Show)', '墨尔本独享（悉尼无场次）')
                   : cityFilter === 'sydney'
-                    ? 'Sydney Exclusives (No Melbourne Show)'
-                    : 'Single-City Exclusives (MEL or SYD Only)'}
+                    ? tr('Sydney Exclusives (No Melbourne Show)', '悉尼独享（墨尔本无场次）')
+                    : tr('Single-City Exclusives (MEL or SYD Only)', '单城独享场次（仅墨或仅悉）')}
               </option>
               <option value="reminded">
-                My Saved Alerts ({cityScopedReminders.length})
+                {tr(
+                  `My Saved Alerts (${cityScopedReminders.length})`,
+                  `我已保存的提醒 (${cityScopedReminders.length})`,
+                )}
               </option>
             </select>
 
             <select
               id="sort-order-select"
               className="filter-select"
-              aria-label="Sort concerts"
+              aria-label={tr('Sort concerts', '排序方式')}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortMode)}
             >
-              <option value="date">Sort: Soonest Date</option>
-              <option value="drops-first">Sort: Next Ticket Drop</option>
-              <option value="price-asc">Sort: Lowest Price (AUD)</option>
-              <option value="artist-az">Sort: Artist A–Z</option>
+              <option value="date">{tr('Sort: Soonest Date', '排序：最近演出日期')}</option>
+              <option value="drops-first">{tr('Sort: Next Ticket Drop', '排序：最快开票')}</option>
+              <option value="price-asc">{tr('Sort: Lowest Price (AUD)', '排序：最低票价 (澳元)')}</option>
+              <option value="artist-az">{tr('Sort: Artist A–Z', '排序：艺人 A–Z')}</option>
             </select>
           </div>
 
@@ -2394,7 +2478,11 @@ export const App: React.FC = () => {
                 onClick={() => setWeekendOnly((v) => !v)}
               >
                 <Calendar size={14} />
-                <span>{weekendOnly ? '✓ Fri–Sun Only' : 'Fri–Sun Only'}</span>
+                <span>
+                  {weekendOnly
+                    ? tr('✓ Fri–Sun Only', '✓ 仅看周五至周日')
+                    : tr('Fri–Sun Only', '仅看周末场')}
+                </span>
               </button>
 
               {(weekendOnly ||
@@ -2418,13 +2506,13 @@ export const App: React.FC = () => {
                     setSearchQuery('');
                   }}
                 >
-                  Clear Filters
+                  {tr('Clear Filters', '清除筛选')}
                 </button>
               )}
             </div>
           </div>
 
-          <div className="genre-pill-row" role="group" aria-label="Filter by music genre">
+          <div className="genre-pill-row" role="group" aria-label={tr('Filter by music genre', '按曲风筛选')}>
             {GENRE_FILTERS.map((g) => (
               <button
                 key={g}
@@ -2432,7 +2520,7 @@ export const App: React.FC = () => {
                 className={`genre-pill ${genreFilter === g ? 'is-active' : ''}`}
                 onClick={() => setGenreFilter(g)}
               >
-                {g}
+                {genreLabel(g)}
               </button>
             ))}
           </div>
@@ -2441,19 +2529,31 @@ export const App: React.FC = () => {
         {/* Results Meta Bar + Cards / Monthly Calendar View Switcher */}
         <div className="results-meta-bar">
           <p className="results-summary">
-            Showing <strong>{filteredConcerts.length}</strong> live concert
-            {filteredConcerts.length === 1 ? '' : 's'}
-            {cityFilter !== 'all'
-              ? ` in ${cityFilter === 'melbourne' ? 'Melbourne (VIC)' : 'Sydney (NSW)'}`
-              : ' across Melbourne & Sydney'}
-            {weekendOnly ? ' · Fri–Sun' : ''}
-            {priceRange[0] > 0 || priceRange[1] < 500
-              ? ` · A$${priceRange[0]}–${priceRange[1] >= 500 ? 'A$500+' : `A$${priceRange[1]}`}`
-              : ''}
+            {isZh ? (
+              <>
+                共显示 <strong>{filteredConcerts.length}</strong> 场演出（{cityLabel(cityFilter)}）
+                {weekendOnly ? ' · 仅周末' : ''}
+                {priceRange[0] > 0 || priceRange[1] < 500
+                  ? ` · A$${priceRange[0]}–${priceRange[1] >= 500 ? 'A$500+' : `A$${priceRange[1]}`}`
+                  : ''}
+              </>
+            ) : (
+              <>
+                Showing <strong>{filteredConcerts.length}</strong> live concert
+                {filteredConcerts.length === 1 ? '' : 's'}
+                {cityFilter !== 'all'
+                  ? ` in ${cityFilter === 'melbourne' ? 'Melbourne (VIC)' : 'Sydney (NSW)'}`
+                  : ' across Melbourne & Sydney'}
+                {weekendOnly ? ' · Fri–Sun' : ''}
+                {priceRange[0] > 0 || priceRange[1] < 500
+                  ? ` · A$${priceRange[0]}–${priceRange[1] >= 500 ? 'A$500+' : `A$${priceRange[1]}`}`
+                  : ''}
+              </>
+            )}
           </p>
 
           <div className="sync-status-cluster">
-            <div className="page-mode-switcher view-mode-switch" role="tablist" aria-label="Concert view layout">
+            <div className="page-mode-switcher view-mode-switch" role="tablist" aria-label={tr('Concert view layout', '切换演出视图')}>
               <button
                 type="button"
                 id="view-mode-grid-btn"
@@ -2463,7 +2563,7 @@ export const App: React.FC = () => {
                 onClick={() => setGigViewMode('grid')}
               >
                 <LayoutGrid size={13} />
-                <span>Cards Grid</span>
+                <span>{tr('Cards Grid', '卡片列表')}</span>
               </button>
               <button
                 type="button"
@@ -2474,7 +2574,7 @@ export const App: React.FC = () => {
                 onClick={() => setGigViewMode('calendar')}
               >
                 <CalendarDays size={13} />
-                <span>Monthly Calendar</span>
+                <span>{tr('Monthly Calendar', '月度日历')}</span>
               </button>
             </div>
 
@@ -2488,7 +2588,7 @@ export const App: React.FC = () => {
                 disabled={syncing}
               >
                 <RefreshCw size={13} className={syncing ? 'spin-icon' : ''} />
-                <span>{syncing ? 'Syncing…' : 'Sync Feed'}</span>
+                <span>{syncing ? tr('Syncing…', '同步中…') : tr('Sync Feed', '刷新数据')}</span>
               </button>
             )}
           </div>
@@ -2496,7 +2596,7 @@ export const App: React.FC = () => {
 
         {/* Main Concert Broadsheet Grid OR Interactive Monthly Calendar */}
         {gigViewMode === 'calendar' ? (
-          <Suspense fallback={<div className="lazy-page-loader">Loading Monthly Calendar…</div>}>
+          <Suspense fallback={<div className="lazy-page-loader">{tr('Loading Monthly Calendar…', '正在加载月度日历…')}</div>}>
             <ConcertCalendarView
               concerts={filteredConcerts}
               upcomingDrops={upcomingDrops}
@@ -2509,11 +2609,12 @@ export const App: React.FC = () => {
         ) : filteredConcerts.length === 0 ? (
           <section className="empty-results-panel">
             <Sparkles size={26} />
-            <h2>No matching gigs under current filters</h2>
+            <h2>{tr('No matching gigs under current filters', '当前筛选条件下暂无匹配演出')}</h2>
             <p>
-              Try widening your price slider, clearing Fri–Sun Only, switching cities, or adding
-              the singer to <strong>Favourite Singers Radar</strong> above so we alert you as soon
-              as dates drop.
+              {tr(
+                'Try widening your price slider, clearing Fri–Sun Only, switching cities, or adding the singer to Favourite Singers Radar above so we alert you as soon as dates drop.',
+                '您可以放宽票价范围、取消“仅看周末场”、切换城市，或在上方将歌手加入“歌手雷达”，巡演官宣时第一时间提醒您。',
+              )}
             </p>
             <button
               type="button"
@@ -2530,13 +2631,13 @@ export const App: React.FC = () => {
                 setSearchQuery('');
               }}
             >
-              Reset All Filters
+              {tr('Reset All Filters', '重置所有筛选')}
             </button>
           </section>
         ) : (
-          <section className="gig-grid" aria-label="Upcoming concerts">
+          <section className="gig-grid" aria-label={tr('Upcoming concerts', '即将上演的演唱会')}>
             {filteredConcerts.map((concert) => {
-              const dateParts = formatConcertDate(concert.dateIso, concert.timeZone);
+              const dateParts = formatConcertDate(concert.dateIso, concert.timeZone, locale);
               const venueMeta = catalog.venues.find((v) => v.id === concert.venueId);
               const watched = isArtistFollowed(concert);
               const hasReminder = remindedConcertIds.has(concert.id);
@@ -2550,16 +2651,7 @@ export const App: React.FC = () => {
                 venueMeta,
               );
 
-              const statusLabel =
-                concert.status === 'presale-live'
-                  ? 'Pre-Sale Live'
-                  : concert.status === 'presale-soon'
-                    ? 'Pre-Sale Upcoming'
-                    : concert.status === 'selling-fast'
-                      ? 'Selling Fast'
-                      : concert.status === 'waitlist-resale'
-                        ? 'Waitlist · Resale'
-                        : 'On Sale';
+              const statusText = localizeStatus(concert.status);
 
               return (
                 <article
@@ -2569,17 +2661,21 @@ export const App: React.FC = () => {
                   <div className="gig-card-header">
                     <div className="gig-badge-group">
                       <span className={`city-pill city-pill--${concert.city}`}>
-                        {concert.city === 'sydney' ? 'SYDNEY · NSW' : 'MELBOURNE · VIC'}
+                        {cityLabel(concert.city, 'state').toUpperCase()}
                       </span>
                       <span className={`status-pill status-pill--${concert.status}`}>
-                        {statusLabel}
+                        {statusText}
                       </span>
                       {tripPlan?.isExclusiveToOtherCity && (
                         <span className="interstate-excl-pill">
-                          {concert.city === 'sydney' ? 'SYD Exclusive' : 'MEL/VIC Exclusive'}
+                          {concert.city === 'sydney'
+                            ? tr('SYD Exclusive', '悉尼独享')
+                            : tr('MEL/VIC Exclusive', '墨尔本独享')}
                         </span>
                       )}
-                      {concert.isCustom && <span className="custom-pill">Imported</span>}
+                      {concert.isCustom && (
+                        <span className="custom-pill">{tr('Imported', '已导入')}</span>
+                      )}
                     </div>
 
                     <div className="card-corner-tools">
@@ -2592,7 +2688,11 @@ export const App: React.FC = () => {
                             ? `Stop monitoring ${concert.artist}`
                             : `Monitor ${concert.artist}`
                         }
-                        title={watched ? 'Monitoring singer' : 'Monitor singer for alerts'}
+                        title={
+                          watched
+                            ? tr('Monitoring singer', '正在关注该歌手')
+                            : tr('Monitor singer for alerts', '关注该歌手获取巡演提醒')
+                        }
                       >
                         <Star size={16} fill={watched ? 'currentColor' : 'none'} />
                       </button>
@@ -2614,19 +2714,23 @@ export const App: React.FC = () => {
                         <strong className="logistics-primary">{dateParts.fullLabel}</strong>
                         {concert.additionalDates && concert.additionalDates.length > 0 && (
                           <span className="multi-night-badge">
-                            +{concert.additionalDates.length} more night
-                            {concert.additionalDates.length === 1 ? '' : 's'}
+                            {isZh
+                              ? `+${concert.additionalDates.length} 场加演`
+                              : `+${concert.additionalDates.length} more night${concert.additionalDates.length === 1 ? '' : 's'}`}
                           </span>
                         )}
                         <div className="logistics-sub">
-                          <Clock size={12} /> Doors{' '}
+                          <Clock size={12} /> {tr('Doors', '入场')}{' '}
                           {formatAuTime24To12(
                             concert.doorsTimeLocal,
                             concert.dateIso,
                             concert.timeZone,
+                            locale,
                           )}{' '}
-                          · Set {concert.setTimeLocal}
-                          {venueMeta?.curfewLocal ? ` · Curfew ${venueMeta.curfewLocal}` : ''}
+                          · {tr('Set', '主秀')} {concert.setTimeLocal}
+                          {venueMeta?.curfewLocal
+                            ? ` · ${tr('Curfew', '散场')} ${venueMeta.curfewLocal}`
+                            : ''}
                         </div>
                       </div>
                     </div>
@@ -2654,7 +2758,8 @@ export const App: React.FC = () => {
                     <div className="resale-guard-text">
                       <ShieldCheck size={14} className="resale-icon" />
                       <span>
-                        <strong>{resaleGuard.statutoryLawLabel}:</strong> Max fair resale{' '}
+                        <strong>{resaleGuard.statutoryLawLabel}:</strong>{' '}
+                        {tr('Max fair resale', '法定最高转售价')}{' '}
                         <code>{resaleGuard.maxLegalMaxAud}</code>
                       </span>
                     </div>
@@ -2664,7 +2769,7 @@ export const App: React.FC = () => {
                       rel="noopener noreferrer"
                       className="platform-mini-link"
                     >
-                      Tixel Auto-Buy <ExternalLink size={10} />
+                      {tr('Tixel Auto-Buy', 'Tixel 自动蹲票')} <ExternalLink size={10} />
                     </a>
                   </div>
 
@@ -2679,7 +2784,7 @@ export const App: React.FC = () => {
                       </div>
                       <div className="interstate-hotel-row">
                         <span>
-                          <Hotel size={12} /> Stay: {tripPlan.hotelAreaTip}
+                          <Hotel size={12} /> {tr('Stay:', '住宿建议:')} {tripPlan.hotelAreaTip}
                         </span>
                         <button
                           type="button"
@@ -2693,7 +2798,7 @@ export const App: React.FC = () => {
                             })
                           }
                         >
-                          +Hotel Reminder
+                          {tr('+Hotel Reminder', '+酒店提醒')}
                         </button>
                       </div>
                     </div>
@@ -2740,18 +2845,20 @@ export const App: React.FC = () => {
                   {/* Inline Pre-Sale Schedule */}
                   {concert.ticketDrops.length > 0 && (
                     <div className="card-drops-box">
-                      <span className="card-drops-heading">Pre-Sale &amp; On-Sale Schedule</span>
+                      <span className="card-drops-heading">
+                        {tr('Pre-Sale & On-Sale Schedule', '预售与公售时间表')}
+                      </span>
                       <ul className="card-drops-list">
                         {concert.ticketDrops.map((drop) => {
-                          const cd = computeCountdown(drop.opensAtIso, nowMs);
+                          const cd = computeCountdown(drop.opensAtIso, nowMs, locale);
                           const isDropArmed = reminders.some(
                             (r) => r.id === `${concert.id}::${drop.id}::15`,
                           );
                           return (
                             <li key={drop.id} className="card-drop-row">
                               <div>
-                                <strong>{drop.kind}:</strong>{' '}
-                                {formatAuTimestamp(drop.opensAtIso, concert.city)}{' '}
+                                <strong>{dropKindLabel(drop.kind)}:</strong>{' '}
+                                {formatAuTimestamp(drop.opensAtIso, concert.city, locale)}{' '}
                                 <span className="inline-cd">({cd.compact})</span>
                               </div>
                               <button
@@ -2759,7 +2866,7 @@ export const App: React.FC = () => {
                                 className={`mini-arm-btn ${isDropArmed ? 'is-armed' : ''}`}
                                 onClick={() => addOrToggleReminder(concert, 15, drop)}
                               >
-                                {isDropArmed ? 'Alert On' : '+15m Alert'}
+                                {isDropArmed ? tr('Alert On', '已提醒') : tr('+15m Alert', '+15分提醒')}
                               </button>
                             </li>
                           );
@@ -2774,7 +2881,9 @@ export const App: React.FC = () => {
                       <span className="price-aud">
                         {formatAudRange(concert.priceMinAud, concert.priceMaxAud)}
                       </span>
-                      <span className="agency-caption">via {concert.agency}</span>
+                      <span className="agency-caption">
+                        {tr(`via ${concert.agency}`, `官方票务: ${concert.agency}`)}
+                      </span>
                     </div>
 
                     <div className="card-cta-cluster">
@@ -2787,12 +2896,14 @@ export const App: React.FC = () => {
                           }
                         >
                           <BellPlus size={14} />
-                          <span>{hasReminder ? 'Alert On' : 'Notify Me'}</span>
+                          <span>{hasReminder ? tr('Alert On', '已设提醒') : tr('Notify Me', '设置提醒')}</span>
                         </button>
 
                         {isPopoverOpen && (
                           <div className="remind-popover" role="menu">
-                            <span className="popover-title">Queue &amp; Sniper Alerts</span>
+                            <span className="popover-title">
+                              {tr('Queue & Sniper Alerts', '抢票与放票提醒')}
+                            </span>
                             {concert.ticketDrops[0] && (
                               <button
                                 type="button"
@@ -2801,7 +2912,10 @@ export const App: React.FC = () => {
                                   addOrToggleReminder(concert, 15, concert.ticketDrops[0])
                                 }
                               >
-                                T-15m Next Drop ({concert.ticketDrops[0].kind})
+                                {tr(
+                                  `T-15m Next Drop (${concert.ticketDrops[0].kind})`,
+                                  `开票前 15 分钟 (${dropKindLabel(concert.ticketDrops[0].kind)})`,
+                                )}
                               </button>
                             )}
                             {resaleGuard.productionHoldFuture && (
@@ -2817,7 +2931,10 @@ export const App: React.FC = () => {
                                   })
                                 }
                               >
-                                T-48h Production-Hold Sniper (10am)
+                                {tr(
+                                  'T-48h Production-Hold Sniper (10am)',
+                                  '演出前 48 小时蹲舞美加放票 (上午10点)',
+                                )}
                               </button>
                             )}
                             <button
@@ -2825,14 +2942,14 @@ export const App: React.FC = () => {
                               className="popover-option"
                               onClick={() => addOrToggleReminder(concert, 60)}
                             >
-                              1 hour before Show Doors
+                              {tr('1 hour before Show Doors', '开场入场前 1 小时提醒')}
                             </button>
                             <button
                               type="button"
                               className="popover-option"
                               onClick={() => addOrToggleReminder(concert, 1440)}
                             >
-                              24 hours before Show Day
+                              {tr('24 hours before Show Day', '演出前 24 小时提醒')}
                             </button>
                             <hr className="popover-divider" />
                             <a
@@ -2842,7 +2959,7 @@ export const App: React.FC = () => {
                               className="popover-option"
                               onClick={() => setActivePopoverId(null)}
                             >
-                              Add Show to Google Calendar ↗
+                              {tr('Add Show to Google Calendar ↗', '添加到 Google 日历 ↗')}
                             </a>
                             <button
                               type="button"
@@ -2852,7 +2969,7 @@ export const App: React.FC = () => {
                                 setActivePopoverId(null);
                               }}
                             >
-                              Download Show .ics File
+                              {tr('Download Show .ics File', '下载 .ics 日历文件')}
                             </button>
                           </div>
                         )}
@@ -2866,7 +2983,7 @@ export const App: React.FC = () => {
                           className="btn-primary-sm"
                         >
                           <Ticket size={14} />
-                          <span>Official Resale</span>
+                          <span>{tr('Official Resale', '官方转售')}</span>
                         </a>
                       ) : (
                         <a
@@ -2892,14 +3009,17 @@ export const App: React.FC = () => {
           <div className="section-header-row">
             <div>
               <span className="eyebrow-kicker">
-                02 · {availableVenues.length} Tracked Stages · Sightlines, Curfews &amp; Bag Rules
+                {tr(
+                  `02 · ${availableVenues.length} Tracked Stages · Sightlines, Curfews & Bag Rules`,
+                  `02 · ${availableVenues.length} 座热门场馆 · 视野、散场时间与存包规则`,
+                )}
               </span>
               <h2 id="venues-heading" className="section-heading">
                 {cityFilter === 'melbourne'
-                  ? 'Melbourne Venue & Sightline Guide'
+                  ? tr('Melbourne Venue & Sightline Guide', '墨尔本演出场馆与视野攻略')
                   : cityFilter === 'sydney'
-                    ? 'Sydney Venue & Sightline Guide'
-                    : 'Melbourne & Sydney Venue & Sightline Guide'}
+                    ? tr('Sydney Venue & Sightline Guide', '悉尼演出场馆与视野攻略')
+                    : tr('Melbourne & Sydney Venue & Sightline Guide', '墨尔本与悉尼场馆与视野攻略')}
               </h2>
             </div>
 
@@ -2909,7 +3029,11 @@ export const App: React.FC = () => {
               onClick={() => setShowVenueTips((cur) => !cur)}
             >
               <Eye size={14} />
-              <span>{showVenueTips ? 'Compact Venue Grid' : 'Show Sightline & Bag Tips'}</span>
+              <span>
+                {showVenueTips
+                  ? tr('Compact Venue Grid', '收起场馆详情')
+                  : tr('Show Sightline & Bag Tips', '展开视野与存包贴士')}
+              </span>
             </button>
           </div>
           <div className={`venue-directory-grid ${showVenueTips ? 'is-expanded-guide' : ''}`}>
@@ -2925,8 +3049,8 @@ export const App: React.FC = () => {
                   <div className="venue-tile-top">
                     <span className={`city-pill city-pill--${v.city}`}>{v.state}</span>
                     <span className="venue-cap">
-                      Cap. {new Intl.NumberFormat('en-AU').format(v.capacity)} · Curfew{' '}
-                      {v.curfewLocal || '23:00'}
+                      {tr('Cap.', '容量')} {new Intl.NumberFormat(intlLocale).format(v.capacity)} ·{' '}
+                      {tr('Curfew', '散场')} {v.curfewLocal || '23:00'}
                     </span>
                   </div>
 
@@ -2942,19 +3066,19 @@ export const App: React.FC = () => {
                       <div className="venue-insider-row">
                         <Eye size={13} className="insider-icon insider-icon--best" />
                         <span>
-                          <strong>Best Sightline:</strong> {insider.bestSectionTip}
+                          <strong>{tr('Best Sightline:', '最佳视野:')}</strong> {insider.bestSectionTip}
                         </span>
                       </div>
                       <div className="venue-insider-row">
                         <AlertTriangle size={13} className="insider-icon insider-icon--warn" />
                         <span>
-                          <strong>Watch Out:</strong> {insider.restrictedViewWarning}
+                          <strong>{tr('Watch Out:', '避坑提示:')}</strong> {insider.restrictedViewWarning}
                         </span>
                       </div>
                       <div className="venue-insider-row">
                         <ShoppingBag size={13} className="insider-icon insider-icon--merch" />
                         <span>
-                          <strong>Bags &amp; Merch:</strong> {insider.cloakAndMerchTip}
+                          <strong>{tr('Bags & Merch:', '存包与周边:')}</strong> {insider.cloakAndMerchTip}
                         </span>
                       </div>
                     </div>
@@ -2971,8 +3095,14 @@ export const App: React.FC = () => {
                     >
                       <span>
                         {isSelected
-                          ? `✓ Filtering ${count} Show${count === 1 ? '' : 's'}`
-                          : `Filter ${count} Show${count === 1 ? '' : 's'} Here`}
+                          ? tr(
+                              `✓ Filtering ${count} Show${count === 1 ? '' : 's'}`,
+                              `✓ 已筛选 ${count} 场演出`,
+                            )
+                          : tr(
+                              `Filter ${count} Show${count === 1 ? '' : 's'} Here`,
+                              `查看该场馆 ${count} 场演出`,
+                            )}
                       </span>
                     </button>
                   </div>
@@ -3036,10 +3166,20 @@ export const App: React.FC = () => {
       <footer className="site-footer">
         <div className="container footer-inner">
           <p>
-            <strong>OZ Amp</strong> — Melbourne (Naarm) &amp; Sydney (Eora) Live Music &amp;
-            Pre-Sale Reminder Guide. Protected by VIC Major Events Act &amp; NSW Fair Trading{' '}
-            <strong>+10% statutory resale caps</strong> via <strong>Ticketek Marketplace</strong>{' '}
-            &amp; <strong>Tixel</strong>.
+            {isZh ? (
+              <>
+                <strong>OZ Amp</strong> — 墨尔本与悉尼演唱会及预售抢票指南。受维州大型活动法案与新州公平交易局{' '}
+                <strong>+10% 官方转售法定上限</strong>保护（<strong>Ticketek Marketplace</strong>{' '}
+                &amp; <strong>Tixel</strong>）。
+              </>
+            ) : (
+              <>
+                <strong>OZ Amp</strong> — Melbourne (Naarm) &amp; Sydney (Eora) Live Music &amp;
+                Pre-Sale Reminder Guide. Protected by VIC Major Events Act &amp; NSW Fair Trading{' '}
+                <strong>+10% statutory resale caps</strong> via <strong>Ticketek Marketplace</strong>{' '}
+                &amp; <strong>Tixel</strong>.
+              </>
+            )}
           </p>
         </div>
       </footer>
@@ -3049,10 +3189,10 @@ export const App: React.FC = () => {
           type="button"
           className="back-to-top-fab"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          aria-label="Scroll back to top"
+          aria-label={tr('Scroll back to top', '返回顶部')}
         >
           <ArrowUp size={15} />
-          <span>Top</span>
+          <span>{tr('Top', '顶部')}</span>
         </button>
       )}
 

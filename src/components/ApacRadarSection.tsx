@@ -15,6 +15,7 @@ import { APAC_PROMOTER_PORTALS, APAC_SHORT_FLIGHT_STOPS } from '../data/apacTour
 import { sanitizeExternalHttpsUrl } from '../utils/formatters';
 import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
 import { ArtistAvatar } from './ArtistAvatar';
+import { useLocale } from '../i18n/LocaleContext';
 
 interface ApacRadarSectionProps {
   cityFilter: 'all' | CityId;
@@ -36,6 +37,7 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
   reminders,
   onToggleApacReminder,
 }) => {
+  const { isZh, tr, cityLabel, genreLabel } = useLocale();
   const [hubFilter, setHubFilter] = useState<'All Hubs' | ApacTourStop['city']>('All Hubs');
   const [onlyAsiaExclusive, setOnlyAsiaExclusive] = useState(false);
 
@@ -58,10 +60,16 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
       <div className="section-header-row">
         <div>
           <span className="eyebrow-kicker">
-            SHORT-FLIGHT ASIA-PACIFIC RADAR · TOKYO · SINGAPORE · BANGKOK · HONG KONG · AUCKLAND
+            {tr(
+              'SHORT-FLIGHT ASIA-PACIFIC RADAR · TOKYO · SINGAPORE · BANGKOK · HONG KONG · AUCKLAND',
+              '亚太短途飞行看演出雷达 · 东京 · 新加坡 · 曼谷 · 香港 · 奥克兰',
+            )}
           </span>
           <h2 id="apac-radar-heading" className="section-heading">
-            Nearby Asia-Pacific Tour Stops ({filteredStops.length})
+            {tr(
+              `Nearby Asia-Pacific Tour Stops (${filteredStops.length})`,
+              `周边亚太短途巡演场次 (${filteredStops.length})`,
+            )}
           </h2>
         </div>
 
@@ -72,26 +80,38 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
           onClick={() => setOnlyAsiaExclusive((v) => !v)}
         >
           <Sparkles size={13} />
-          <span>{onlyAsiaExclusive ? 'Showing Skipping-AU Only' : 'Filter: Skipping AU So Far'}</span>
+          <span>
+            {onlyAsiaExclusive
+              ? tr('Showing Skipping-AU Only', '仅看暂未官宣澳洲场')
+              : tr('Filter: Skipping AU So Far', '筛选：暂未官宣澳洲场')}
+          </span>
         </button>
       </div>
 
       <p className="section-subcopy">
-        Watchlist singers often announce <strong>Tokyo, Singapore, Bangkok, Hong Kong, or Auckland</strong>{' '}
-        dates weeks before Australia—or skip VIC/NSW altogether. Catch easy nonstop weekend gig hops
-        from{' '}
-        <strong>
-          {cityFilter === 'sydney'
-            ? 'Sydney (SYD)'
-            : cityFilter === 'melbourne'
-              ? 'Melbourne (MEL)'
-              : 'Melbourne & Sydney'}
-        </strong>
-        .
+        {isZh ? (
+          <>
+            关注清单中的歌手常在官宣澳洲之前先官宣<strong>东京、新加坡、曼谷、香港或奥克兰</strong>场次（或跳过澳洲）。从<strong>{cityLabel(cityFilter)}</strong>出发即可周末直飞打卡。
+          </>
+        ) : (
+          <>
+            Watchlist singers often announce{' '}
+            <strong>Tokyo, Singapore, Bangkok, Hong Kong, or Auckland</strong> dates weeks before
+            Australia—or skip VIC/NSW altogether. Catch easy nonstop weekend gig hops from{' '}
+            <strong>
+              {cityFilter === 'sydney'
+                ? 'Sydney (SYD)'
+                : cityFilter === 'melbourne'
+                  ? 'Melbourne (MEL)'
+                  : 'Melbourne & Sydney'}
+            </strong>
+            .
+          </>
+        )}
       </p>
 
       <div className="apac-hub-bar">
-        <div className="genre-scroll-row" role="group" aria-label="Filter by Asia-Pacific hub city">
+        <div className="genre-scroll-row" role="group" aria-label={tr('Filter by Asia-Pacific hub city', '按亚太城市筛选')}>
           {APAC_CITIES.map((hub) => (
             <button
               key={hub}
@@ -99,7 +119,7 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
               className={`genre-pill ${hubFilter === hub ? 'is-selected' : ''}`}
               onClick={() => setHubFilter(hub)}
             >
-              {hub}
+              {genreLabel(hub)}
             </button>
           ))}
         </div>
@@ -226,7 +246,7 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
                   onClick={() => onToggleApacReminder(stop)}
                 >
                   {isArmed ? <Check size={14} /> : <BellPlus size={14} />}
-                  <span>{isArmed ? 'Alert On' : 'Notify Me'}</span>
+                  <span>{isArmed ? tr('Alert On', '已设提醒') : tr('Notify Me', '设置提醒')}</span>
                 </button>
 
                 <a

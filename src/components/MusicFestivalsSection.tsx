@@ -20,6 +20,7 @@ import { formatAudPrice, sanitizeExternalHttpsUrl } from '../utils/formatters';
 import { FestivalAdvisorSection } from './FestivalAdvisorSection';
 import { ArtistAvatar } from './ArtistAvatar';
 import type { WatchlistSingerEntry } from '../data/userSingerList';
+import { useLocale } from '../i18n/LocaleContext';
 
 interface MusicFestivalsSectionProps {
   festivals: MusicFestivalDirectoryItem[];
@@ -46,6 +47,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
   onArmFestivalReminder,
   onToggleMonitorArtist,
 }) => {
+  const { isZh, tr, cityLabel } = useLocale();
   const [formatFilter, setFormatFilter] = useState<
     'all' | 'City Day Festival' | 'Multi-Day Camping'
   >('all');
@@ -102,69 +104,83 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
       <div className="section-header-row">
         <div>
           <span className="eyebrow-kicker">
-            03 · Music Festivals &amp; Full Artist Lineups (VIC &amp; NSW)
+            {tr(
+              '03 · Music Festivals & Full Artist Lineups (VIC & NSW)',
+              '03 · 澳洲本地音乐节与完整阵容 (维州 & 新州)',
+            )}
           </span>
           <h2 id="music-festivals-heading" className="section-heading">
-            Upcoming Music Festivals — Who’s Performing ({filteredFestivals.length})
+            {tr(
+              `Upcoming Music Festivals — Who’s Performing (${filteredFestivals.length})`,
+              `近期澳洲音乐节与演出阵容 (${filteredFestivals.length})`,
+            )}
           </h2>
         </div>
 
         <div className="festival-filter-Cluster">
-          <div className="category-tabs" role="group" aria-label="Filter festivals by state">
+          <div className="category-tabs" role="group" aria-label={tr('Filter festivals by state', '按城市筛选音乐节')}>
             <button
               type="button"
               className={`genre-pill ${cityFilter === 'melbourne' ? 'is-active' : ''}`}
               onClick={() => onChangeCityFilter('melbourne')}
             >
-              Melbourne &amp; VIC
+              {tr('Melbourne & VIC', '墨尔本 · VIC')}
             </button>
             <button
               type="button"
               className={`genre-pill ${cityFilter === 'sydney' ? 'is-active' : ''}`}
               onClick={() => onChangeCityFilter('sydney')}
             >
-              Sydney &amp; NSW
+              {tr('Sydney & NSW', '悉尼 · NSW')}
             </button>
             <button
               type="button"
               className={`genre-pill ${cityFilter === 'all' ? 'is-active' : ''}`}
               onClick={() => onChangeCityFilter('all')}
             >
-              Both Cities
+              {cityLabel('all')}
             </button>
           </div>
 
-          <div className="category-tabs" role="group" aria-label="Filter festivals by format">
+          <div className="category-tabs" role="group" aria-label={tr('Filter festivals by format', '按形式筛选音乐节')}>
             <button
               type="button"
               className={`genre-pill ${formatFilter === 'all' ? 'is-active' : ''}`}
               onClick={() => setFormatFilter('all')}
             >
-              All Formats
+              {tr('All Formats', '全部形式')}
             </button>
             <button
               type="button"
               className={`genre-pill ${formatFilter === 'City Day Festival' ? 'is-active' : ''}`}
               onClick={() => setFormatFilter('City Day Festival')}
             >
-              1-Day City Festivals
+              {tr('1-Day City Festivals', '城市单日音乐节')}
             </button>
             <button
               type="button"
               className={`genre-pill ${formatFilter === 'Multi-Day Camping' ? 'is-active' : ''}`}
               onClick={() => setFormatFilter('Multi-Day Camping')}
             >
-              Multi-Day Camping
+              {tr('Multi-Day Camping', '多日露营音乐节')}
             </button>
           </div>
         </div>
       </div>
 
       <p className="section-sublead">
-        Every festival card shows the <strong>Headliners</strong> and{' '}
-        <strong>Supporting Artists</strong> right on the bill. Click any artist name to monitor
-        them, or click <strong>Official Full Lineup ↗</strong> to open the festival’s official
-        lineup webpage.
+        {isZh ? (
+          <>
+            每张音乐节卡片均展示<strong>领衔艺人（Headliners）</strong>与<strong>参演阵容</strong>。点击任意歌手即可一键加入关注，或点击<strong>官方完整阵容 ↗</strong>查看官网。
+          </>
+        ) : (
+          <>
+            Every festival card shows the <strong>Headliners</strong> and{' '}
+            <strong>Supporting Artists</strong> right on the bill. Click any artist name to
+            monitor them, or click <strong>Official Full Lineup ↗</strong> to open the festival’s
+            official lineup webpage.
+          </>
+        )}
       </p>
 
       <div className="festival-poster-list">
@@ -348,8 +364,12 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
               {/* 3. Clear Action Footer: Price + Official Full Lineup Link + Remind + Tickets */}
               <div className="poster-card-footer">
                 <div className="price-block">
-                  <span className="price-aud">Passes from {formatAudPrice(fest.priceAud)}</span>
-                  <span className="agency-caption">Authorised seller: {fest.agency}</span>
+                  <span className="price-aud">
+                    {tr(`Passes from ${formatAudPrice(fest.priceAud)}`, `通票 ${formatAudPrice(fest.priceAud)} 起`)}
+                  </span>
+                  <span className="agency-caption">
+                    {tr(`Authorised seller: ${fest.agency}`, `官方票务: ${fest.agency}`)}
+                  </span>
                 </div>
 
                 <div className="poster-cta-row">
@@ -359,7 +379,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                     rel="noopener noreferrer"
                     className="btn-lineup-link"
                   >
-                    <span>Official Full Lineup</span>
+                    <span>{tr('Official Full Lineup', '官方完整阵容')}</span>
                     <ExternalLink size={14} />
                   </a>
 
@@ -369,7 +389,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                     onClick={() => onArmFestivalReminder(fest)}
                   >
                     {isArmed ? <Check size={14} /> : <BellPlus size={14} />}
-                    <span>{isArmed ? 'Alert On' : 'Notify Me'}</span>
+                    <span>{isArmed ? tr('Alert On', '已设提醒') : tr('Notify Me', '设置提醒')}</span>
                   </button>
 
                   <a
@@ -379,7 +399,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                     className="btn-primary-sm"
                   >
                     <Ticket size={14} />
-                    <span>Buy Passes</span>
+                    <span>{tr('Buy Passes', '购买通票')}</span>
                   </a>
                 </div>
               </div>
@@ -398,8 +418,11 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
         >
           <span>
             {showSideshowCalculator
-              ? 'Hide Pass vs. Headline Sideshow Calculator'
-              : 'Compare Festival Pass vs. Individual Sydney/Melbourne Sideshows'}
+              ? tr('Hide Pass vs. Headline Sideshow Calculator', '收起音乐节通票 vs 专场计算器')
+              : tr(
+                  'Compare Festival Pass vs. Individual Sydney/Melbourne Sideshows',
+                  '对比音乐节通票与墨尔本 / 悉尼单场专场票价',
+                )}
           </span>
           {showSideshowCalculator ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>

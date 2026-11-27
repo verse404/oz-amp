@@ -18,6 +18,7 @@ import type {
 } from '../types/gig';
 import { sanitizeExternalHttpsUrl } from '../utils/formatters';
 import { IS_STATIC_MODE } from '../config/runtimeMode';
+import { useLocale } from '../i18n/LocaleContext';
 
 export interface OzAmpProfileBackup {
   schemaVersion: 1;
@@ -164,6 +165,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
   onRestoreBackup,
   onShowToast,
 }) => {
+  const { tr } = useLocale();
   const [activeTab, setActiveTab] = useState<'sync' | 'cloud-push'>('sync');
   const [pasteJson, setPasteJson] = useState('');
   const [copied, setCopied] = useState(false);
@@ -266,16 +268,18 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
       <div className="center-modal sync-modal-panel">
         <div className="modal-header">
           <div>
-            <span className="eyebrow-kicker">ZERO-DATABASE CLOUD PORTABILITY · PWA &amp; PUSH</span>
+            <span className="eyebrow-kicker">
+              {tr('ZERO-DATABASE CLOUD PORTABILITY · PWA & PUSH', '跨设备 JSON 备份 · 手机桌面应用与推送')}
+            </span>
             <h2 id="sync-modal-title" className="modal-title">
-              Device Sync, Phone App &amp; Background Alerts
+              {tr('Device Sync, Phone App & Background Alerts', '设备同步、手机安装与后台提醒')}
             </h2>
           </div>
           <button
             type="button"
             className="icon-btn"
             onClick={onClose}
-            aria-label="Close sync modal"
+            aria-label={tr('Close sync modal', '关闭同步弹窗')}
           >
             <X size={18} />
           </button>
@@ -290,7 +294,10 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
               className={`page-mode-btn ${activeTab === 'sync' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('sync')}
             >
-              1. Sync Laptop ↔ Phone ({reminders.length} Alarms · {monitoredSingers.length} Singers)
+              {tr(
+                `1. Sync Laptop ↔ Phone (${reminders.length} Alerts · ${monitoredSingers.length} Singers)`,
+                `1. 电脑 ↔ 手机备份 (${reminders.length} 提醒 · ${monitoredSingers.length} 歌手)`,
+              )}
             </button>
             <button
               type="button"
@@ -299,28 +306,32 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
               className={`page-mode-btn ${activeTab === 'cloud-push' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('cloud-push')}
             >
-              2. Background Phone Push &amp; PWA Setup
+              {tr('2. Background Phone Push & PWA Setup', '2. 后台推送与手机主屏安装')}
             </button>
           </div>
 
           {activeTab === 'sync' ? (
           <div className="sync-modal-body">
             <p className="sync-helper-copy">
-              Export your saved alerts (<strong>{reminders.length}</strong>), monitored
-              singers (<strong>{monitoredSingers.length}</strong>), custom World Festivals (
-              <strong>{savedWorldFestivals.length}</strong>), and Home City preference to transfer
-              between your laptop and mobile phone—or sign in with your email for automatic sync.
+              {tr(
+                'Export your saved alerts, monitored singers, custom World Festivals, and Home City preference to transfer between your laptop and mobile phone—or sign in with your account for automatic Firebase sync.',
+                '导出您已保存的提醒、关注歌手、自选全球音乐节和常驻城市设置，方便在电脑和手机间迁移（或直接登录账号开启 Firebase 自动同步）。',
+              )}
             </p>
 
             <div className="sync-export-row">
               <button type="button" className="btn-primary-sm" onClick={handleDownloadJson}>
                 <Download size={15} />
-                <span>Download Backup (.json)</span>
+                <span>{tr('Download Backup (.json)', '下载备份文件 (.json)')}</span>
               </button>
 
               <button type="button" className="btn-outline-sm" onClick={() => void handleCopyJson()}>
                 {copied ? <Check size={15} /> : <Copy size={15} />}
-                <span>{copied ? 'Copied Sync Code!' : 'Copy Sync Code'}</span>
+                <span>
+                  {copied
+                    ? tr('Copied Sync Code!', '已复制同步码！')
+                    : tr('Copy Sync Code', '复制同步码')}
+                </span>
               </button>
 
               <button
@@ -329,7 +340,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload size={15} />
-                <span>Restore from .json File</span>
+                <span>{tr('Restore from .json File', '从 .json 文件恢复')}</span>
               </button>
 
               <input
@@ -343,7 +354,12 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
 
             <div className="sync-paste-box">
               <label className="form-field">
-                <span>Or paste a copied Sync Code from your other device:</span>
+                <span>
+                  {tr(
+                    'Or paste a copied Sync Code from your other device:',
+                    '或直接粘贴来自其他设备的同步码：',
+                  )}
+                </span>
                 <textarea
                   rows={4}
                   value={pasteJson}
@@ -360,7 +376,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
                   onClick={() => applyRawImport(pasteJson)}
                 >
                   <Upload size={14} />
-                  <span>Restore Pasted Sync Code</span>
+                  <span>{tr('Restore Pasted Sync Code', '恢复粘贴的同步码')}</span>
                 </button>
               </div>
             </div>

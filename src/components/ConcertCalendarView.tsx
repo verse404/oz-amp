@@ -27,6 +27,7 @@ import {
   sanitizeExternalHttpsUrl,
 } from '../utils/formatters';
 import { ArtistAvatar } from './ArtistAvatar';
+import { useLocale } from '../i18n/LocaleContext';
 
 interface ConcertCalendarViewProps {
   concerts: ConcertEvent[];
@@ -47,7 +48,8 @@ interface DayBucket {
   worldFests: WorldFestivalItem[];
 }
 
-const WEEKDAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAY_HEADERS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAY_HEADERS_ZH = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
 function toAuDateIso(isoTimestamp: string): string {
   const d = new Date(isoTimestamp);
@@ -81,29 +83,29 @@ function shiftMonthKey(monthKey: string, delta: number): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
-function formatMonthTitle(monthKey: string): string {
+function formatMonthTitle(monthKey: string, intlLocale: 'en-AU' | 'zh-CN'): string {
   const [yStr, mStr] = monthKey.split('-');
   const d = new Date(Date.UTC(Number(yStr), Number(mStr) - 1, 15));
-  return new Intl.DateTimeFormat('en-AU', {
+  return new Intl.DateTimeFormat(intlLocale, {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
   }).format(d);
 }
 
-function formatMonthShort(monthKey: string): string {
+function formatMonthShort(monthKey: string, intlLocale: 'en-AU' | 'zh-CN'): string {
   const [yStr, mStr] = monthKey.split('-');
   const d = new Date(Date.UTC(Number(yStr), Number(mStr) - 1, 15));
-  return new Intl.DateTimeFormat('en-AU', {
+  return new Intl.DateTimeFormat(intlLocale, {
     month: 'short',
     year: '2-digit',
     timeZone: 'UTC',
   }).format(d);
 }
 
-function formatFullDayHeading(dateIso: string): string {
+function formatFullDayHeading(dateIso: string, intlLocale: 'en-AU' | 'zh-CN'): string {
   const d = new Date(`${dateIso}T12:00:00Z`);
-  return new Intl.DateTimeFormat('en-AU', {
+  return new Intl.DateTimeFormat(intlLocale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -120,6 +122,8 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
   onAddOrToggleReminder,
   onOpenWorldFestivalsPage,
 }) => {
+  const { locale, intlLocale, isZh, tr, cityLabel, dropKindLabel } = useLocale();
+  const weekdayHeaders = isZh ? WEEKDAY_HEADERS_ZH : WEEKDAY_HEADERS_EN;
   const todayAu = useMemo(
     () =>
       new Intl.DateTimeFormat('en-CA', {
@@ -188,9 +192,9 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
           worldCount += bucket.worldFests.length > 0 ? 1 : 0;
         }
       }
-      return { key: mk, label: formatMonthShort(mk), gigCount, worldCount };
+      return { key: mk, label: formatMonthShort(mk, intlLocale), gigCount, worldCount };
     });
-  }, [todayAu, dayMap]);
+  }, [todayAu, dayMap, intlLocale]);
 
   // Build 7-column Mon–Sun grid cells for activeMonth
   const calendarCells = useMemo(() => {
@@ -284,14 +288,27 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
           </button>
 
           <div className="calendar-month-heading">
-            <h2 className="calendar-month-title">{formatMonthTitle(activeMonth)}</h2>
+            <h2 className="calendar-month-title">{formatMonthTitle(activeMonth, intlLocale)}</h2>
             <span className="calendar-month-stats">
-              {monthSummary.gigs} gig{monthSummary.gigs === 1 ? '' : 's'}
-              {showDropsOverlay ? ` · ${monthSummary.drops} drop${monthSummary.drops === 1 ? '' : 's'}` : ''}
-              {showWorldOverlay && monthSummary.worldFestsCount > 0
-                ? ` · ${monthSummary.worldFestsCount} world fest${monthSummary.worldFestsCount === 1 ? '' : 's'}`
-                : ''}
-              {monthSummary.clashes > 0 ? ` · ${monthSummary.clashes} travel overlap` : ''}
+              {isZh ? (
+                <>
+                  {monthSummary.gigs} 场演出
+                  {showDropsOverlay ? ` · ${monthSummary.drops} 场开票` : ''}
+                  {showWorldOverlay && monthSummary.worldFestsCount > 0
+                    ? ` · ${monthSummary.worldFestsCount} 个全球音乐节`
+                    : ''}
+                  {monthSummary.clashes > 0 ? ` · ${monthSummary.clashes} 处行程重叠` : ''}
+                </>
+              ) : (
+                <>
+                  {monthSummary.gigs} gig{monthSummary.gigs === 1 ? '' : 's'}
+                  {showDropsOverlay ? ` · ${monthSummary.drops} drop${monthSummary.drops === 1 ? '' : 's'}` : ''}
+                  {showWorldOverlay && monthSummary.worldFestsCount > 0
+                    ? ` · ${monthSummary.worldFestsCount} world fest${monthSummary.worldFestsCount === 1 ? '' : 's'}`
+                    : ''}
+                  {monthSummary.clashes > 0 ? ` · ${monthSummary.clashes} travel overlap` : ''}
+                </>
+              )}
             </span>
           </div>
 
@@ -299,7 +316,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
             type="button"
             className="icon-btn"
             onClick={() => jumpToMonth(shiftMonthKey(activeMonth, 1))}
-            aria-label="Next month"
+            aria-label={tr('Next month', '下个月')}
           >
             <ChevronRight size={18} />
           </button>
@@ -312,7 +329,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
             onClick={() => setShowDropsOverlay((v) => !v)}
           >
             <Zap size={12} />
-            <span>Ticket Drops</span>
+            <span>{tr('Ticket Drops', '开票场次')}</span>
           </button>
           <button
             type="button"
@@ -320,7 +337,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
             onClick={() => setShowWorldOverlay((v) => !v)}
           >
             <Globe size={12} />
-            <span>World Festivals</span>
+            <span>{tr('World Festivals', '全球音乐节')}</span>
           </button>
           <button
             type="button"
@@ -330,13 +347,13 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
               setSelectedDayIso(todayAu);
             }}
           >
-            Today
+            {tr('Today', '今天')}
           </button>
         </div>
       </div>
 
       {/* Quick 12-Month Jump Strip */}
-      <div className="calendar-month-strip" role="tablist" aria-label="Jump to month">
+      <div className="calendar-month-strip" role="tablist" aria-label={tr('Jump to month', '快捷切换月份')}>
         {quickMonths.map((m) => (
           <button
             key={m.key}
@@ -348,7 +365,9 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
           >
             <span>{m.label}</span>
             <span className="cal-month-count">{m.gigCount}</span>
-            {m.worldCount > 0 && <span className="cal-world-dot" title="World Festival dates" />}
+            {m.worldCount > 0 && (
+              <span className="cal-world-dot" title={tr('World Festival dates', '全球音乐节日期')} />
+            )}
           </button>
         ))}
       </div>
@@ -356,26 +375,29 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
       {/* Color Legend */}
       <div className="calendar-legend" aria-hidden="true">
         <span className="cal-legend-item">
-          <i className="cal-dot cal-dot--mel" /> Melbourne Gig
+          <i className="cal-dot cal-dot--mel" /> {tr('Melbourne Gig', '墨尔本演出')}
         </span>
         <span className="cal-legend-item">
-          <i className="cal-dot cal-dot--syd" /> Sydney Gig
+          <i className="cal-dot cal-dot--syd" /> {tr('Sydney Gig', '悉尼演出')}
         </span>
         <span className="cal-legend-item">
-          <i className="cal-dot cal-dot--drop" /> Ticket Drop / Pre-Sale
+          <i className="cal-dot cal-dot--drop" /> {tr('Ticket Drop / Pre-Sale', '预售 / 开票')}
         </span>
         <span className="cal-legend-item">
-          <i className="cal-dot cal-dot--world" /> World Festival Travel Window
+          <i className="cal-dot cal-dot--world" /> {tr('World Festival Travel Window', '全球音乐节档期')}
         </span>
       </div>
 
       {/* 7-Column Mon–Sun Grid */}
       <p className="calendar-mobile-hint">
-        Swipe calendar horizontally ↔ or tap any highlighted day to inspect its agenda below.
+        {tr(
+          'Swipe calendar horizontally ↔ or tap any highlighted day to inspect its agenda below.',
+          '左右滑动日历 ↔ 或点击任意高亮日期查看当日演出详情。',
+        )}
       </p>
       <div className="calendar-grid-scroll">
         <div className="calendar-grid">
-          {WEEKDAY_HEADERS.map((wd, idx) => (
+          {weekdayHeaders.map((wd, idx) => (
             <div
               key={wd}
               className={`calendar-dow-head ${idx >= 4 ? 'is-weekend' : ''}`}
@@ -460,15 +482,22 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
       <div className="calendar-day-agenda" aria-live="polite">
         <div className="calendar-agenda-head">
           <div>
-            <span className="eyebrow-kicker">SELECTED DAY SCHEDULE</span>
-            <h3 className="calendar-agenda-title">{formatFullDayHeading(effectiveSelectedIso)}</h3>
+            <span className="eyebrow-kicker">{tr('SELECTED DAY SCHEDULE', '当日演出日程')}</span>
+            <h3 className="calendar-agenda-title">
+              {formatFullDayHeading(effectiveSelectedIso, intlLocale)}
+            </h3>
           </div>
           {selectedBucket &&
             selectedBucket.concerts.length > 0 &&
             selectedBucket.worldFests.length > 0 && (
               <span className="watched-match-pill">
                 <AlertTriangle size={12} />
-                <span>Travel Clash: AU gig overlaps World Festival window</span>
+                <span>
+                  {tr(
+                    'Travel Clash: AU gig overlaps World Festival window',
+                    '档期提示：澳洲演出与全球音乐节日期重叠',
+                  )}
+                </span>
               </span>
             )}
         </div>
@@ -478,8 +507,10 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
           selectedBucket.drops.length === 0 &&
           selectedBucket.worldFests.length === 0) ? (
           <p className="calendar-agenda-empty">
-            No matching gigs, ticket drops, or tracked world festivals on this day. Click any
-            highlighted day on the calendar above to inspect its full lineup.
+            {tr(
+              'No matching gigs, ticket drops, or tracked world festivals on this day. Click any highlighted day on the calendar above to inspect its full lineup.',
+              '当日暂无匹配的演出、开票或全球音乐节。点击上方任意高亮日期即可查看详情。',
+            )}
           </p>
         ) : (
           <div className="calendar-agenda-list">
@@ -501,7 +532,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                     onClick={onOpenWorldFestivalsPage}
                   >
                     <Globe size={13} />
-                    <span>World Page</span>
+                    <span>{tr('World Page', '全球页面')}</span>
                   </button>
                   <a
                     href={sanitizeExternalHttpsUrl(wf.officialUrl, wf.name)}
@@ -509,7 +540,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                     rel="noopener noreferrer"
                     className="btn-primary-sm"
                   >
-                    <span>Official</span>
+                    <span>{tr('Official', '官网')}</span>
                     <ExternalLink size={12} />
                   </a>
                 </div>
@@ -528,15 +559,16 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                     <div>
                       <div className="calendar-agenda-badges">
                         <span className={`city-pill city-pill--${concert.city}`}>
-                          {concert.city === 'sydney' ? 'SYD' : 'MEL'}
+                          {cityLabel(concert.city, 'short')}
                         </span>
-                        <span className="presale-kind-badge">⚡ {drop.kind}</span>
+                        <span className="presale-kind-badge">⚡ {dropKindLabel(drop.kind)}</span>
                       </div>
                       <strong>
                         {concert.artist} — {drop.label}
                       </strong>
                       <span className="calendar-agenda-sub">
-                        <Clock size={12} /> Opens {formatAuTimestamp(drop.opensAtIso, concert.city)} ·{' '}
+                        <Clock size={12} /> {tr('Opens', '开票')}{' '}
+                        {formatAuTimestamp(drop.opensAtIso, concert.city, locale)} ·{' '}
                         {concert.venueName}
                       </span>
                     </div>
@@ -548,7 +580,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                       onClick={() => onAddOrToggleReminder(concert, 15, drop)}
                     >
                       {isArmed ? <Check size={13} /> : <BellPlus size={13} />}
-                      <span>{isArmed ? 'Alert On' : 'T-15m Alert'}</span>
+                      <span>{isArmed ? tr('Alert On', '已设提醒') : tr('T-15m Alert', '提前15分提醒')}</span>
                     </button>
                     <a
                       href={href}
@@ -574,7 +606,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                     <div>
                       <div className="calendar-agenda-badges">
                         <span className={`city-pill city-pill--${concert.city}`}>
-                          {concert.city === 'sydney' ? 'SYD · NSW' : 'MEL · VIC'}
+                          {cityLabel(concert.city, 'state').toUpperCase()}
                         </span>
                         <span className="calendar-price-mini">
                           {formatAudRange(concert.priceMinAud, concert.priceMaxAud)}
@@ -585,8 +617,9 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                         {concert.tourTitle ? ` — ${concert.tourTitle}` : ''}
                       </strong>
                       <span className="calendar-agenda-sub">
-                        <MapPin size={12} /> {concert.venueName} ({concert.suburb}) · Doors{' '}
-                        {concert.doorsTimeLocal} · Set {concert.setTimeLocal}
+                        <MapPin size={12} /> {concert.venueName} ({concert.suburb}) ·{' '}
+                        {tr('Doors', '入场')} {concert.doorsTimeLocal} · {tr('Set', '主秀')}{' '}
+                        {concert.setTimeLocal}
                       </span>
                     </div>
                   </div>
@@ -597,7 +630,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                       onClick={() => onAddOrToggleReminder(concert, 60)}
                     >
                       {isArmed ? <Check size={13} /> : <Calendar size={13} />}
-                      <span>{isArmed ? 'Alert On' : 'Notify 1h'}</span>
+                      <span>{isArmed ? tr('Alert On', '已设提醒') : tr('Notify 1h', '提前1小时提醒')}</span>
                     </button>
                     <a
                       href={href}

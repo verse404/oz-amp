@@ -49,6 +49,7 @@ import { ArtistAvatar } from './ArtistAvatar';
 import { ApacRadarSection } from './ApacRadarSection';
 import { buildArtistPreviewLinks } from '../utils/musicPreviewLinks';
 import { IS_STATIC_MODE } from '../config/runtimeMode';
+import { useLocale } from '../i18n/LocaleContext';
 
 function resolveTripPlanner(fest: WorldFestivalItem): {
   allInBudgetAud: string;
@@ -224,6 +225,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
   onBackToMainGuide,
   onShowToast,
 }) => {
+  const { locale, isZh, tr, cityLabel, genreLabel } = useLocale();
   const [trackedRegion, setTrackedRegion] = useState<'All Regions' | WorldFestivalRegion>(
     'All Regions',
   );
@@ -592,26 +594,40 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
             onClick={onBackToMainGuide}
           >
             <ArrowLeft size={14} />
-            <span>Back to Melbourne &amp; Sydney Gig Guide</span>
+            <span>{tr('Back to Melbourne & Sydney Gig Guide', '返回墨尔本与悉尼全部演出')}</span>
           </button>
           <span className="eyebrow-kicker">
-            WORLD PILGRIMAGE EDITION · DEPARTING {departureCityLabel.toUpperCase()}
+            {tr(
+              `WORLD PILGRIMAGE EDITION · DEPARTING ${departureCityLabel.toUpperCase()}`,
+              `全球音乐节朝圣指南 · 从 ${cityLabel(cityFilter)} 出发`,
+            )}
           </span>
         </div>
 
         <div className="watchlist-hero-grid">
           <div>
             <h1 id="world-fest-title" className="hero-headline watchlist-headline">
-              Iconic Global Music &amp; Arts Festivals.
+              {tr('Iconic Global Music & Arts Festivals.', '全球标志性音乐与艺术节')}
             </h1>
             <p className="hero-lede">
-              Tracking your flagship global festival roster —{' '}
-              <strong>Coachella</strong>, <strong>Tomorrowland</strong>,{' '}
-              <strong>Burning Man</strong>, <strong>Fuji Rock</strong>,{' '}
-              <strong>Wonderfruit</strong>, and <strong>Boom Festival</strong> — with registration
-              countdowns in Australian time, watchlist singer crossovers, flight routing from{' '}
-              <strong>{departureCityLabel}</strong>, and live discovery for potential new festivals
-              worldwide.
+              {isZh ? (
+                <>
+                  追踪全球殿堂级音乐节 — <strong>Coachella</strong>、<strong>Tomorrowland</strong>、
+                  <strong>Burning Man</strong>、<strong>Fuji Rock</strong>、<strong>Wonderfruit</strong> 与{' '}
+                  <strong>Boom Festival</strong> — 提供澳东时间开票倒计时、我的歌手阵容匹配、从{' '}
+                  <strong>{cityLabel(cityFilter)}</strong> 出发的航班与预算建议，以及全球新音乐节实时搜索。
+                </>
+              ) : (
+                <>
+                  Tracking your flagship global festival roster —{' '}
+                  <strong>Coachella</strong>, <strong>Tomorrowland</strong>,{' '}
+                  <strong>Burning Man</strong>, <strong>Fuji Rock</strong>,{' '}
+                  <strong>Wonderfruit</strong>, and <strong>Boom Festival</strong> — with
+                  registration countdowns in Australian time, watchlist singer crossovers, flight
+                  routing from <strong>{departureCityLabel}</strong>, and live discovery for
+                  potential new festivals worldwide.
+                </>
+              )}
             </p>
 
             <div className="watchlist-cta-row">
@@ -622,12 +638,14 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 onClick={handleBulkArmAllSessions}
               >
                 <BellPlus size={15} />
-                <span>Notify All Registration Sessions</span>
+                <span>
+                  {tr('Notify All Registration Sessions', '一键开启全部抽签 / 开票提醒')}
+                </span>
               </button>
 
               <a href="#discover-world-festivals" className="btn-outline-sm">
                 <Compass size={15} />
-                <span>Search Potential New Festivals ↓</span>
+                <span>{tr('Search Potential New Festivals ↓', '探索更多全球音乐节 ↓')}</span>
               </a>
 
               <button
@@ -636,7 +654,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 onClick={handleExportWorldFestivalsIcs}
               >
                 <Calendar size={14} />
-                <span>Export World Calendar (.ics)</span>
+                <span>{tr('Export World Calendar (.ics)', '导出音乐节日历 (.ics)')}</span>
               </button>
 
               <button
@@ -645,7 +663,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 onClick={onOpenReminderDrawer}
               >
                 <Bell size={14} />
-                <span>Saved Alerts ({reminders.length})</span>
+                <span>{tr(`Saved Alerts (${reminders.length})`, `已存提醒 (${reminders.length})`)}</span>
               </button>
             </div>
           </div>
@@ -654,8 +672,10 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
             <div className="watchlist-stat-tile is-accent">
               <span className="watchlist-stat-num">{myFestivals.length}</span>
               <span className="watchlist-stat-label">
-                Tracked Festivals ({CORE_WORLD_FESTIVALS.length} Core
-                {savedExtraFestivals.length > 0 ? ` + ${savedExtraFestivals.length} Added` : ''})
+                {tr(
+                  `Tracked Festivals (${CORE_WORLD_FESTIVALS.length} Core${savedExtraFestivals.length > 0 ? ` + ${savedExtraFestivals.length} Added` : ''})`,
+                  `已追踪音乐节（${CORE_WORLD_FESTIVALS.length} 核心${savedExtraFestivals.length > 0 ? ` + ${savedExtraFestivals.length} 自选` : ''}）`,
+                )}
               </span>
             </div>
             <div className="watchlist-stat-tile">
@@ -663,12 +683,14 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 {myFestivals.filter((f) => remindedFestivalIds.has(f.id)).length} /{' '}
                 {myFestivals.length}
               </span>
-              <span className="watchlist-stat-label">Registration Alerts On</span>
+              <span className="watchlist-stat-label">
+                {tr('Registration Alerts On', '已开启开票提醒')}
+              </span>
             </div>
             <div className="watchlist-stat-tile">
               <span className="watchlist-stat-num">{totalWatchlistCrossovers.length}</span>
               <span className="watchlist-stat-label">
-                Your Singer Crossovers
+                {tr('Your Singer Crossovers', '命中您的关注歌手')}
                 {totalWatchlistCrossovers.length > 0
                   ? ` (${totalWatchlistCrossovers.slice(0, 2).join(', ')})`
                   : ''}
@@ -676,7 +698,9 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
             </div>
             <div className="watchlist-stat-tile">
               <span className="watchlist-stat-num">{DISCOVERABLE_WORLD_FESTIVALS.length}+</span>
-              <span className="watchlist-stat-label">Curated + Live Web Discovery</span>
+              <span className="watchlist-stat-label">
+                {tr('Curated + Live Web Discovery', '精选库 + 全网实时探索')}
+              </span>
             </div>
           </div>
         </div>
@@ -685,9 +709,9 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         <div className="world-origin-bar">
           <span className="world-origin-label">
             <Plane size={14} />
-            <span>Flight Routing Origin:</span>
+            <span>{tr('Flight Routing Origin:', '出发城市 (航班建议):')}</span>
           </span>
-          <div className="city-tab-bar watchlist-city-tabs" role="tablist" aria-label="Flight routing origin">
+          <div className="city-tab-bar watchlist-city-tabs" role="tablist" aria-label={tr('Flight routing origin', '出发城市')}>
             <button
               type="button"
               role="tab"
@@ -695,7 +719,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
               className={`city-tab ${cityFilter === 'melbourne' ? 'is-active' : ''}`}
               onClick={() => onChangeCityFilter('melbourne')}
             >
-              <span>Melbourne (MEL)</span>
+              <span>{tr('Melbourne (MEL)', '墨尔本 (MEL)')}</span>
             </button>
             <button
               type="button"
@@ -704,7 +728,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
               className={`city-tab ${cityFilter === 'sydney' ? 'is-active' : ''}`}
               onClick={() => onChangeCityFilter('sydney')}
             >
-              <span>Sydney (SYD)</span>
+              <span>{tr('Sydney (SYD)', '悉尼 (SYD)')}</span>
             </button>
             <button
               type="button"
@@ -713,7 +737,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
               className={`city-tab ${cityFilter === 'all' ? 'is-active' : ''}`}
               onClick={() => onChangeCityFilter('all')}
             >
-              <span>Both Cities (MEL &amp; SYD)</span>
+              <span>{tr('Both Cities (MEL & SYD)', '墨尔本 & 悉尼')}</span>
             </button>
           </div>
         </div>
@@ -724,10 +748,16 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         <div className="section-header-row">
           <div>
             <span className="eyebrow-kicker">
-              01 · YOUR GLOBAL PILGRIMAGE ROSTER · REGISTRATION, BALLOTS &amp; LINEUPS
+              {tr(
+                '01 · YOUR GLOBAL PILGRIMAGE ROSTER · REGISTRATION, BALLOTS & LINEUPS',
+                '01 · 您的全球音乐节清单 · 抽签、开票倒计时与阵容',
+              )}
             </span>
             <h2 id="tracked-world-heading" className="section-heading">
-              Your World Festivals ({filteredMyFestivals.length})
+              {tr(
+                `Your World Festivals (${filteredMyFestivals.length})`,
+                `已追踪全球音乐节 (${filteredMyFestivals.length})`,
+              )}
             </h2>
           </div>
 
@@ -738,13 +768,13 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
               onClick={onResetExtraFestivals}
             >
               <RotateCcw size={13} />
-              <span>Reset to Core 6</span>
+              <span>{tr('Reset to Core 6', '重置为核心 6 大音乐节')}</span>
             </button>
           )}
         </div>
 
         <div className="world-filter-toolbar">
-          <div className="genre-scroll-row" role="group" aria-label="Filter tracked festivals by region">
+          <div className="genre-scroll-row" role="group" aria-label={tr('Filter tracked festivals by region', '按地区筛选音乐节')}>
             {REGION_FILTERS.map((reg) => (
               <button
                 key={reg}
@@ -752,12 +782,12 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 className={`genre-pill ${trackedRegion === reg ? 'is-selected' : ''}`}
                 onClick={() => setTrackedRegion(reg)}
               >
-                {reg}
+                {genreLabel(reg)}
               </button>
             ))}
           </div>
 
-          <div className="genre-scroll-row" role="group" aria-label="Filter tracked festivals by vibe">
+          <div className="genre-scroll-row" role="group" aria-label={tr('Filter tracked festivals by vibe', '按风格筛选音乐节')}>
             {VIBE_FILTERS.map((vibe) => (
               <button
                 key={vibe}
@@ -765,7 +795,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 className={`genre-pill ${trackedVibe === vibe ? 'is-selected' : ''}`}
                 onClick={() => setTrackedVibe(vibe)}
               >
-                {vibe}
+                {genreLabel(vibe)}
               </button>
             ))}
           </div>
@@ -773,7 +803,12 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
 
         {filteredMyFestivals.length === 0 ? (
           <div className="empty-state-box">
-            <p>No tracked festivals match that region/vibe combination.</p>
+            <p>
+              {tr(
+                'No tracked festivals match that region/vibe combination.',
+                '当前地区与风格筛选下暂无匹配音乐节。',
+              )}
+            </p>
             <button
               type="button"
               className="btn-outline-sm"
@@ -782,14 +817,17 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 setTrackedVibe('All Vibes');
               }}
             >
-              Show All {myFestivals.length} Tracked Festivals
+              {tr(
+                `Show All ${myFestivals.length} Tracked Festivals`,
+                `显示全部 ${myFestivals.length} 个已追踪音乐节`,
+              )}
             </button>
           </div>
         ) : (
           <div className="world-festivals-grid">
             {filteredMyFestivals.map((fest) => {
               const isArmed = remindedFestivalIds.has(fest.id);
-              const countdown = computeCountdown(fest.nextSessionIso, nowMs);
+              const countdown = computeCountdown(fest.nextSessionIso, nowMs, locale);
               const crossoverActs = fest.lineupHighlights.filter((act) =>
                 watchedArtistSet.has(normalizeToken(act)),
               );
@@ -975,11 +1013,16 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                       <div className="world-session-meta">
                         <span className="world-session-kicker">
                           <Clock size={12} />
-                          <span>NEXT KEY SESSION ({auDisplayCity === 'sydney' ? 'SYD' : 'MEL'} TIME)</span>
+                          <span>
+                            {tr(
+                              `NEXT KEY SESSION (${auDisplayCity === 'sydney' ? 'SYD' : 'MEL'} TIME)`,
+                              `下一关键节点（${cityLabel(auDisplayCity)}时间）`,
+                            )}
+                          </span>
                         </span>
                         <strong className="world-session-title">{fest.nextSessionLabel}</strong>
                         <span className="world-session-timestamp">
-                          {formatAuTimestamp(fest.nextSessionIso, auDisplayCity)}
+                          {formatAuTimestamp(fest.nextSessionIso, auDisplayCity, locale)}
                         </span>
                       </div>
                       <span
@@ -998,7 +1041,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                           onClick={() => onToggleFestivalReminder(fest)}
                         >
                           {isArmed ? <Check size={14} /> : <BellPlus size={14} />}
-                          <span>{isArmed ? 'Alert On' : 'Notify Me'}</span>
+                          <span>{isArmed ? tr('Alert On', '已设提醒') : tr('Notify Me', '设置提醒')}</span>
                         </button>
 
                         <a
@@ -1006,17 +1049,17 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn-subtle-sm"
-                          title="Add registration/ticket session to Google Calendar"
+                          title={tr('Add registration/ticket session to Google Calendar', '添加到 Google 日历')}
                         >
                           <Calendar size={13} />
-                          <span>GCal</span>
+                          <span>{tr('GCal', '日历')}</span>
                         </a>
 
                         <button
                           type="button"
                           className="btn-subtle-sm"
                           onClick={() => handleDownloadSingleFestivalIcs(fest)}
-                          title="Download festival dates .ics file"
+                          title={tr('Download festival dates .ics file', '下载 .ics 日历文件')}
                         >
                           <span>.ics</span>
                         </button>
@@ -1028,10 +1071,10 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                             type="button"
                             className="btn-subtle-sm world-remove-btn"
                             onClick={() => onRemoveExtraFestival(fest.id)}
-                            title={`Remove ${fest.name} from your tracked page`}
+                            title={tr(`Remove ${fest.name} from your tracked page`, `移除 ${fest.name}`)}
                           >
                             <Trash2 size={13} />
-                            <span>Remove</span>
+                            <span>{tr('Remove', '移除')}</span>
                           </button>
                         )}
 
@@ -1041,7 +1084,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                           rel="noopener noreferrer"
                           className="btn-outline-sm"
                         >
-                          <span>Official Site</span>
+                          <span>{tr('Official Site', '官网')}</span>
                           <ExternalLink size={13} />
                         </a>
 
@@ -1052,7 +1095,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                           className="btn-primary-sm"
                         >
                           <Ticket size={14} />
-                          <span>Passes</span>
+                          <span>{tr('Passes', '购票')}</span>
                           <ExternalLink size={13} />
                         </a>
                       </div>
@@ -1081,10 +1124,13 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         <div className="section-header-row">
           <div>
             <span className="eyebrow-kicker">
-              03 · GLOBAL FESTIVAL RADAR · CURATED CATALOG + LIVE WORLDWIDE SEARCH
+              {tr(
+                '03 · GLOBAL FESTIVAL RADAR · CURATED CATALOG + LIVE WORLDWIDE SEARCH',
+                '03 · 全球音乐节雷达 · 精选目录 + 全网实时搜索',
+              )}
             </span>
             <h2 id="discover-world-heading" className="section-heading">
-              Search &amp; Add Potential New Festivals
+              {tr('Search & Add Potential New Festivals', '搜索并添加新的全球音乐节')}
             </h2>
           </div>
 
@@ -1094,14 +1140,19 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
             onClick={() => setShowCustomForm((open) => !open)}
           >
             <Plus size={14} />
-            <span>{showCustomForm ? 'Close Custom Builder' : 'Add Custom Festival'}</span>
+            <span>
+              {showCustomForm
+                ? tr('Close Custom Builder', '收起自定义表单')
+                : tr('Add Custom Festival', '手动添加音乐节')}
+            </span>
           </button>
         </div>
 
         <p className="section-subcopy">
-          Explore transformational desert &amp; forest gatherings, European techno shrines, and
-          short-flight Asian festivals — or search live across worldwide music festivals and pin any
-          discovery straight onto your page above.
+          {tr(
+            'Explore transformational desert & forest gatherings, European techno shrines, and short-flight Asian festivals — or search live across worldwide music festivals and pin any discovery straight onto your page above.',
+            '探索沙漠与森林艺术节、欧洲电音圣地与亚洲短途音乐节 — 或全网实时搜索任意全球音乐节，一键固定到您的专属列表。',
+          )}
         </p>
 
         {/* Search Input + Live Worldwide Lookup */}
@@ -1119,8 +1170,11 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
               type="search"
               value={discoveryQuery}
               onChange={(e) => setDiscoveryQuery(e.target.value)}
-              placeholder="Search potential festivals by name, country, stage, or vibe (e.g. Ozora, Glastonbury, Primavera, Waking Life, Dekmantel)..."
-              aria-label="Search potential new world music festivals"
+              placeholder={tr(
+                'Search potential festivals by name, country, stage, or vibe (e.g. Ozora, Glastonbury, Primavera, Waking Life, Dekmantel)...',
+                '按名称、国家、舞台或风格搜索全球音乐节（如：Ozora、Glastonbury、Primavera、Clockenflap）…',
+              )}
+              aria-label={tr('Search potential new world music festivals', '搜索全球音乐节')}
             />
           </div>
 
@@ -1131,7 +1185,11 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
             disabled={liveSearching}
           >
             {liveSearching ? <Loader2 size={15} className="spin-icon" /> : <Globe size={15} />}
-            <span>{liveSearching ? 'Searching Worldwide...' : 'Search Worldwide Live'}</span>
+            <span>
+              {liveSearching
+                ? tr('Searching Worldwide...', '全网搜索中…')
+                : tr('Search Worldwide Live', '全网实时搜索')}
+            </span>
           </button>
 
           {discoveryQuery && (
@@ -1144,7 +1202,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 setLiveSearchNote(null);
               }}
             >
-              Clear
+              {tr('Clear', '清除')}
             </button>
           )}
         </form>
@@ -1153,7 +1211,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         <div className="world-quick-chips">
           <span className="world-quick-label">
             <Sparkles size={13} />
-            <span>Try searching:</span>
+            <span>{tr('Try searching:', '热门搜索:')}</span>
           </span>
           {QUICK_SEARCH_SUGGESTIONS.map((term) => (
             <button

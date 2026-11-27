@@ -19,6 +19,7 @@ import {
   sanitizeExternalHttpsUrl,
 } from '../utils/formatters';
 import { ArtistAvatar } from './ArtistAvatar';
+import { useLocale } from '../i18n/LocaleContext';
 
 interface ReminderDrawerProps {
   isOpen: boolean;
@@ -49,6 +50,7 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
   readonlyMode,
   defaultWebhookMasked,
 }) => {
+  const { locale, tr, cityLabel } = useLocale();
   const [webhookUrl, setWebhookUrl] = useState('');
   const [sendingWebhook, setSendingWebhook] = useState(false);
 
@@ -113,9 +115,11 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
       <aside className="side-drawer">
         <header className="modal-header">
           <div>
-            <span className="eyebrow-kicker">Queue &amp; Show-Night Dispatch</span>
+            <span className="eyebrow-kicker">
+              {tr('Queue & Show-Night Dispatch', '开票与演出夜提醒中心')}
+            </span>
             <h2 id="reminder-drawer-title" className="modal-title">
-              Saved Alerts ({reminders.length})
+              {tr(`Saved Alerts (${reminders.length})`, `已存提醒 (${reminders.length})`)}
             </h2>
           </div>
           <button
@@ -134,13 +138,24 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
           <section className="utility-panel">
             <div className="utility-panel-row">
               <div>
-                <h3 className="panel-heading">Browser &amp; Audio Queue Alerts</h3>
+                <h3 className="panel-heading">
+                  {tr('Browser & Audio Queue Alerts', '浏览器通知与铃声提醒')}
+                </h3>
                 <p className="panel-subtext">
                   {notificationPermission === 'granted'
-                    ? 'Desktop browser notifications and harmonic queue chimes are active.'
+                    ? tr(
+                        'Desktop browser notifications and harmonic queue chimes are active.',
+                        '浏览器桌面弹窗提醒与开票提示音已开启。',
+                      )
                     : notificationPermission === 'denied'
-                      ? 'Browser notifications are blocked in site settings — in-app banners & chimes still fire.'
-                      : 'Enable browser notifications so you never miss a 10:00 AM AEDT Telstra or Frontier queue.'}
+                      ? tr(
+                          'Browser notifications are blocked in site settings — in-app banners & chimes still fire.',
+                          '浏览器通知权限被屏蔽 — 页面内横幅与提示音仍会正常工作。',
+                        )
+                      : tr(
+                          'Enable browser notifications so you never miss a 10:00 AM AEDT Telstra or Frontier queue.',
+                          '开启浏览器通知，避免错过澳东时间上午 10:00 的 Telstra 或 Frontier 预售排队。',
+                        )}
                 </p>
               </div>
               <div className="panel-actions">
@@ -152,7 +167,7 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
                     onClick={onRequestNotificationPermission}
                   >
                     <BellRing size={14} />
-                    <span>Enable Alerts</span>
+                    <span>{tr('Enable Alerts', '开启浏览器通知')}</span>
                   </button>
                 )}
                 <button
@@ -162,7 +177,7 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
                   onClick={handleTestBrowserAlert}
                 >
                   <Volume2 size={14} />
-                  <span>Test Chime</span>
+                  <span>{tr('Test Chime', '测试铃声')}</span>
                 </button>
               </div>
             </div>
@@ -175,11 +190,16 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
                   className="btn-outline-sm"
                   onClick={() => {
                     exportRemindersToIcs(reminders);
-                    onShowToast(`Exported ${reminders.length} reminder(s) to .ics calendar file.`);
+                    onShowToast(
+                      tr(
+                        `Exported ${reminders.length} reminder(s) to .ics calendar file.`,
+                        `已导出 ${reminders.length} 条提醒至 .ics 日历文件。`,
+                      ),
+                    );
                   }}
                 >
                   <CalendarPlus size={14} />
-                  <span>Download All as .ics Calendar</span>
+                  <span>{tr('Download All as .ics Calendar', '全部导出为 .ics 日历')}</span>
                 </button>
                 <button
                   type="button"
@@ -187,7 +207,7 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
                   className="text-link-btn"
                   onClick={onClearPastReminders}
                 >
-                  Clear elapsed drops
+                  {tr('Clear elapsed drops', '清理已过期提醒')}
                 </button>
               </div>
             )}
@@ -198,22 +218,24 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
             {sorted.length === 0 ? (
               <div className="empty-box">
                 <Bell size={24} />
-                <p className="empty-title">No saved alerts yet</p>
+                <p className="empty-title">{tr('No saved alerts yet', '暂未保存任何提醒')}</p>
                 <p className="empty-desc">
-                  Click <strong>Notify Me</strong> on any Pre-Sale window or concert card to set a
-                  15-minute Ticketek/Ticketmaster waiting-room alarm, 1-hour heads-up, or 24-hour alert.
+                  {tr(
+                    'Click Notify Me on any Pre-Sale window or concert card to set a 15-minute Ticketek/Ticketmaster waiting-room alarm, 1-hour heads-up, or 24-hour alert.',
+                    '点击任意预售场次或演出卡片上的“设置提醒”，即可添加提前 15 分钟抢票候场提醒、开场前 1 小时或 24 小时提醒。',
+                  )}
                 </p>
               </div>
             ) : (
               <ul className="reminder-list">
                 {sorted.map((item) => {
-                  const cd = computeCountdown(item.targetIso, nowMs);
+                  const cd = computeCountdown(item.targetIso, nowMs, locale);
                   const leadText =
                     item.leadMinutes === 15
-                      ? '15m before (Queue Open)'
+                      ? tr('15m before (Queue Open)', '提前 15 分钟（进入候票室）')
                       : item.leadMinutes === 60
-                        ? '1h before'
-                        : '24h before';
+                        ? tr('1h before', '提前 1 小时')
+                        : tr('24h before', '提前 24 小时');
                   return (
                     <li key={item.id} className="reminder-item">
                       <div className="reminder-item-visual">
@@ -227,9 +249,7 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
                             >
                               {item.regionBadge
                                 ? item.regionBadge
-                                : item.city === 'sydney'
-                                  ? 'SYD'
-                                  : 'MEL'}
+                                : cityLabel(item.city, 'short')}
                             </span>
                             <span className="lead-pill">{leadText}</span>
                             <span className={`mono-countdown ${cd.isImminent ? 'is-urgent' : ''}`}>
