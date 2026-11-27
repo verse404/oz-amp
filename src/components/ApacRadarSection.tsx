@@ -226,7 +226,7 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
                   onClick={() => onToggleApacReminder(stop)}
                 >
                   {isArmed ? <Check size={14} /> : <BellPlus size={14} />}
-                  <span>{isArmed ? 'Trip Alert Armed' : 'Remind Trip'}</span>
+                  <span>{isArmed ? 'Alert On' : 'Notify Me'}</span>
                 </button>
 
                 <a

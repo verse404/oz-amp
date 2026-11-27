@@ -230,7 +230,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
                 onClick={handleConfirmImport}
               >
                 <PlusCircle size={16} />
-                <span>Add to My Gig Guide{autoRemind ? ' & Arm Reminders' : ''}</span>
+                <span>Add to My Gig Guide{autoRemind ? ' & Save Alerts' : ''}</span>
               </button>
             </div>
           )}

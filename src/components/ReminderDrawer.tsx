@@ -62,7 +62,7 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
     playReminderChime();
     if (notificationPermission === 'granted' && 'Notification' in window) {
       new Notification('OZ Amp — Queue Open Test', {
-        body: 'Ticketek & Ticketmaster pre-sale alerts are armed for Melbourne & Sydney.',
+        body: 'Ticketek & Ticketmaster pre-sale alerts are active for Melbourne & Sydney.',
       });
     }
     onShowToast('Stage chime & reminder alert verified.');
@@ -115,7 +115,7 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
           <div>
             <span className="eyebrow-kicker">Queue &amp; Show-Night Dispatch</span>
             <h2 id="reminder-drawer-title" className="modal-title">
-              My Concert Reminders ({reminders.length})
+              Saved Alerts ({reminders.length})
             </h2>
           </div>
           <button
@@ -198,9 +198,9 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
             {sorted.length === 0 ? (
               <div className="empty-box">
                 <Bell size={24} />
-                <p className="empty-title">No ticket drops or gigs armed yet</p>
+                <p className="empty-title">No saved alerts yet</p>
                 <p className="empty-desc">
-                  Click <strong>Remind Me</strong> on any Pre-Sale window or concert card to set a
+                  Click <strong>Notify Me</strong> on any Pre-Sale window or concert card to set a
                   15-minute Ticketek/Ticketmaster waiting-room alarm, 1-hour heads-up, or 24-hour alert.
                 </p>
               </div>

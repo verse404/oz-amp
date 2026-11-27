@@ -301,7 +301,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                   </div>
                   <div className="auth-metric-pill">
                     <strong>{remindersCount}</strong>
-                    <span>Armed Reminders</span>
+                    <span>Saved Alerts</span>
                   </div>
                   <div className="auth-metric-pill">
                     <strong>{worldFestivalsCount}</strong>
@@ -433,7 +433,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
               <p className="panel-subtext">
                 {mode === 'register'
                   ? 'Create a free account to automatically save your favourite singers, ticket-drop reminders, custom festivals, and Home City across visits and devices.'
-                  : 'Sign in with your email to immediately load your saved favourite singers, armed reminders, and preferences.'}
+                  : 'Sign in with your email to immediately load your saved favourite singers, saved alerts, and preferences.'}
               </p>
 
               <form className="auth-form" onSubmit={(e) => void handleSubmit(e)}>

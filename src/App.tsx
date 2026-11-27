@@ -1286,7 +1286,7 @@ export const App: React.FC = () => {
         return prev.filter((r) => r.id !== ruleId);
       }
       playReminderChime();
-      showToast(`Armed reminder: ${concert.artist} — ${targetLabel}.`);
+      showToast(`Saved alert: ${concert.artist} — ${targetLabel}.`);
       const nextRule: ReminderRule = {
         id: ruleId,
         concertId: concert.id,
@@ -1356,7 +1356,7 @@ export const App: React.FC = () => {
       setReminders((prev) => [...newRules, ...prev]);
     }
     showToast(
-      `Imported ${imported.length} Sydney/Melbourne show${imported.length === 1 ? '' : 's'}${autoRemind ? ' & armed queue alerts' : ''}.`,
+      `Imported ${imported.length} Sydney/Melbourne show${imported.length === 1 ? '' : 's'}${autoRemind ? ' & saved queue alerts' : ''}.`,
     );
   };
 
@@ -1579,7 +1579,7 @@ export const App: React.FC = () => {
         return prev.filter((r) => r.id !== ruleId && r.concertId !== stop.id);
       }
       playReminderChime();
-      showToast(`Armed short-flight gig alert: ${stop.artist} in ${stop.city} (${stop.dateLabel}).`);
+      showToast(`Saved short-flight alert: ${stop.artist} in ${stop.city} (${stop.dateLabel}).`);
       const nextRule: ReminderRule = {
         id: ruleId,
         concertId: stop.id,
@@ -1743,7 +1743,7 @@ export const App: React.FC = () => {
               onClick={() => setIsReminderDrawerOpen(true)}
             >
               <Bell size={15} />
-              <span>Reminders ({cityScopedReminders.length})</span>
+              <span>Saved Alerts ({cityScopedReminders.length})</span>
             </button>
 
             <button
@@ -1859,7 +1859,7 @@ export const App: React.FC = () => {
                   return prev.filter((r) => r.id !== ruleId && r.concertId !== fest.id);
                 }
                 playReminderChime();
-                showToast(`Armed reminder: ${fest.name} — ${fest.nextSessionLabel}.`);
+                showToast(`Saved alert: ${fest.name} — ${fest.nextSessionLabel}.`);
                 const nextRule: ReminderRule = {
                   id: ruleId,
                   concertId: fest.id,
@@ -1885,7 +1885,7 @@ export const App: React.FC = () => {
               setReminders((prev) => [...newRules, ...prev]);
               playReminderChime();
               showToast(
-                `Armed ${newRules.length} world festival registration & ticket reminder${newRules.length === 1 ? '' : 's'}!`,
+                `Saved ${newRules.length} world festival registration & ticket alert${newRules.length === 1 ? '' : 's'}!`,
               );
             }}
             onToggleApacReminder={handleToggleApacReminder}
@@ -1924,7 +1924,7 @@ export const App: React.FC = () => {
               setReminders((prev) => [...newRules, ...prev]);
               playReminderChime();
               showToast(
-                `Armed ${newRules.length} session & concert reminder${newRules.length === 1 ? '' : 's'} for your uploaded singer list!`,
+                `Saved ${newRules.length} session & concert alert${newRules.length === 1 ? '' : 's'} for your singer list!`,
               );
             }}
             onToggleApacReminder={handleToggleApacReminder}
@@ -2146,7 +2146,7 @@ export const App: React.FC = () => {
                         onClick={() => addOrToggleReminder(concert, 15, drop)}
                       >
                         {isArmed ? <Check size={13} /> : <BellPlus size={13} />}
-                        <span>{isArmed ? 'Armed' : 'T-15m Alert'}</span>
+                        <span>{isArmed ? 'Alert On' : 'T-15m Alert'}</span>
                       </button>
 
                       <a
@@ -2297,7 +2297,7 @@ export const App: React.FC = () => {
                     : 'Single-City Exclusives (MEL or SYD Only)'}
               </option>
               <option value="reminded">
-                My Armed Reminders ({cityScopedReminders.length})
+                My Saved Alerts ({cityScopedReminders.length})
               </option>
             </select>
 
@@ -2699,7 +2699,7 @@ export const App: React.FC = () => {
                                 className={`mini-arm-btn ${isDropArmed ? 'is-armed' : ''}`}
                                 onClick={() => addOrToggleReminder(concert, 15, drop)}
                               >
-                                {isDropArmed ? 'Armed' : '+15m Alert'}
+                                {isDropArmed ? 'Alert On' : '+15m Alert'}
                               </button>
                             </li>
                           );
@@ -2727,7 +2727,7 @@ export const App: React.FC = () => {
                           }
                         >
                           <BellPlus size={14} />
-                          <span>{hasReminder ? 'Armed' : 'Remind'}</span>
+                          <span>{hasReminder ? 'Alert On' : 'Notify Me'}</span>
                         </button>
 
                         {isPopoverOpen && (
@@ -2946,7 +2946,7 @@ export const App: React.FC = () => {
                 return prev.filter((r) => r.id !== ruleId);
               }
               playReminderChime();
-              showToast(`Armed festival reminder for ${fest.name} (${matchingStop.dateLabel}).`);
+              showToast(`Saved festival alert for ${fest.name} (${matchingStop.dateLabel}).`);
               return [
                 {
                   id: ruleId,

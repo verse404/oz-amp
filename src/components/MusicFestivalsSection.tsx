@@ -366,7 +366,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                     onClick={() => onArmFestivalReminder(fest)}
                   >
                     {isArmed ? <Check size={14} /> : <BellPlus size={14} />}
-                    <span>{isArmed ? 'Reminder Armed' : 'Remind Me'}</span>
+                    <span>{isArmed ? 'Alert On' : 'Notify Me'}</span>
                   </button>
 
                   <a

@@ -548,7 +548,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                       onClick={() => onAddOrToggleReminder(concert, 15, drop)}
                     >
                       {isArmed ? <Check size={13} /> : <BellPlus size={13} />}
-                      <span>{isArmed ? 'Armed' : 'T-15m Alert'}</span>
+                      <span>{isArmed ? 'Alert On' : 'T-15m Alert'}</span>
                     </button>
                     <a
                       href={href}
@@ -597,7 +597,7 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                       onClick={() => onAddOrToggleReminder(concert, 60)}
                     >
                       {isArmed ? <Check size={13} /> : <Calendar size={13} />}
-                      <span>{isArmed ? 'Armed' : 'Remind 1h'}</span>
+                      <span>{isArmed ? 'Alert On' : 'Notify 1h'}</span>
                     </button>
                     <a
                       href={href}

@@ -452,7 +452,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
     }
 
     if (rulesToAdd.length === 0) {
-      onShowToast('All tracked world festival registration & ticket sessions are already armed.');
+      onShowToast('All tracked world festival registration & ticket sessions already have alerts saved.');
       return;
     }
     onBulkArmFestivalReminders(rulesToAdd);
@@ -620,7 +620,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 onClick={handleBulkArmAllSessions}
               >
                 <BellPlus size={15} />
-                <span>Arm All Registration Sessions</span>
+                <span>Notify All Registration Sessions</span>
               </button>
 
               <a href="#discover-world-festivals" className="btn-outline-sm">
@@ -643,7 +643,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 onClick={onOpenReminderDrawer}
               >
                 <Bell size={14} />
-                <span>Armed Queue ({reminders.length})</span>
+                <span>Saved Alerts ({reminders.length})</span>
               </button>
             </div>
           </div>
@@ -661,7 +661,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 {myFestivals.filter((f) => remindedFestivalIds.has(f.id)).length} /{' '}
                 {myFestivals.length}
               </span>
-              <span className="watchlist-stat-label">Registration Alarms Armed</span>
+              <span className="watchlist-stat-label">Registration Alerts On</span>
             </div>
             <div className="watchlist-stat-tile">
               <span className="watchlist-stat-num">{totalWatchlistCrossovers.length}</span>
@@ -996,7 +996,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                           onClick={() => onToggleFestivalReminder(fest)}
                         >
                           {isArmed ? <Check size={14} /> : <BellPlus size={14} />}
-                          <span>{isArmed ? 'Session Armed' : 'Remind Session'}</span>
+                          <span>{isArmed ? 'Alert On' : 'Notify Me'}</span>
                         </button>
 
                         <a

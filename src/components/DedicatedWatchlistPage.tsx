@@ -230,7 +230,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
       onShowToast(
         next.includes(entry.id)
           ? `Muted session alerts for ${entry.displayName}.`
-          : `Armed automatic session & concert alerts for ${entry.displayName}.`,
+          : `Enabled automatic session & concert alerts for ${entry.displayName}.`,
       );
       return next;
     });
@@ -548,7 +548,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
     }
 
     if (toAdd.length === 0) {
-      onShowToast('All sessions and upcoming concerts for your singer list are already armed!');
+      onShowToast('All sessions and upcoming concerts for your singer list already have alerts saved!');
       return;
     }
     onBulkArmReminders(toAdd);
@@ -631,7 +631,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
             </h1>
             <p className="hero-lede">
               Tracking all <strong>{allSingers.length}</strong> singers and bands from your personal
-              A–Z &amp; Chinese Artists roster across Melbourne (VIC) and Sydney (NSW). Arm 15-minute
+              A–Z &amp; Chinese Artists roster across Melbourne (VIC) and Sydney (NSW). Set 15-minute
               waiting-room alarms for pre-sale &amp; on-sale sessions, lock T-48h production-hold
               drops, and automatically monitor unannounced artists for 2027 tour drops.
             </p>
@@ -644,7 +644,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                 onClick={handleArmAllWatchlistSessions}
               >
                 <BellPlus size={15} />
-                <span>Arm All Sessions &amp; Concerts ({upcomingWatchlistSessions.length + matchedWatchlistConcerts.length})</span>
+                <span>Notify All Sessions &amp; Concerts ({upcomingWatchlistSessions.length + matchedWatchlistConcerts.length})</span>
               </button>
 
               <button
@@ -673,7 +673,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                 onClick={onOpenReminderDrawer}
               >
                 <Bell size={14} />
-                <span>View Armed Alarms ({reminders.length})</span>
+                <span>Saved Alerts ({reminders.length})</span>
               </button>
             </div>
 
@@ -742,7 +742,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
             </div>
             <div className="watchlist-stat-tile">
               <span className="watchlist-stat-num">{allSingers.length - mutedSet.size}</span>
-              <span className="watchlist-stat-label">Auto-Drop Alerts Armed</span>
+              <span className="watchlist-stat-label">Auto-Drop Alerts On</span>
             </div>
           </div>
         </div>
@@ -911,7 +911,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       onClick={() => onAddOrToggleReminder(concert, 15, drop)}
                     >
                       {armed15 ? <Check size={13} /> : <BellPlus size={13} />}
-                      <span>{armed15 ? 'T-15m Armed' : 'Remind T-15m'}</span>
+                      <span>{armed15 ? 'T-15m On' : 'Notify T-15m'}</span>
                     </button>
 
                     <button
@@ -919,7 +919,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       className={`btn-ghost-xs ${armed60 ? 'is-armed-btn' : ''}`}
                       onClick={() => onAddOrToggleReminder(concert, 60, drop)}
                     >
-                      <span>{armed60 ? 'T-1h Armed' : '+1h Alert'}</span>
+                      <span>{armed60 ? 'T-1h On' : '+1h Alert'}</span>
                     </button>
 
                     <a
@@ -1421,7 +1421,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                         title={
                           isMuted
                             ? 'Click to enable session & tour drop alerts'
-                            : 'Session & tour drop alert armed (click to mute)'
+                            : 'Session & tour drop alert on (click to mute)'
                         }
                         aria-label={`Toggle alert for ${singer.displayName}`}
                       >

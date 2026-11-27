@@ -306,7 +306,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
           {activeTab === 'sync' ? (
           <div className="sync-modal-body">
             <p className="sync-helper-copy">
-              Export your armed queue reminders (<strong>{reminders.length}</strong>), monitored
+              Export your saved alerts (<strong>{reminders.length}</strong>), monitored
               singers (<strong>{monitoredSingers.length}</strong>), custom World Festivals (
               <strong>{savedWorldFestivals.length}</strong>), and Home City preference to transfer
               between your laptop and mobile phone—or sign in with your email for automatic sync.

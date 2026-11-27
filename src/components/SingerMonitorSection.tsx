@@ -263,7 +263,7 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
           <div className="panel-actions">
             <button type="submit" id="submit-bulk-singers-btn" className="btn-primary-sm">
               <Sparkles size={14} />
-              <span>Monitor All &amp; Arm Announcement Alerts</span>
+              <span>Monitor All &amp; Turn On Alerts</span>
             </button>
           </div>
         </form>
@@ -526,8 +526,8 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                         onClick={() => onToggleNotifySinger(singer.name)}
                         title={
                           singer.notifyOnAnnounce
-                            ? 'Announcement alert armed (click to mute)'
-                            : 'Click to arm announcement alert'
+                            ? 'Announcement alert on (click to mute)'
+                            : 'Click to turn on announcement alert'
                         }
                         aria-label={`Toggle announcement reminder for ${singer.name}`}
                       >
