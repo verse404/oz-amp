@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ARTIST_PORTRAITS } from '../data/artistPortraits';
 import { IS_STATIC_MODE } from '../config/runtimeMode';
+import { useLocale } from '../i18n/LocaleContext';
 
 const RUNTIME_PORTRAIT_CACHE = new Map<string, string>();
 const PENDING_NAMES = new Set<string>();
@@ -220,6 +221,7 @@ export const ConcertMediaBanner: React.FC<ConcertMediaBannerProps> = ({
   tourTitle,
   supportActs,
 }) => {
+  const { tr } = useLocale();
   const portraitUrl = useArtistPortrait(artist);
   const [failedBgUrl, setFailedBgUrl] = useState<string | null>(null);
   const fallbackGrad = MONOGRAM_PALETTES[hashString(artist) % MONOGRAM_PALETTES.length];
@@ -255,7 +257,7 @@ export const ConcertMediaBanner: React.FC<ConcertMediaBannerProps> = ({
           {tourTitle && <p className="gig-tour-title">{tourTitle}</p>}
           {supportActs.length > 0 && (
             <div className="gig-supports-visual">
-              <span className="support-prefix">with</span>
+              <span className="support-prefix">{tr('with', '嘉宾')}</span>
               <div className="gig-support-pills">
                 {supportActs.slice(0, 3).map((act) => (
                   <span key={act} className="gig-support-chip">
@@ -264,7 +266,9 @@ export const ConcertMediaBanner: React.FC<ConcertMediaBannerProps> = ({
                   </span>
                 ))}
                 {supportActs.length > 3 && (
-                  <span className="gig-support-more">+{supportActs.length - 3} more</span>
+                  <span className="gig-support-more">
+                    {tr(`+${supportActs.length - 3} more`, `另 +${supportActs.length - 3} 位`)}
+                  </span>
                 )}
               </div>
             </div>

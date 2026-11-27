@@ -165,7 +165,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
   onRestoreBackup,
   onShowToast,
 }) => {
-  const { tr } = useLocale();
+  const { isZh, tr } = useLocale();
   const [activeTab, setActiveTab] = useState<'sync' | 'cloud-push'>('sync');
   const [pasteJson, setPasteJson] = useState('');
   const [copied, setCopied] = useState(false);
@@ -205,7 +205,9 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    onShowToast('Downloaded your OZ Amp profile backup (.json).');
+    onShowToast(
+      tr('Downloaded your OZ Amp profile backup (.json).', '已下载您的 OZ Amp 配置文件备份 (.json)。'),
+    );
   };
 
   const handleCopyJson = async () => {
@@ -213,10 +215,20 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
       const payload = buildBackupObject();
       await navigator.clipboard.writeText(JSON.stringify(payload));
       setCopied(true);
-      onShowToast('Copied sync JSON to clipboard — paste it on your phone or laptop!');
+      onShowToast(
+        tr(
+          'Copied sync JSON to clipboard — paste it on your phone or laptop!',
+          '已复制同步码至剪贴板 — 可直接粘贴到手机或电脑上恢复！',
+        ),
+      );
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      onShowToast('Clipboard blocked by browser — use Download .json instead.');
+      onShowToast(
+        tr(
+          'Clipboard blocked by browser — use Download .json instead.',
+          '浏览器拦截了剪贴板访问 — 请改用“下载备份文件 (.json)”。',
+        ),
+      );
     }
   };
 
@@ -240,7 +252,13 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
       setPasteJson('');
       onClose();
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Could not parse backup JSON.');
+      setErrorMsg(
+        isZh
+          ? '无法解析备份 JSON，请确认文件内容或同步码完整无误。'
+          : err instanceof Error
+            ? err.message
+            : 'Could not parse backup JSON.',
+      );
     }
   };
 
@@ -315,7 +333,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
             <p className="sync-helper-copy">
               {tr(
                 'Export your saved alerts, monitored singers, custom World Festivals, and Home City preference to transfer between your laptop and mobile phone—or sign in with your account for automatic Firebase sync.',
-                '导出您已保存的提醒、关注歌手、自选全球音乐节和常驻城市设置，方便在电脑和手机间迁移（或直接登录账号开启 Firebase 自动同步）。',
+                '导出您的已存提醒、关注歌手、自选全球音乐节和常驻城市设置，方便在电脑和手机间迁移（或直接登录账号开启 Firebase 自动同步）。',
               )}
             </p>
 
@@ -387,23 +405,53 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
               <div className="cloud-guide-card">
                 <div className="cloud-guide-title">
                   <BellRing size={16} />
-                  <strong>Private Per-Browser Storage &amp; Calendar Alerts</strong>
+                  <strong>
+                    {tr(
+                      'Private Per-Browser Storage & Calendar Alerts',
+                      '本地私密存储与日历提醒',
+                    )}
+                  </strong>
                 </div>
                 <p className="sync-helper-copy">
-                  Your reminders, watched singers, and custom world festivals are stored privately
-                  inside your own browser (<code>localStorage</code>) — other visitors never see your
-                  personal selections.
+                  {isZh ? (
+                    <>
+                      您的已存提醒、关注歌手与自选全球音乐节均私密保存在当前浏览器本地（
+                      <code>localStorage</code>），其他访客无法看到您的个人设置。
+                    </>
+                  ) : (
+                    <>
+                      Your reminders, watched singers, and custom world festivals are stored privately
+                      inside your own browser (<code>localStorage</code>) — other visitors never see your
+                      personal selections.
+                    </>
+                  )}
                 </p>
                 <ul className="cloud-secrets-list">
                   <li>
-                    Use <strong>Download All as .ics Calendar</strong> inside the{' '}
-                    <strong>Reminders</strong> drawer or click <strong>GCal</strong> on any ticket
-                    drop to sync 15-minute pre-sale queue alerts directly to Google Calendar / Apple
-                    Calendar on your phone.
+                    {isZh ? (
+                      <>
+                        在<strong>已存提醒</strong>侧栏中点击<strong>全部导出为 .ics 日历</strong>，或在任意开票场次点击<strong>日历</strong>，即可将提前 15 分钟抢票候场提醒同步到手机上的 Google 日历 / Apple 日历。
+                      </>
+                    ) : (
+                      <>
+                        Use <strong>Download All as .ics Calendar</strong> inside the{' '}
+                        <strong>Saved Alerts</strong> drawer or click <strong>GCal</strong> on any ticket
+                        drop to sync 15-minute pre-sale queue alerts directly to Google Calendar / Apple
+                        Calendar on your phone.
+                      </>
+                    )}
                   </li>
                   <li>
-                    Use <strong>Tab 1 (Sync Laptop ↔ Phone)</strong> to export or copy your JSON
-                    profile whenever you switch devices.
+                    {isZh ? (
+                      <>
+                        切换设备时，使用<strong>标签页 1（电脑 ↔ 手机备份）</strong>导出或复制 JSON 配置即可一键迁移。
+                      </>
+                    ) : (
+                      <>
+                        Use <strong>Tab 1 (Sync Laptop ↔ Phone)</strong> to export or copy your JSON
+                        profile whenever you switch devices.
+                      </>
+                    )}
                   </li>
                 </ul>
               </div>
@@ -411,26 +459,56 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
               <div className="cloud-guide-card">
                 <div className="cloud-guide-title">
                   <BellRing size={16} />
-                  <strong>Background 7:30 AM AEDT Phone Push Alerts ($0 via GitHub Actions)</strong>
+                  <strong>
+                    {tr(
+                      'Background 7:30 AM AEDT Phone Push Alerts ($0 via GitHub Actions)',
+                      '每日澳东 7:30 后台手机推送（基于 GitHub Actions，免费）',
+                    )}
+                  </strong>
                 </div>
                 <p className="sync-helper-copy">
-                  Your repository (<code>verse404/oz-amp</code>) runs an automated morning radar
-                  check across <strong>all your tracked singers</strong> and{' '}
-                  <strong>6 World Festivals</strong> even when your laptop and browser tabs are
-                  closed. Add two optional free secrets in GitHub{' '}
-                  <strong>Settings → Secrets and variables → Actions</strong>:
+                  {isZh ? (
+                    <>
+                      仓库（<code>verse404/oz-amp</code>）支持在关闭电脑和浏览器时，每天早晨自动扫描<strong>您追踪的全部歌手</strong>与<strong> 6 大全球音乐节</strong>。只需在 GitHub 的{' '}
+                      <strong>Settings → Secrets and variables → Actions</strong> 中配置以下两项免费密钥：
+                    </>
+                  ) : (
+                    <>
+                      Your repository (<code>verse404/oz-amp</code>) runs an automated morning radar
+                      check across <strong>all your tracked singers</strong> and{' '}
+                      <strong>6 World Festivals</strong> even when your laptop and browser tabs are
+                      closed. Add two optional free secrets in GitHub{' '}
+                      <strong>Settings → Secrets and variables → Actions</strong>:
+                    </>
+                  )}
                 </p>
                 <ul className="cloud-secrets-list">
                   <li>
-                    <code>REMINDER_WEBHOOK_URL</code> — Paste a free HTTPS webhook from{' '}
-                    <strong>Discord</strong>, <strong>Slack</strong>, <strong>Telegram</strong>, or{' '}
-                    <strong>Bark (iOS Push)</strong> to receive instant morning phone alerts when
-                    new Melbourne/Sydney tours or &lt;36h pre-sales appear.
+                    {isZh ? (
+                      <>
+                        <code>REMINDER_WEBHOOK_URL</code> — 填入 <strong>Discord</strong>、<strong>Slack</strong>、<strong>Telegram</strong> 或 <strong>Bark（iOS 推送）</strong> 的免费 HTTPS Webhook，有墨尔本/悉尼新巡演或 36 小时内即将开票时即刻推送到手机。
+                      </>
+                    ) : (
+                      <>
+                        <code>REMINDER_WEBHOOK_URL</code> — Paste a free HTTPS webhook from{' '}
+                        <strong>Discord</strong>, <strong>Slack</strong>, <strong>Telegram</strong>, or{' '}
+                        <strong>Bark (iOS Push)</strong> to receive instant morning phone alerts when
+                        new Melbourne/Sydney tours or &lt;36h pre-sales appear.
+                      </>
+                    )}
                   </li>
                   <li>
-                    <code>TICKETMASTER_API_KEY</code> — Grab a free key (5,000 calls/day) from
-                    Ticketmaster Developer Portal so the morning job automatically pulls newly
-                    listed VIC &amp; NSW Ticketmaster/Live Nation shows.
+                    {isZh ? (
+                      <>
+                        <code>TICKETMASTER_API_KEY</code> — 前往 Ticketmaster 开发者平台申请免费密钥（每日 5,000 次配额），定时任务即可自动拉取维州与新州新上架的 Ticketmaster / Live Nation 演出。
+                      </>
+                    ) : (
+                      <>
+                        <code>TICKETMASTER_API_KEY</code> — Grab a free key (5,000 calls/day) from
+                        Ticketmaster Developer Portal so the morning job automatically pulls newly
+                        listed VIC &amp; NSW Ticketmaster/Live Nation shows.
+                      </>
+                    )}
                   </li>
                 </ul>
                 <div className="sync-export-row">
@@ -440,7 +518,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
                     rel="noopener noreferrer"
                     className="btn-primary-sm"
                   >
-                    <span>Open GitHub Actions Secrets</span>
+                    <span>{tr('Open GitHub Actions Secrets', '打开 GitHub Actions 密钥设置')}</span>
                     <ExternalLink size={13} />
                   </a>
                   <a
@@ -449,7 +527,7 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
                     rel="noopener noreferrer"
                     className="btn-outline-sm"
                   >
-                    <span>Free Ticketmaster Key</span>
+                    <span>{tr('Free Ticketmaster Key', '申请免费 Ticketmaster 密钥')}</span>
                     <ExternalLink size={13} />
                   </a>
                 </div>
@@ -459,13 +537,26 @@ export const BackupSyncModal: React.FC<BackupSyncModalProps> = ({
             <div className="cloud-guide-card">
               <div className="cloud-guide-title">
                 <Smartphone size={16} />
-                <strong>Install OZ Amp on iPhone / Android Home Screen (PWA Enabled)</strong>
+                <strong>
+                  {tr(
+                    'Install OZ Amp on iPhone / Android Home Screen (PWA Enabled)',
+                    '将 OZ Amp 添加到 iPhone / Android 主屏幕（支持 PWA 应用模式）',
+                  )}
+                </strong>
               </div>
               <p className="sync-helper-copy">
-                Open this page in Safari (iOS) or Chrome (Android), tap{' '}
-                <strong>Share → Add to Home Screen</strong>, and OZ Amp launches full-screen with
-                direct shortcuts to <em>All Gigs</em>, <em>My Singer Sessions</em>,{' '}
-                <em>World Festivals</em>, and <em>Trending Music</em>.
+                {isZh ? (
+                  <>
+                    在手机 Safari（iOS）或 Chrome（Android）中打开本页，点击<strong>分享 → 添加到主屏幕</strong>，即可像原生 App 一样全屏启动，并一键直达<em>全部演出</em>、<em>我的歌手</em>、<em>全球音乐节</em>与<em>热门音乐榜</em>。
+                  </>
+                ) : (
+                  <>
+                    Open this page in Safari (iOS) or Chrome (Android), tap{' '}
+                    <strong>Share → Add to Home Screen</strong>, and OZ Amp launches full-screen with
+                    direct shortcuts to <em>All Gigs</em>, <em>My Singer Sessions</em>,{' '}
+                    <em>World Festivals</em>, and <em>Trending Music</em>.
+                  </>
+                )}
               </p>
             </div>
           </div>

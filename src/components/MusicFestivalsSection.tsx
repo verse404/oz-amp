@@ -47,7 +47,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
   onArmFestivalReminder,
   onToggleMonitorArtist,
 }) => {
-  const { isZh, tr, cityLabel } = useLocale();
+  const { isZh, tr, cityLabel, genreLabel } = useLocale();
   const [formatFilter, setFormatFilter] = useState<
     'all' | 'City Day Festival' | 'Multi-Day Camping'
   >('all');
@@ -202,12 +202,12 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
 
           const statusLabel =
             fest.status === 'presale-soon'
-              ? 'Pre-Sale / Ballot Soon'
+              ? tr('Pre-Sale / Ballot Soon', '即将预售 / 抽签')
               : fest.status === 'selling-fast'
-                ? 'Selling Fast'
+                ? tr('Selling Fast', '余票紧张')
                 : fest.status === 'waitlist-resale'
-                  ? 'Ballot Closed · Resale'
-                  : 'On Sale';
+                  ? tr('Ballot Closed · Resale', '抽签已截止 · 官方转售')
+                  : tr('On Sale', '公开售票中');
 
           return (
             <article key={fest.id} className="festival-poster-card">
@@ -215,14 +215,17 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
               <div className="poster-card-top">
                 <div className="poster-title-block">
                   <div className="poster-meta-badges">
-                    <span className="custom-pill">{fest.format}</span>
+                    <span className="custom-pill">{genreLabel(fest.format)}</span>
                     <span className={`status-pill status-pill--${fest.status}`}>
                       {statusLabel}
                     </span>
                     {watchedMatches.length > 0 && (
                       <span className="watched-match-pill">
-                        <Star size={11} fill="currentColor" /> {watchedMatches.length} of your
-                        singers playing
+                        <Star size={11} fill="currentColor" />{' '}
+                        {tr(
+                          `${watchedMatches.length} of your singers playing`,
+                          `命中 ${watchedMatches.length} 位您关注的歌手`,
+                        )}
                       </span>
                     )}
                   </div>
@@ -255,7 +258,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                     .map((st) => (
                       <div key={`${fest.id}-${st.venueName}`} className="poster-stop-pill">
                         <span className={`city-pill city-pill--${st.city}`}>
-                          {st.city === 'melbourne' ? 'MELBOURNE / VIC' : 'SYDNEY / NSW'}
+                          {cityLabel(st.city, 'state').toUpperCase()}
                         </span>
                         <Calendar size={13} className="stop-cal-icon" />
                         <strong>{st.dateLabel}</strong>
@@ -271,10 +274,23 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                   <div className="lineup-tba-notice">
                     <Sparkles size={16} />
                     <div>
-                      <strong>Artist Lineup Not Announced Yet (Phase 1 Dropping Soon)</strong>
+                      <strong>
+                        {tr(
+                          'Artist Lineup Not Announced Yet (Phase 1 Dropping Soon)',
+                          '阵容尚未官宣（第一批名单即将公布）',
+                        )}
+                      </strong>
                       <p>
-                        Dates and venue are locked in. Click <strong>Remind Me</strong> below to
-                        get notified when the Phase 1 lineup drops, or check the official page.
+                        {isZh ? (
+                          <>
+                            举办日期与场地已确定。点击下方<strong>设置提醒</strong>，第一批阵容官宣时即可收到通知。
+                          </>
+                        ) : (
+                          <>
+                            Dates and venue are locked in. Click <strong>Notify Me</strong> below to
+                            get notified when the Phase 1 lineup drops, or check the official page.
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -282,7 +298,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                   <>
                     {/* Tier 1: HEADLINERS */}
                     <div className="lineup-tier-group">
-                      <span className="lineup-tier-label">HEADLINERS</span>
+                      <span className="lineup-tier-label">{tr('HEADLINERS', '领衔压轴阵容')}</span>
                       <div className="headliner-pills-row">
                         {fest.headliners.map((headliner) => {
                           const cleanName = headliner.replace(/\s*\([^)]*\)\s*/g, '').trim();
@@ -295,8 +311,11 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                               onClick={() => onToggleMonitorArtist(cleanName)}
                               title={
                                 watched
-                                  ? `Monitoring ${cleanName} (click to remove)`
-                                  : `Click to monitor ${cleanName}`
+                                  ? tr(
+                                      `Monitoring ${cleanName} (click to remove)`,
+                                      `正在关注 ${cleanName}（点击取消）`,
+                                    )
+                                  : tr(`Click to monitor ${cleanName}`, `点击关注 ${cleanName}`)
                               }
                             >
                               <ArtistAvatar name={cleanName} size="xs" shape="circle" />
@@ -312,7 +331,10 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                     {undercard.length > 0 && (
                       <div className="lineup-tier-group">
                         <span className="lineup-tier-label">
-                          ALSO PERFORMING ({undercard.length} ARTISTS)
+                          {tr(
+                            `ALSO PERFORMING (${undercard.length} ARTISTS)`,
+                            `其余参演艺人（共 ${undercard.length} 组）`,
+                          )}
                         </span>
                         <div className="undercard-pills-row">
                           {visibleUndercard.map((act) => {
@@ -324,7 +346,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                                 type="button"
                                 className={`poster-undercard-pill ${watched ? 'is-watched' : ''}`}
                                 onClick={() => onToggleMonitorArtist(cleanName)}
-                                title={`Click to monitor ${cleanName}`}
+                                title={tr(`Click to monitor ${cleanName}`, `点击关注 ${cleanName}`)}
                               >
                                 <ArtistAvatar name={cleanName} size="xs" shape="circle" />
                                 {watched && <Check size={11} />}
@@ -339,7 +361,12 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                               className="expand-lineup-btn"
                               onClick={() => toggleExpand(fest.id)}
                             >
-                              <span>+{hiddenCount} more artists (Show Full Roster)</span>
+                              <span>
+                                {tr(
+                                  `+${hiddenCount} more artists (Show Full Roster)`,
+                                  `展开其余 ${hiddenCount} 组艺人`,
+                                )}
+                              </span>
                               <ChevronDown size={13} />
                             </button>
                           )}
@@ -350,7 +377,7 @@ export const MusicFestivalsSection: React.FC<MusicFestivalsSectionProps> = ({
                               className="expand-lineup-btn"
                               onClick={() => toggleExpand(fest.id)}
                             >
-                              <span>Show fewer</span>
+                              <span>{tr('Show fewer', '收起阵容')}</span>
                               <ChevronUp size={13} />
                             </button>
                           )}

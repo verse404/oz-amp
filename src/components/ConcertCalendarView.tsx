@@ -454,7 +454,13 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                 <div className="calendar-day-top">
                   <span className="calendar-day-num">{cell.dayNum}</span>
                   {hasClash && (
-                    <span className="cal-clash-flag" title="AU gig overlaps with a World Festival">
+                    <span
+                      className="cal-clash-flag"
+                      title={tr(
+                        'AU gig overlaps with a World Festival',
+                        '澳洲演出与全球音乐节日期重叠',
+                      )}
+                    >
                       <AlertTriangle size={11} />
                     </span>
                   )}
@@ -468,7 +474,9 @@ export const ConcertCalendarView: React.FC<ConcertCalendarViewProps> = ({
                       </span>
                     ))}
                     {pillRows.length > 3 && (
-                      <span className="cal-more-count">+{pillRows.length - 3} more</span>
+                      <span className="cal-more-count">
+                        {tr(`+${pillRows.length - 3} more`, `另 +${pillRows.length - 3} 项`)}
+                      </span>
                     )}
                   </div>
                 )}

@@ -31,7 +31,7 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
   watchlistSingers,
   homeCity,
 }) => {
-  const { tr } = useLocale();
+  const { tr, cityLabel } = useLocale();
   const [selectedFestivalId, setSelectedFestivalId] = useState<string>(
     festivals[0]?.id || 'laneway-2027',
   );
@@ -110,19 +110,20 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
             onClick={syncWithMonitored}
           >
             <Sparkles size={14} />
-            <span>Match My Monitored Singers</span>
+            <span>{tr('Match My Monitored Singers', '自动匹配我关注的歌手')}</span>
           </button>
         </div>
       </div>
 
       <p className="section-sublead">
-        Most international festival acts in Australia also play intimate theatre sideshows (Enmore,
-        Forum, Hordern, Northcote). Toggle the acts you want to see below to check stage set-time
-        clashes and whether individual sideshow tickets beat a full festival pass.
+        {tr(
+          'Most international festival acts in Australia also play intimate theatre sideshows (Enmore, Forum, Hordern, Northcote). Toggle the acts you want to see below to check stage set-time clashes and whether individual sideshow tickets beat a full festival pass.',
+          '多数来澳参加音乐节的海外艺人也会在剧场（Forum、Enmore、Hordern、Northcote 等）加开专场（Sideshow）。勾选下方想看的艺人，即可检测舞台时间冲突，并对比单买专场与音乐节通票哪个更划算。',
+        )}
       </p>
 
       <div className="festival-controls-bar">
-        <div className="category-tabs" role="tablist" aria-label="Select Australian festival">
+        <div className="category-tabs" role="tablist" aria-label={tr('Select Australian festival', '选择澳洲音乐节')}>
           {festivals.map((f) => (
             <button
               key={f.id}
@@ -146,14 +147,14 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
             className={`genre-pill ${targetCity === 'melbourne' ? 'is-active' : ''}`}
             onClick={() => setTargetCity('melbourne')}
           >
-            Compare Melbourne
+            {tr('Compare Melbourne', '对比墨尔本场')}
           </button>
           <button
             type="button"
             className={`genre-pill ${targetCity === 'sydney' ? 'is-active' : ''}`}
             onClick={() => setTargetCity('sydney')}
           >
-            Compare Sydney
+            {tr('Compare Sydney', '对比悉尼场')}
           </button>
         </div>
       </div>
@@ -184,19 +185,23 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
       {/* Verdict & Clash Output Card */}
       <div className="festival-verdict-grid">
         <div className="verdict-summary-card">
-          <span className="eyebrow-kicker">Smart Cost &amp; Set-Length Verdict</span>
+          <span className="eyebrow-kicker">
+            {tr('Smart Cost & Set-Length Verdict', '票价与演出时长智能结论')}
+          </span>
           <h3 className="verdict-headline">{analysis.verdictBadge}</h3>
           <p className="panel-subtext">{analysis.verdictExplanation}</p>
 
           <div className="cost-compare-bars">
             <div className="cost-row">
-              <span>Full {festival.name} Pass</span>
+              <span>{tr(`Full ${festival.name} Pass`, `${festival.name} 音乐节通票`)}</span>
               <strong>{formatAudPrice(festival.festivalPassAud)}</strong>
             </div>
             <div className="cost-row">
               <span>
-                Selected {targetCity === 'sydney' ? 'Sydney' : 'Melbourne'} Sideshows (
-                {effectivePicked.length})
+                {tr(
+                  `Selected ${targetCity === 'sydney' ? 'Sydney' : 'Melbourne'} Sideshows (${effectivePicked.length})`,
+                  `已选${cityLabel(targetCity)}剧场专场 (${effectivePicked.length} 场)`,
+                )}
               </span>
               <strong>{formatAudPrice(analysis.sideshowTotalAud)}</strong>
             </div>
@@ -214,7 +219,10 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
           ) : (
             effectivePicked.length >= 2 && (
               <p className="clean-run-badge">
-                Zero set-time clashes across your {effectivePicked.length} selected acts!
+                {tr(
+                  `Zero set-time clashes across your ${effectivePicked.length} selected acts!`,
+                  `您选中的 ${effectivePicked.length} 组艺人演出时间完全无冲突！`,
+                )}
               </p>
             )
           )}
@@ -226,7 +234,7 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
               rel="noopener noreferrer"
               className="btn-primary-sm"
             >
-              <span>Official {festival.agency} Page</span>
+              <span>{tr(`Official ${festival.agency} Page`, `前往 ${festival.agency} 官方购票`)}</span>
               <ExternalLink size={13} />
             </a>
           </div>
@@ -235,7 +243,7 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
         {/* Sideshow Comparison Ledger */}
         <div className="sideshow-table-card">
           <h3 className="panel-heading">
-            Sydney &amp; Melbourne Headline Sideshow Ledger
+            {tr('Sydney & Melbourne Headline Sideshow Ledger', '墨尔本与悉尼剧场专场价格一览')}
           </h3>
           <div className="sideshow-list">
             {festival.sideshows.map((side) => {
@@ -248,11 +256,12 @@ export const FestivalAdvisorSection: React.FC<FestivalAdvisorSectionProps> = ({
                   <div>
                     <strong>{side.artist}</strong>
                     <span className="sideshow-venues">
-                      SYD: {side.sydneyVenue} · MEL: {side.melbourneVenue}
+                      {cityLabel('sydney', 'short')}: {side.sydneyVenue} ·{' '}
+                      {cityLabel('melbourne', 'short')}: {side.melbourneVenue}
                     </span>
                   </div>
                   <span className="sideshow-price">
-                    {side.festivalOnly ? 'Fest Only' : formatAudPrice(side.priceAud)}
+                    {side.festivalOnly ? tr('Fest Only', '仅音乐节限定') : formatAudPrice(side.priceAud)}
                   </span>
                 </div>
               );

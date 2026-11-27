@@ -456,7 +456,12 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
     }
 
     if (rulesToAdd.length === 0) {
-      onShowToast('All tracked world festival registration & ticket sessions already have alerts saved.');
+      onShowToast(
+        tr(
+          'All tracked world festival registration & ticket sessions already have alerts saved.',
+          '已追踪的全部全球音乐节注册与开票场次均已保存提醒。',
+        ),
+      );
       return;
     }
     onBulkArmFestivalReminders(rulesToAdd);
@@ -486,7 +491,12 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
       };
     });
     downloadIcsEvents('oz-amp-world-festivals.ics', events);
-    onShowToast(`Exported ${events.length} world festival sessions to .ics calendar.`);
+    onShowToast(
+      tr(
+        `Exported ${events.length} world festival sessions to .ics calendar.`,
+        `已导出 ${events.length} 场全球音乐节提醒至 .ics 日历文件。`,
+      ),
+    );
   };
 
   const handleDownloadSingleFestivalIcs = (fest: WorldFestivalItem) => {
@@ -504,14 +514,19 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         alarmMinutes: 1440,
       },
     ]);
-    onShowToast(`Downloaded .ics calendar file for ${fest.name}.`);
+    onShowToast(
+      tr(
+        `Downloaded .ics calendar file for ${fest.name}.`,
+        `已下载 ${fest.name} 的 .ics 日历文件。`,
+      ),
+    );
   };
 
   const handleCustomFestivalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = customName.trim();
     if (cleanName.length < 2) {
-      onShowToast('Please enter a festival name.');
+      onShowToast(tr('Please enter a festival name.', '请输入音乐节名称。'));
       return;
     }
     const cleanCountry = customCountry.trim() || 'International';
@@ -847,10 +862,16 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                     <div className="world-banner-top-badges">
                       <div className="world-banner-left-pills">
                         <span className="world-country-pill">{fest.countryCode}</span>
-                        <span className="world-vibe-pill">{fest.vibe}</span>
+                        <span className="world-vibe-pill">{genreLabel(fest.vibe)}</span>
                       </div>
                       <span className={`world-status-pill world-status-pill--${fest.status}`}>
-                        {fest.statusLabel}
+                        {fest.status === 'lineup-live'
+                          ? tr(fest.statusLabel, '阵容已公布')
+                          : fest.status === 'registration-soon'
+                            ? tr(fest.statusLabel, '即将开启预注册')
+                            : fest.status === 'ballot-upcoming'
+                              ? tr(fest.statusLabel, '即将抽签售票')
+                              : tr(fest.statusLabel, '售罄 / 官方转售')}
                       </span>
                     </div>
 
@@ -874,8 +895,11 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                             <Star size={12} />
                             <span>
                               {crossoverActs.length === 1
-                                ? `Your Singer: ${crossoverActs[0]}`
-                                : `${crossoverActs.length} Watchlist Singers`}
+                                ? tr(`Your Singer: ${crossoverActs[0]}`, `您关注的歌手: ${crossoverActs[0]}`)
+                                : tr(
+                                    `${crossoverActs.length} Watchlist Singers`,
+                                    `命中 ${crossoverActs.length} 位关注歌手`,
+                                  )}
                             </span>
                           </span>
                         )}
@@ -901,13 +925,17 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                     <div className="world-flight-box">
                       {(cityFilter === 'melbourne' || cityFilter === 'all') && (
                         <div className="world-flight-line">
-                          <span className="city-pill city-pill--melbourne">MEL ✈</span>
+                          <span className="city-pill city-pill--melbourne">
+                            {cityLabel('melbourne', 'short')} ✈
+                          </span>
                           <span>{fest.melbourneFlightTip}</span>
                         </div>
                       )}
                       {(cityFilter === 'sydney' || cityFilter === 'all') && (
                         <div className="world-flight-line">
-                          <span className="city-pill city-pill--sydney">SYD ✈</span>
+                          <span className="city-pill city-pill--sydney">
+                            {cityLabel('sydney', 'short')} ✈
+                          </span>
                           <span>{fest.sydneyFlightTip}</span>
                         </div>
                       )}
@@ -921,7 +949,12 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                           <div className="world-budget-top">
                             <span className="world-budget-kicker">
                               <Wallet size={13} />
-                              <span>ESTIMATED ALL-IN TRIP BUDGET (AUD)</span>
+                              <span>
+                                {tr(
+                                  'ESTIMATED ALL-IN TRIP BUDGET (AUD)',
+                                  '预估总出行预算（含机票/住宿/门票 · 澳元）',
+                                )}
+                              </span>
                             </span>
                             <strong className="world-budget-total">{planner.allInBudgetAud}</strong>
                           </div>
@@ -939,7 +972,10 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                       {fest.lineupAnnounced && fest.lineupHighlights.length > 0 ? (
                         <div className="world-tier-block">
                           <span className="lineup-tier-label">
-                            ANNOUNCED LINEUP HIGHLIGHTS (CLICK TO TOGGLE RADAR)
+                            {tr(
+                              'ANNOUNCED LINEUP HIGHLIGHTS (CLICK TO TOGGLE RADAR)',
+                              '已官宣重点阵容（点击加入 / 取消巡演雷达）',
+                            )}
                           </span>
                           <div className="world-artist-chips">
                             {fest.lineupHighlights.map((act) => {
@@ -953,8 +989,14 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                                   onClick={() => onToggleMonitorArtist(act)}
                                   title={
                                     isMonitored
-                                      ? `${act} is in your active radar (click to toggle)`
-                                      : `Add ${act} to your OZ Amp tour radar`
+                                      ? tr(
+                                          `${act} is in your active radar (click to toggle)`,
+                                          `${act} 已在巡演雷达中（点击切换）`,
+                                        )
+                                      : tr(
+                                          `Add ${act} to your OZ Amp tour radar`,
+                                          `将 ${act} 加入巡演雷达`,
+                                        )
                                   }
                                 >
                                   <ArtistAvatar name={act} size="xs" />
@@ -975,7 +1017,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                                   className="preview-chip"
                                 >
                                   <Headphones size={12} />
-                                  <span>Headliner Spotify</span>
+                                  <span>{tr('Headliner Spotify', '压轴歌手 Spotify')}</span>
                                 </a>
                                 <a
                                   href={leadPreview.setlistFm}
@@ -984,7 +1026,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                                   className="preview-chip preview-chip--setlist"
                                 >
                                   <ListMusic size={12} />
-                                  <span>Headliner Setlist.fm</span>
+                                  <span>{tr('Headliner Setlist.fm', '压轴歌手歌单')}</span>
                                 </a>
                               </div>
                             );
@@ -995,7 +1037,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                       {fest.stagesOrCamps.length > 0 && (
                         <div className="world-tier-block">
                           <span className="lineup-tier-label">
-                            ICONIC STAGES, REALMS &amp; SOUND CAMPS
+                            {tr('ICONIC STAGES, REALMS & SOUND CAMPS', '标志性舞台与主题营地')}
                           </span>
                           <div className="world-stage-chips">
                             {fest.stagesOrCamps.map((stage) => (
@@ -1239,80 +1281,80 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
           <form className="world-custom-form" onSubmit={handleCustomFestivalSubmit}>
             <div className="world-fest-form-grid">
               <label className="form-field">
-                <span>Festival Name *</span>
+                <span>{tr('Festival Name *', '音乐节名称 *')}</span>
                 <input
                   type="text"
                   required
                   maxLength={80}
-                  placeholder="e.g. Waking Life or Garbicz Festival"
+                  placeholder={tr('e.g. Waking Life or Garbicz Festival', '例如：Clockenflap 或 Glastonbury')}
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
                 />
               </label>
 
               <label className="form-field">
-                <span>City / Grounds</span>
+                <span>{tr('City / Grounds', '城市 / 场地')}</span>
                 <input
                   type="text"
                   maxLength={60}
-                  placeholder="e.g. Crato, Alentejo"
+                  placeholder={tr('e.g. Crato, Alentejo', '例如：香港中环海滨')}
                   value={customCity}
                   onChange={(e) => setCustomCity(e.target.value)}
                 />
               </label>
 
               <label className="form-field">
-                <span>Country</span>
+                <span>{tr('Country', '国家 / 地区')}</span>
                 <input
                   type="text"
                   maxLength={48}
-                  placeholder="e.g. Portugal"
+                  placeholder={tr('e.g. Portugal', '例如：葡萄牙 / 日本')}
                   value={customCountry}
                   onChange={(e) => setCustomCountry(e.target.value)}
                 />
               </label>
 
               <label className="form-field">
-                <span>Region</span>
+                <span>{tr('Region', '大洲 / 区域')}</span>
                 <select
                   value={customRegion}
                   onChange={(e) => setCustomRegion(e.target.value as WorldFestivalRegion)}
                 >
                   {REGION_FILTERS.filter((r) => r !== 'All Regions').map((reg) => (
                     <option key={reg} value={reg}>
-                      {reg}
+                      {genreLabel(reg)}
                     </option>
                   ))}
                 </select>
               </label>
 
               <label className="form-field">
-                <span>Festival Vibe</span>
+                <span>{tr('Festival Vibe', '音乐节风格')}</span>
                 <select
                   value={customVibe}
                   onChange={(e) => setCustomVibe(e.target.value as WorldFestivalVibe)}
                 >
                   {VIBE_FILTERS.filter((v) => v !== 'All Vibes').map((vibe) => (
                     <option key={vibe} value={vibe}>
-                      {vibe}
+                      {genreLabel(vibe)}
                     </option>
                   ))}
                 </select>
               </label>
 
               <label className="form-field">
-                <span>2027 Dates / Window</span>
+                <span>{tr('2027 Dates / Window', '举办日期 / 档期')}</span>
                 <input
                   type="text"
                   maxLength={60}
-                  placeholder="e.g. Jun 16–21, 2027"
+                  placeholder={tr('e.g. Jun 16–21, 2027', '例如：2027年6月16–21日')}
                   value={customDates}
                   onChange={(e) => setCustomDates(e.target.value)}
                 />
               </label>
 
               <label className="form-field">
-                <span>Official Website (HTTPS)</span>
+                <span>{tr('Official Website (HTTPS)', '官方网站 (HTTPS)')}</span>
                 <input
                   type="url"
                   maxLength={180}
@@ -1326,7 +1368,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
             <div className="world-custom-actions">
               <button type="submit" className="btn-primary-sm">
                 <Plus size={14} />
-                <span>Pin Custom Festival to My Page</span>
+                <span>{tr('Pin Custom Festival to My Page', '添加到我的全球音乐节')}</span>
               </button>
             </div>
           </form>
@@ -1334,7 +1376,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
 
         {/* Discovery Filter Pills */}
         <div className="world-filter-toolbar">
-          <div className="genre-scroll-row" role="group" aria-label="Filter discovery by vibe">
+          <div className="genre-scroll-row" role="group" aria-label={tr('Filter discovery by vibe', '按风格筛选探索')}>
             {VIBE_FILTERS.map((vibe) => (
               <button
                 key={vibe}
@@ -1342,12 +1384,12 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 className={`genre-pill ${discoveryVibe === vibe ? 'is-selected' : ''}`}
                 onClick={() => setDiscoveryVibe(vibe)}
               >
-                {vibe}
+                {genreLabel(vibe)}
               </button>
             ))}
           </div>
 
-          <div className="genre-scroll-row" role="group" aria-label="Filter discovery by region">
+          <div className="genre-scroll-row" role="group" aria-label={tr('Filter discovery by region', '按地区筛选探索')}>
             {REGION_FILTERS.map((reg) => (
               <button
                 key={reg}
@@ -1355,7 +1397,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                 className={`genre-pill ${discoveryRegion === reg ? 'is-selected' : ''}`}
                 onClick={() => setDiscoveryRegion(reg)}
               >
-                {reg}
+                {genreLabel(reg)}
               </button>
             ))}
           </div>
@@ -1365,9 +1407,17 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
         {combinedDiscoveryFestivals.length === 0 ? (
           <div className="empty-state-box">
             <p>
-              No potential festivals matched that filter yet. Click{' '}
-              <strong>Search Worldwide Live</strong> or <strong>Add Custom Festival</strong> to pin
-              any boutique gathering.
+              {isZh ? (
+                <>
+                  当前筛选下暂无音乐节。点击<strong>全网实时搜索</strong>或<strong>手动添加音乐节</strong>即可收藏任意全球音乐节。
+                </>
+              ) : (
+                <>
+                  No potential festivals matched that filter yet. Click{' '}
+                  <strong>Search Worldwide Live</strong> or <strong>Add Custom Festival</strong> to
+                  pin any boutique gathering.
+                </>
+              )}
             </p>
           </div>
         ) : (
@@ -1386,7 +1436,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                   <FestivalPhotoBanner festival={item} compact>
                     <div className="world-banner-top-badges">
                       <span className="world-country-pill">{item.countryCode}</span>
-                      <span className="world-vibe-pill">{item.vibe}</span>
+                      <span className="world-vibe-pill">{genreLabel(item.vibe)}</span>
                     </div>
                     <div className="world-banner-bottom-caption">
                       <span className="world-dates-chip">
@@ -1426,7 +1476,7 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                         rel="noopener noreferrer"
                         className="btn-outline-sm"
                       >
-                        <span>Official Site</span>
+                        <span>{tr('Official Site', '官网')}</span>
                         <ExternalLink size={13} />
                       </a>
 
@@ -1437,7 +1487,11 @@ export const WorldFestivalsPage: React.FC<WorldFestivalsPageProps> = ({
                         onClick={() => onAddFestival({ ...item, isCustomAdded: true })}
                       >
                         {alreadyAdded ? <Check size={14} /> : <Plus size={14} />}
-                        <span>{alreadyAdded ? 'On Your Page' : 'Add to My Page'}</span>
+                        <span>
+                          {alreadyAdded
+                            ? tr('On Your Page', '已在列表中')
+                            : tr('Add to My Page', '加入我的列表')}
+                        </span>
                       </button>
                     </div>
                   </div>

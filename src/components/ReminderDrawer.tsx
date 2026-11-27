@@ -63,17 +63,25 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
   const handleTestBrowserAlert = () => {
     playReminderChime();
     if (notificationPermission === 'granted' && 'Notification' in window) {
-      new Notification('OZ Amp — Queue Open Test', {
-        body: 'Ticketek & Ticketmaster pre-sale alerts are active for Melbourne & Sydney.',
+      new Notification(tr('OZ Amp — Queue Open Test', 'OZ Amp — 开票候场测试通知'), {
+        body: tr(
+          'Ticketek & Ticketmaster pre-sale alerts are active for Melbourne & Sydney.',
+          '墨尔本与悉尼 Ticketek / Ticketmaster 预售提醒已生效。',
+        ),
       });
     }
-    onShowToast('Stage chime & reminder alert verified.');
+    onShowToast(tr('Stage chime & reminder alert verified.', '铃声与提醒通知测试正常。'));
   };
 
   const handleSendTestWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (readonlyMode) {
-      onShowToast('Webhook dispatch is disabled in public read-only cloud mode.');
+      onShowToast(
+        tr(
+          'Webhook dispatch is disabled in public read-only cloud mode.',
+          '公开静态预览模式下不支持发送 Webhook 推送。',
+        ),
+      );
       return;
     }
     setSendingWebhook(true);
@@ -91,12 +99,19 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        onShowToast(`Push delivered to ${data.targetMasked || 'webhook'}.`);
+        onShowToast(
+          tr(
+            `Push delivered to ${data.targetMasked || 'webhook'}.`,
+            `已发送测试推送至 ${data.targetMasked || 'Webhook'}。`,
+          ),
+        );
       } else {
-        onShowToast(data.error || 'Webhook push could not be delivered.');
+        onShowToast(
+          data.error || tr('Webhook push could not be delivered.', 'Webhook 推送发送失败。'),
+        );
       }
     } catch {
-      onShowToast('Network error while testing webhook.');
+      onShowToast(tr('Network error while testing webhook.', '测试 Webhook 时出现网络错误。'));
     } finally {
       setSendingWebhook(false);
     }
@@ -261,7 +276,7 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
                             {item.targetLabel} · {item.venueName}
                           </p>
                           <p className="reminder-timestamp">
-                            {formatAuTimestamp(item.targetIso, item.city)}
+                            {formatAuTimestamp(item.targetIso, item.city, locale)}
                           </p>
                         </div>
                       </div>
@@ -295,11 +310,17 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
           {/* Optional Mobile Push Webhook Integration */}
           {!readonlyMode && (
             <form className="utility-panel webhook-form" onSubmit={handleSendTestWebhook}>
-              <h3 className="panel-heading">Mobile Push Webhook (Optional)</h3>
+              <h3 className="panel-heading">
+                {tr('Mobile Push Webhook (Optional)', '手机推送 Webhook（选填）')}
+              </h3>
               <p className="panel-subtext">
-                Send a test dispatch to Bark (<code>api.day.app</code>), Telegram (
-                <code>api.telegram.org</code>), Discord, or Slack.
-                {defaultWebhookMasked ? ` Default configured: ${defaultWebhookMasked}` : ''}
+                {tr(
+                  'Send a test dispatch to Bark (api.day.app), Telegram (api.telegram.org), Discord, or Slack.',
+                  '向 Bark (api.day.app)、Telegram、Discord 或 Slack 发送测试推送通知。',
+                )}
+                {defaultWebhookMasked
+                  ? tr(` Default configured: ${defaultWebhookMasked}`, ` 当前默认配置：${defaultWebhookMasked}`)
+                  : ''}
               </p>
               <div className="inline-input-group">
                 <input
@@ -317,7 +338,9 @@ export const ReminderDrawer: React.FC<ReminderDrawerProps> = ({
                   disabled={sendingWebhook}
                 >
                   <Send size={14} />
-                  <span>{sendingWebhook ? 'Sending…' : 'Test Push'}</span>
+                  <span>
+                    {sendingWebhook ? tr('Sending…', '发送中…') : tr('Test Push', '测试推送')}
+                  </span>
                 </button>
               </div>
             </form>

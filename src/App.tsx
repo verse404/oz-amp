@@ -756,7 +756,12 @@ export const App: React.FC = () => {
           setLastAccountSavedIso(updatedAtIso);
           setAccountSyncState('saved');
           if (manual) {
-            showToast('Saved all your choices to Firebase Cloud Firestore.');
+            showToast(
+              tr(
+                'Saved all your choices to Firebase Cloud Firestore.',
+                '已将您的所有选择保存至 Firebase 云端。',
+              ),
+            );
           }
           return;
         }
@@ -778,18 +783,34 @@ export const App: React.FC = () => {
           setLastAccountSavedIso(data.updatedAtIso || new Date().toISOString());
           setAccountSyncState('saved');
           if (manual) {
-            showToast('Saved all your choices to your OZ Amp account.');
+            showToast(
+              tr(
+                'Saved all your choices to your OZ Amp account.',
+                '已将您的所有选择保存至 OZ Amp 账号。',
+              ),
+            );
           }
         } else {
           setAccountSyncState('error');
-          if (manual) showToast('Could not save to account right now — please retry.');
+          if (manual) {
+            showToast(
+              tr(
+                'Could not save to account right now — please retry.',
+                '暂时无法保存到账号，请重试。',
+              ),
+            );
+          }
         }
       } catch {
         setAccountSyncState('error');
-        if (manual) showToast('Network error while saving choices.');
+        if (manual) {
+          showToast(
+            tr('Network error while saving choices.', '保存设置时发生网络错误。'),
+          );
+        }
       }
     },
-    [authUser, firebaseConfig, csrfToken, buildCurrentAccountProfile, showToast],
+    [authUser, firebaseConfig, csrfToken, buildCurrentAccountProfile, showToast, tr],
   );
 
   // Subscribe to Firebase Auth state whenever Firebase config is active
@@ -953,14 +974,20 @@ export const App: React.FC = () => {
 
       if (newlyAnnouncedArtists.length > 0) {
         playReminderChime();
-        const msg = `CONCERT ANNOUNCED: ${newlyAnnouncedArtists.join(', ')} now confirmed in Sydney/Melbourne!`;
+        const msg = tr(
+          `CONCERT ANNOUNCED: ${newlyAnnouncedArtists.join(', ')} now confirmed in Sydney/Melbourne!`,
+          `新巡演官宣：${newlyAnnouncedArtists.join('、')} 已官宣墨尔本/悉尼场次！`,
+        );
         if ('Notification' in window && window.Notification.permission === 'granted') {
-          new window.Notification('OZ Amp — Singer Tour Announced!', { body: msg });
+          new window.Notification(
+            tr('OZ Amp — Singer Tour Announced!', 'OZ Amp — 关注歌手巡演官宣！'),
+            { body: msg },
+          );
         }
         showToast(msg);
       }
     },
-    [showToast],
+    [showToast, tr],
   );
 
   // Run server-backed monitor scan (or instant local catalog scan in static mode)
@@ -990,11 +1017,21 @@ export const App: React.FC = () => {
             setMonitorResults((prev) => ({ ...prev, ...mapUpdate }));
             setLastMonitorCheckIso(data.checkedAtIso || new Date().toISOString());
             if (refreshFeed) {
-              showToast(`Scanned AU radar for ${monitoredSingers.length} favourite singers.`);
+              showToast(
+                tr(
+                  `Scanned AU radar for ${monitoredSingers.length} favourite singers.`,
+                  `已扫描 ${monitoredSingers.length} 位关注歌手的澳洲巡演雷达。`,
+                ),
+              );
             }
           }
         } else if (IS_STATIC_MODE && refreshFeed) {
-          showToast(`Scanned OZ Amp catalog for ${monitoredSingers.length} favourite singers.`);
+          showToast(
+            tr(
+              `Scanned OZ Amp catalog for ${monitoredSingers.length} favourite singers.`,
+              `已在 OZ Amp 演出库中扫描 ${monitoredSingers.length} 位关注歌手。`,
+            ),
+          );
         }
         evaluateSingerAnnouncements(monitoredSingers, allConcerts, true);
       } catch {
@@ -1003,7 +1040,7 @@ export const App: React.FC = () => {
         setCheckingRadar(false);
       }
     },
-    [csrfToken, monitoredSingers, allConcerts, evaluateSingerAnnouncements, showToast],
+    [csrfToken, monitoredSingers, allConcerts, evaluateSingerAnnouncements, showToast, tr],
   );
 
   // Bootstrap session + catalog on load
@@ -1149,12 +1186,15 @@ export const App: React.FC = () => {
         updated = true;
         playReminderChime();
         const alertTitle = `${rule.artist} — ${rule.targetLabel}`;
-        const alertLoc = rule.regionBadge || rule.city.toUpperCase();
-        const alertBody = `Starting in ~${rule.leadMinutes === 1440 ? '24 hours' : `${rule.leadMinutes} mins`} at ${rule.venueName} (${alertLoc}).`;
+        const alertLoc = rule.regionBadge || cityLabel(rule.city, 'short');
+        const alertBody = tr(
+          `Starting in ~${rule.leadMinutes === 1440 ? '24 hours' : `${rule.leadMinutes} mins`} at ${rule.venueName} (${alertLoc}).`,
+          `将在约 ${rule.leadMinutes === 1440 ? '24 小时' : `${rule.leadMinutes} 分钟`}后开始 · ${rule.venueName}（${alertLoc}）。`,
+        );
         if ('Notification' in window && window.Notification.permission === 'granted') {
           new window.Notification(alertTitle, { body: alertBody });
         }
-        showToast(`QUEUE ALERT: ${alertTitle}`);
+        showToast(tr(`QUEUE ALERT: ${alertTitle}`, `抢票 / 演出提醒：${alertTitle}`));
         return {
           ...rule,
           firedOffsets: [...rule.firedOffsets, rule.leadMinutes],
@@ -1163,7 +1203,7 @@ export const App: React.FC = () => {
       return rule;
     });
     if (updated) setReminders(nextReminders);
-  }, [nowMs, reminders, showToast]);
+  }, [nowMs, reminders, showToast, tr, cityLabel]);
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
@@ -1174,7 +1214,12 @@ export const App: React.FC = () => {
     setNotificationPermission(perm);
     if (perm === 'granted') {
       playReminderChime();
-      showToast('Browser concert & pre-sale notifications enabled.');
+      showToast(
+        tr(
+          'Browser concert & pre-sale notifications enabled.',
+          '已开启浏览器演唱会与预售提醒通知。',
+        ),
+      );
     }
   };
 
@@ -1189,12 +1234,17 @@ export const App: React.FC = () => {
       if (res.ok) {
         const refreshed = (await res.json()) as CatalogPayload;
         setCatalog(refreshed);
-        showToast(`Synced ${refreshed.concerts.length} Sydney & Melbourne gigs.`);
+        showToast(
+          tr(
+            `Synced ${refreshed.concerts.length} Sydney & Melbourne gigs.`,
+            `已同步 ${refreshed.concerts.length} 场墨尔本与悉尼演出。`,
+          ),
+        );
       } else {
-        showToast('Sync skipped or rate-limited.');
+        showToast(tr('Sync skipped or rate-limited.', '已跳过同步或触发频率限制。'));
       }
     } catch {
-      showToast('Unable to reach sync server.');
+      showToast(tr('Unable to reach sync server.', '无法连接数据同步服务器。'));
     } finally {
       setSyncing(false);
     }
@@ -1236,7 +1286,7 @@ export const App: React.FC = () => {
     setMonitoredSingers((prev) => {
       const exists = prev.some((s) => s.name.toLowerCase() === canonicalName.toLowerCase());
       if (exists) {
-        showToast(`Stopped monitoring ${canonicalName}.`);
+        showToast(tr(`Stopped monitoring ${canonicalName}.`, `已取消关注 ${canonicalName}。`));
         return prev.filter((s) => s.name.toLowerCase() !== canonicalName.toLowerCase());
       }
       // Pre-record currently known concert IDs if already announced, and alert user immediately if already touring!
@@ -1248,11 +1298,17 @@ export const App: React.FC = () => {
       playReminderChime();
       if (existingMatches.length > 0) {
         showToast(
-          `Monitoring ${canonicalName} — ${existingMatches.length} Sydney/Melbourne show(s) already on radar!`,
+          tr(
+            `Monitoring ${canonicalName} — ${existingMatches.length} Sydney/Melbourne show(s) already on radar!`,
+            `已关注 ${canonicalName} — 雷达已匹配到 ${existingMatches.length} 场墨尔本/悉尼演出！`,
+          ),
         );
       } else {
         showToast(
-          `Monitoring ${canonicalName} — we will alert you as soon as an AU tour is announced.`,
+          tr(
+            `Monitoring ${canonicalName} — we will alert you as soon as an AU tour is announced.`,
+            `已关注 ${canonicalName} — 一旦官宣澳洲巡演将第一时间提醒您。`,
+          ),
         );
       }
 
@@ -1315,8 +1371,14 @@ export const App: React.FC = () => {
     playReminderChime();
     showToast(
       addedCount > 0
-        ? `Added ${addedCount} singer${addedCount === 1 ? '' : 's'} to automatic AU announcement radar.`
-        : 'All listed singers are already in your monitored radar.',
+        ? tr(
+            `Added ${addedCount} singer${addedCount === 1 ? '' : 's'} to automatic AU announcement radar.`,
+            `已添加 ${addedCount} 位歌手至澳洲巡演自动监控雷达。`,
+          )
+        : tr(
+            'All listed singers are already in your monitored radar.',
+            '所列歌手均已在您的监控雷达中。',
+          ),
     );
   };
 
@@ -1341,7 +1403,10 @@ export const App: React.FC = () => {
       ? customOverride.targetLabel
       : drop
         ? drop.label
-        : `Show Night Doors (${concert.doorsTimeLocal})`;
+        : tr(
+            `Show Night Doors (${concert.doorsTimeLocal})`,
+            `演出当晚入场 (${concert.doorsTimeLocal})`,
+          );
     const ruleId = customOverride
       ? `${concert.id}::${customOverride.ruleSuffix}::${leadMinutes}`
       : `${concert.id}::${drop ? drop.id : 'doors'}::${leadMinutes}`;
@@ -1349,11 +1414,18 @@ export const App: React.FC = () => {
     setReminders((prev) => {
       const exists = prev.some((r) => r.id === ruleId);
       if (exists) {
-        showToast(`Removed reminder for ${concert.artist}.`);
+        showToast(
+          tr(`Removed reminder for ${concert.artist}.`, `已取消 ${concert.artist} 的提醒。`),
+        );
         return prev.filter((r) => r.id !== ruleId);
       }
       playReminderChime();
-      showToast(`Saved alert: ${concert.artist} — ${targetLabel}.`);
+      showToast(
+        tr(
+          `Saved alert: ${concert.artist} — ${targetLabel}.`,
+          `已保存提醒：${concert.artist} — ${targetLabel}。`,
+        ),
+      );
       const nextRule: ReminderRule = {
         id: ruleId,
         concertId: concert.id,
@@ -1423,7 +1495,10 @@ export const App: React.FC = () => {
       setReminders((prev) => [...newRules, ...prev]);
     }
     showToast(
-      `Imported ${imported.length} Sydney/Melbourne show${imported.length === 1 ? '' : 's'}${autoRemind ? ' & saved queue alerts' : ''}.`,
+      tr(
+        `Imported ${imported.length} Sydney/Melbourne show${imported.length === 1 ? '' : 's'}${autoRemind ? ' & saved queue alerts' : ''}.`,
+        `已导入 ${imported.length} 场墨尔本/悉尼演出${autoRemind ? '并同步开启开票提醒' : ''}。`,
+      ),
     );
   };
 
@@ -1642,11 +1717,21 @@ export const App: React.FC = () => {
     setReminders((prev) => {
       const exists = prev.some((r) => r.id === ruleId || r.concertId === stop.id);
       if (exists) {
-        showToast(`Removed Asia-Pacific trip alert for ${stop.artist} (${stop.city}).`);
+        showToast(
+          tr(
+            `Removed Asia-Pacific trip alert for ${stop.artist} (${stop.city}).`,
+            `已取消 ${stop.artist}（${stop.city}）的亚太观演提醒。`,
+          ),
+        );
         return prev.filter((r) => r.id !== ruleId && r.concertId !== stop.id);
       }
       playReminderChime();
-      showToast(`Saved short-flight alert: ${stop.artist} in ${stop.city} (${stop.dateLabel}).`);
+      showToast(
+        tr(
+          `Saved short-flight alert: ${stop.artist} in ${stop.city} (${stop.dateLabel}).`,
+          `已保存短途跨国提醒：${stop.artist} · ${stop.city}（${stop.dateLabel}）。`,
+        ),
+      );
       const nextRule: ReminderRule = {
         id: ruleId,
         concertId: stop.id,
@@ -1680,7 +1765,12 @@ export const App: React.FC = () => {
         alarmMinutes: 60,
       },
     ]);
-    showToast(`Downloaded .ics calendar entry for ${concert.artist}.`);
+    showToast(
+      tr(
+        `Downloaded .ics calendar entry for ${concert.artist}.`,
+        `已下载 ${concert.artist} 的 .ics 日历文件。`,
+      ),
+    );
   };
 
   return (
@@ -1700,7 +1790,7 @@ export const App: React.FC = () => {
           <span>
             {tr(
               'Offline Mode — Viewing cached gigs, set times, venue sightlines & your saved alerts.',
-              '离线模式 — 正在查看已缓存的演出、开演时间、场馆视野攻略与已保存提醒。',
+              '离线模式 — 正在查看已缓存的演出、开演时间、场馆视野攻略与已存提醒。',
             )}
           </span>
         </div>
@@ -1903,7 +1993,13 @@ export const App: React.FC = () => {
 
       <main className="container main-content">
         {activePage === 'trending' ? (
-          <Suspense fallback={<div className="lazy-page-loader">Loading Trending Popular Music…</div>}>
+          <Suspense
+            fallback={
+              <div className="lazy-page-loader">
+                {tr('Loading Trending Popular Music…', '正在加载热门音乐榜…')}
+              </div>
+            }
+          >
             <TrendingMusicPage
               concerts={allConcerts}
               musicFestivals={cityScopedFestivals}
@@ -1927,7 +2023,13 @@ export const App: React.FC = () => {
             />
           </Suspense>
         ) : activePage === 'world-festivals' ? (
-          <Suspense fallback={<div className="lazy-page-loader">Loading World Festivals…</div>}>
+          <Suspense
+            fallback={
+              <div className="lazy-page-loader">
+                {tr('Loading World Festivals…', '正在加载全球音乐节…')}
+              </div>
+            }
+          >
             <WorldFestivalsPage
             savedExtraFestivals={savedWorldFestivals}
             onAddFestival={(fest) => {
@@ -1938,18 +2040,33 @@ export const App: React.FC = () => {
                 return [...prev, fest];
               });
               playReminderChime();
-              showToast(`Added ${fest.name} (${fest.country}) to your World Festivals page!`);
+              showToast(
+                tr(
+                  `Added ${fest.name} (${fest.country}) to your World Festivals page!`,
+                  `已将 ${fest.name}（${fest.country}）加入您的全球音乐节清单！`,
+                ),
+              );
             }}
             onRemoveExtraFestival={(festId) => {
               const target = savedWorldFestivals.find((f) => f.id === festId);
               setSavedWorldFestivals((prev) => prev.filter((f) => f.id !== festId));
               if (target) {
-                showToast(`Removed ${target.name} from your World Festivals page.`);
+                showToast(
+                  tr(
+                    `Removed ${target.name} from your World Festivals page.`,
+                    `已将 ${target.name} 移出您的全球音乐节清单。`,
+                  ),
+                );
               }
             }}
             onResetExtraFestivals={() => {
               setSavedWorldFestivals([]);
-              showToast('Reset World Festivals page to your 6 core festivals.');
+              showToast(
+                tr(
+                  'Reset World Festivals page to your 6 core festivals.',
+                  '已重置为默认 6 大核心全球音乐节。',
+                ),
+              );
             }}
             monitoredSingers={monitoredSingers}
             watchlistSingers={activeWatchlistSingers}
@@ -1960,11 +2077,21 @@ export const App: React.FC = () => {
               setReminders((prev) => {
                 const exists = prev.some((r) => r.id === ruleId || r.concertId === fest.id);
                 if (exists) {
-                  showToast(`Removed session reminder for ${fest.name}.`);
+                  showToast(
+                    tr(
+                      `Removed session reminder for ${fest.name}.`,
+                      `已取消 ${fest.name} 的场次提醒。`,
+                    ),
+                  );
                   return prev.filter((r) => r.id !== ruleId && r.concertId !== fest.id);
                 }
                 playReminderChime();
-                showToast(`Saved alert: ${fest.name} — ${fest.nextSessionLabel}.`);
+                showToast(
+                  tr(
+                    `Saved alert: ${fest.name} — ${fest.nextSessionLabel}.`,
+                    `已保存提醒：${fest.name} — ${fest.nextSessionLabel}。`,
+                  ),
+                );
                 const nextRule: ReminderRule = {
                   id: ruleId,
                   concertId: fest.id,
@@ -1990,7 +2117,10 @@ export const App: React.FC = () => {
               setReminders((prev) => [...newRules, ...prev]);
               playReminderChime();
               showToast(
-                `Saved ${newRules.length} world festival registration & ticket alert${newRules.length === 1 ? '' : 's'}!`,
+                tr(
+                  `Saved ${newRules.length} world festival registration & ticket alert${newRules.length === 1 ? '' : 's'}!`,
+                  `已批量保存 ${newRules.length} 条全球音乐节注册与开票提醒！`,
+                ),
               );
             }}
             onToggleApacReminder={handleToggleApacReminder}
@@ -2006,7 +2136,13 @@ export const App: React.FC = () => {
           />
           </Suspense>
         ) : activePage === 'watchlist' ? (
-          <Suspense fallback={<div className="lazy-page-loader">Loading Your Singer Sessions…</div>}>
+          <Suspense
+            fallback={
+              <div className="lazy-page-loader">
+                {tr('Loading Your Singer Sessions…', '正在加载我的歌手页面…')}
+              </div>
+            }
+          >
             <DedicatedWatchlistPage
             concerts={allConcerts}
             festivals={cityScopedFestivals}
@@ -2029,7 +2165,10 @@ export const App: React.FC = () => {
               setReminders((prev) => [...newRules, ...prev]);
               playReminderChime();
               showToast(
-                `Saved ${newRules.length} session & concert alert${newRules.length === 1 ? '' : 's'} for your singer list!`,
+                tr(
+                  `Saved ${newRules.length} session & concert alert${newRules.length === 1 ? '' : 's'} for your singer list!`,
+                  `已为您的歌手清单批量保存 ${newRules.length} 条开票与演出提醒！`,
+                ),
               );
             }}
             onToggleApacReminder={handleToggleApacReminder}
@@ -2440,7 +2579,7 @@ export const App: React.FC = () => {
               <option value="reminded">
                 {tr(
                   `My Saved Alerts (${cityScopedReminders.length})`,
-                  `我已保存的提醒 (${cityScopedReminders.length})`,
+                  `我的已存提醒 (${cityScopedReminders.length})`,
                 )}
               </option>
             </select>
@@ -3133,11 +3272,21 @@ export const App: React.FC = () => {
             const ruleId = `${fest.id}::fest-doors::1440`;
             setReminders((prev) => {
               if (prev.some((r) => r.id === ruleId)) {
-                showToast(`Removed festival reminder for ${fest.name}.`);
+                showToast(
+                  tr(
+                    `Removed festival reminder for ${fest.name}.`,
+                    `已取消 ${fest.name} 音乐节提醒。`,
+                  ),
+                );
                 return prev.filter((r) => r.id !== ruleId);
               }
               playReminderChime();
-              showToast(`Saved festival alert for ${fest.name} (${matchingStop.dateLabel}).`);
+              showToast(
+                tr(
+                  `Saved festival alert for ${fest.name} (${matchingStop.dateLabel}).`,
+                  `已保存 ${fest.name} 音乐节提醒（${matchingStop.dateLabel}）。`,
+                ),
+              );
               return [
                 {
                   id: ruleId,
@@ -3146,7 +3295,10 @@ export const App: React.FC = () => {
                   venueName: matchingStop.venueName,
                   city: matchingStop.city,
                   targetType: 'show-day',
-                  targetLabel: `Festival Gates & Lineup Alert (${matchingStop.dateLabel})`,
+                  targetLabel: tr(
+                    `Festival Gates & Lineup Alert (${matchingStop.dateLabel})`,
+                    `音乐节入场与阵容提醒 (${matchingStop.dateLabel})`,
+                  ),
                   targetIso: `${matchingStop.dateIso}T10:00:00+11:00`,
                   leadMinutes: 1440,
                   ticketUrl: fest.lineupUrl,
@@ -3207,7 +3359,7 @@ export const App: React.FC = () => {
               setReminders((prev) =>
                 prev.filter((r) => new Date(r.targetIso).getTime() > Date.now()),
               );
-              showToast('Cleared elapsed ticket drops.');
+              showToast(tr('Cleared elapsed ticket drops.', '已清理已过期的开票提醒。'));
             }}
             nowMs={nowMs}
             notificationPermission={notificationPermission}
@@ -3263,7 +3415,10 @@ export const App: React.FC = () => {
               }
               playReminderChime();
               showToast(
-                `Restored OZ Amp profile (${backup.reminders.length} reminders, ${backup.monitoredSingers.length} singers)!`,
+                tr(
+                  `Restored OZ Amp profile (${backup.reminders.length} reminders, ${backup.monitoredSingers.length} singers)!`,
+                  `已恢复 OZ Amp 备份（${backup.reminders.length} 条提醒，${backup.monitoredSingers.length} 位歌手）！`,
+                ),
               );
             }}
             onShowToast={showToast}
@@ -3295,8 +3450,14 @@ export const App: React.FC = () => {
               playReminderChime();
               showToast(
                 isRegistration
-                  ? `Welcome ${user.displayName}! Your OZ Amp choices are now saved to your account.`
-                  : `Welcome back, ${user.displayName}! Loaded your saved choices.`,
+                  ? tr(
+                      `Welcome ${user.displayName}! Your OZ Amp choices are now saved to your account.`,
+                      `欢迎 ${user.displayName}！您的 OZ Amp 偏好已保存至账号。`,
+                    )
+                  : tr(
+                      `Welcome back, ${user.displayName}! Loaded your saved choices.`,
+                      `欢迎回来，${user.displayName}！已加载您保存的偏好。`,
+                    ),
               );
             }}
             onForceSaveNow={() => persistProfileToAccount(true)}

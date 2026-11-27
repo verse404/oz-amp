@@ -157,13 +157,21 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
         setUpdatedAtIso(data.updatedAtIso || new Date().toISOString());
         if (manual) {
           onShowToast(
-            `Refreshed ${targetRegion.toUpperCase()} Top ${data.tracks?.length || 25} trending songs.`,
+            tr(
+              `Refreshed ${targetRegion.toUpperCase()} Top ${data.tracks?.length || 25} trending songs.`,
+              `已刷新 ${targetRegion.toUpperCase()} Top ${data.tracks?.length || 25} 热门歌曲榜单。`,
+            ),
           );
         }
       }
     } catch {
       if (seq === requestSeqRef.current) {
-        onShowToast('Unable to reach trending music feed right now.');
+        onShowToast(
+          tr(
+            'Unable to reach trending music feed right now.',
+            '暂时无法获取热门音乐榜单，请稍后再试。',
+          ),
+        );
       }
     } finally {
       if (seq === requestSeqRef.current) {
@@ -179,7 +187,12 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
 
   const toggleAudioPreview = (track: TrendingTrackItem) => {
     if (!track.previewUrl) {
-      onShowToast(`No 30s preview audio provided for "${track.title}".`);
+      onShowToast(
+        tr(
+          `No 30s preview audio provided for "${track.title}".`,
+          `《${track.title}》暂未提供 30 秒试听音频。`,
+        ),
+      );
       return;
     }
 
@@ -203,7 +216,12 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
       audioRef.current.onerror = () => {
         setPlayingTrackId(null);
         setAudioProgress(0);
-        onShowToast('Audio preview could not be played in this browser.');
+        onShowToast(
+          tr(
+            'Audio preview could not be played in this browser.',
+            '当前浏览器无法播放该试听音频。',
+          ),
+        );
       };
     }
 
@@ -216,7 +234,12 @@ export const TrendingMusicPage: React.FC<TrendingMusicPageProps> = ({
       () => {
         setPlayingTrackId(null);
         setAudioProgress(0);
-        onShowToast('Click again or open Spotify / Apple Music to listen.');
+        onShowToast(
+          tr(
+            'Click again or open Spotify / Apple Music to listen.',
+            '请再试一次，或点击前往 Spotify / Apple Music 收听。',
+          ),
+        );
       },
     );
   };

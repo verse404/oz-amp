@@ -18,6 +18,7 @@ import {
 import { doc, getDoc, getFirestore, setDoc, type Firestore } from 'firebase/firestore/lite';
 import type { AuthUser, FirebasePublicConfig, SavedAccountProfile } from '../types/gig';
 import { sanitizeExternalHttpsUrl } from '../utils/formatters';
+import { getActiveLocale } from '../i18n/LocaleContext';
 
 interface FirebaseHandles {
   app: FirebaseApp;
@@ -136,6 +137,7 @@ function stripUndefinedDeep<T>(obj: T): T {
 }
 
 export function mapFirebaseAuthError(err: unknown): string {
+  const isZh = getActiveLocale() === 'zh';
   const code =
     typeof err === 'object' && err !== null && 'code' in err
       ? String((err as { code?: unknown }).code || '')
@@ -144,23 +146,37 @@ export function mapFirebaseAuthError(err: unknown): string {
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
     case 'auth/user-not-found':
-      return 'Invalid email or password.';
+      return isZh ? '邮箱或密码不正确。' : 'Invalid email or password.';
     case 'auth/email-already-in-use':
-      return 'An account with this email already exists. Please sign in instead.';
+      return isZh
+        ? '该邮箱已注册，请直接登录。'
+        : 'An account with this email already exists. Please sign in instead.';
     case 'auth/weak-password':
-      return 'Password must be at least 8 characters long (12+ recommended).';
+      return isZh
+        ? '密码至少需要 8 位字符（建议 12 位以上）。'
+        : 'Password must be at least 8 characters long (12+ recommended).';
     case 'auth/invalid-email':
-      return 'Please enter a valid email address.';
+      return isZh ? '请输入有效的电子邮箱地址。' : 'Please enter a valid email address.';
     case 'auth/too-many-requests':
-      return 'Too many attempts. Please wait a few minutes and try again.';
+      return isZh
+        ? '尝试次数过多，请几分钟后再试。'
+        : 'Too many attempts. Please wait a few minutes and try again.';
     case 'auth/popup-closed-by-user':
-      return 'Google sign-in popup was closed before finishing.';
+      return isZh
+        ? 'Google 登录弹窗已提前关闭。'
+        : 'Google sign-in popup was closed before finishing.';
     case 'auth/popup-blocked':
-      return 'Popup was blocked by your browser — allow popups or sign in with email.';
+      return isZh
+        ? '登录弹窗被浏览器拦截 — 请允许弹窗或改用邮箱登录。'
+        : 'Popup was blocked by your browser — allow popups or sign in with email.';
     case 'auth/unauthorized-domain':
-      return 'This domain needs to be added under Firebase Console → Authentication → Settings → Authorized domains.';
+      return isZh
+        ? '需在 Firebase 控制台 → Authentication → Settings → Authorized domains 中添加当前域名。'
+        : 'This domain needs to be added under Firebase Console → Authentication → Settings → Authorized domains.';
     default:
-      return 'Authentication could not be completed right now. Please try again.';
+      return isZh
+        ? '暂时无法完成身份验证，请稍后重试。'
+        : 'Authentication could not be completed right now. Please try again.';
   }
 }
 

@@ -608,7 +608,7 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                       {matchedSummaries.slice(0, 2).map((m) => (
                         <div key={m.id} className="monitored-match-line">
                           <span className={`city-pill city-pill--${m.city}`}>
-                            {m.city === 'sydney' ? 'SYD' : 'MEL'}
+                            {cityLabel(m.city, 'short')}
                           </span>
                           <span>
                             {m.venueName} · {m.dateIso}
@@ -620,14 +620,20 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                         className="text-link-btn"
                         onClick={() => onJumpToArtistConcerts(singer.name)}
                       >
-                        View show card &amp; pre-sale countdowns ↓
+                        {tr(
+                          'View show card & pre-sale countdowns ↓',
+                          '查看演出卡片与预售倒计时 ↓',
+                        )}
                       </button>
                     </div>
                   ) : (
                     <p className="monitored-waiting-note">
                       {check?.radarNote ||
                         singer.radarNote ||
-                        'No Sydney or Melbourne dates on sale yet — scanning Ticketmaster AU, promoter wires & tour press automatically.'}
+                        tr(
+                          'No Sydney or Melbourne dates on sale yet — scanning Ticketmaster AU, promoter wires & tour press automatically.',
+                          '暂未官宣墨尔本或悉尼场次 — 系统正持续自动扫描 Ticketmaster AU 与主办方巡演动态。',
+                        )}
                     </p>
                   )}
 
@@ -639,7 +645,8 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                       rel="noopener noreferrer"
                       className="platform-mini-link"
                     >
-                      {hasAnnounced ? 'Direct Show' : 'Ticketek'} <ExternalLink size={10} />
+                      {hasAnnounced ? tr('Direct Show', '直达演出页') : 'Ticketek'}{' '}
+                      <ExternalLink size={10} />
                     </a>
                     <a
                       href={sanitizeExternalHttpsUrl(links.ticketmaster, singer.name)}
@@ -663,7 +670,7 @@ export const SingerMonitorSection: React.FC<SingerMonitorSectionProps> = ({
                       rel="noopener noreferrer"
                       className="platform-mini-link"
                     >
-                      Tixel Waitlist <ExternalLink size={10} />
+                      {tr('Tixel Waitlist', 'Tixel 转售候补')} <ExternalLink size={10} />
                     </a>
                   </div>
                 </article>

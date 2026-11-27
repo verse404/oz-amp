@@ -144,8 +144,10 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
         <div className="empty-state-box">
           <Sparkles size={20} />
           <p>
-            No upcoming {hubFilter === 'All Hubs' ? 'Asia-Pacific' : hubFilter} stops match the
-            current filter.
+            {tr(
+              `No upcoming ${hubFilter === 'All Hubs' ? 'Asia-Pacific' : hubFilter} stops match the current filter.`,
+              `当前筛选下暂无${hubFilter === 'All Hubs' ? '亚太' : genreLabel(hubFilter)}巡演场次。`,
+            )}
           </p>
           <button
             type="button"
@@ -155,7 +157,7 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
               setOnlyAsiaExclusive(false);
             }}
           >
-            Reset Asia-Pacific Filters
+            {tr('Reset Asia-Pacific Filters', '重置亚太筛选')}
           </button>
         </div>
       ) : (
@@ -170,7 +172,13 @@ export const ApacRadarSection: React.FC<ApacRadarSectionProps> = ({
               <div className="apac-card-top">
                 <span className="world-country-pill">{stop.countryCode}</span>
                 <span className={`apac-signal-pill apac-signal-pill--${stop.auStatus}`}>
-                  {stop.auStatusLabel}
+                  {stop.auStatus === 'asia-only'
+                    ? tr(stop.auStatusLabel, '仅限亚洲站（暂无澳洲）')
+                    : stop.auStatus === 'nz-short-hop'
+                      ? tr(stop.auStatusLabel, '新西兰短途直飞')
+                      : stop.auStatus === 'au-signal'
+                        ? tr(stop.auStatusLabel, '有望加开澳洲站')
+                        : tr(stop.auStatusLabel, '已官宣澳洲站')}
                 </span>
               </div>
 

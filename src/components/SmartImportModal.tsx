@@ -42,7 +42,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
   csrfToken,
   onImportConcerts,
 }) => {
-  const { locale, tr, cityLabel } = useLocale();
+  const { locale, tr, cityLabel, dropKindLabel } = useLocale();
   const [rawText, setRawText] = useState('');
   const [preview, setPreview] = useState<ConcertEvent[] | null>(null);
   const [autoRemind, setAutoRemind] = useState(true);
@@ -70,14 +70,18 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
       });
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || 'Could not parse tour announcement.');
+        setErrorMsg(data.error || tr('Could not parse tour announcement.', '无法识别该巡演公告。'));
         setPreview(null);
       } else {
         setPreview(data.concerts || []);
       }
     } catch (err) {
       if (IS_STATIC_MODE) {
-        setErrorMsg(err instanceof Error ? err.message : 'Could not parse tour announcement.');
+        setErrorMsg(
+          err instanceof Error
+            ? err.message
+            : tr('Could not parse tour announcement.', '无法识别该巡演公告。'),
+        );
         setPreview(null);
       } else {
         // Fallback to local parser if backend is momentarily unreachable
@@ -85,7 +89,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
           const parsed = parseTourAnnouncement(textToParse);
           setPreview((parsed.concerts || []) as ConcertEvent[]);
         } catch {
-          setErrorMsg('Unable to parse tour announcement.');
+          setErrorMsg(tr('Unable to parse tour announcement.', '暂时无法解析该巡演公告。'));
           setPreview(null);
         }
       }
@@ -230,7 +234,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
                           <ul className="preview-drops">
                             {c.ticketDrops.map((d) => (
                               <li key={d.id}>
-                                <strong>{d.kind}:</strong>{' '}
+                                <strong>{dropKindLabel(d.kind)}:</strong>{' '}
                                 {formatAuTimestamp(d.opensAtIso, c.city, locale)}
                               </li>
                             ))}

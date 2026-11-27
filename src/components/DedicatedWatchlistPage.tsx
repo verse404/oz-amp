@@ -231,8 +231,14 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
         : [...prev, entry.id];
       onShowToast(
         next.includes(entry.id)
-          ? `Muted session alerts for ${entry.displayName}.`
-          : `Enabled automatic session & concert alerts for ${entry.displayName}.`,
+          ? tr(
+              `Muted session alerts for ${entry.displayName}.`,
+              `已静音 ${entry.displayName} 的场次提醒。`,
+            )
+          : tr(
+              `Enabled automatic session & concert alerts for ${entry.displayName}.`,
+              `已开启 ${entry.displayName} 的自动开票与演出提醒。`,
+            ),
       );
       return next;
     });
@@ -248,25 +254,45 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
       );
     }
     onChangeMutedIds((prev) => prev.filter((id) => id !== entry.id));
-    onShowToast(`Removed ${entry.displayName} from My Singers.`);
+    onShowToast(
+      tr(
+        `Removed ${entry.displayName} from My Singers.`,
+        `已将 ${entry.displayName} 移出“我的歌手”。`,
+      ),
+    );
   };
 
   const handleRestoreSinger = (entry: WatchlistSingerEntry) => {
     onChangeRemovedBuiltInIds((prev) => prev.filter((id) => id !== entry.id));
-    onShowToast(`Restored ${entry.displayName} to My Singers.`);
+    onShowToast(
+      tr(
+        `Restored ${entry.displayName} to My Singers.`,
+        `已将 ${entry.displayName} 恢复至“我的歌手”。`,
+      ),
+    );
   };
 
   const handleRestoreAllRemoved = () => {
     const count = removedBuiltInSingers.length;
     onChangeRemovedBuiltInIds([]);
     setShowRemovedTray(false);
-    onShowToast(`Restored ${count} removed singer${count === 1 ? '' : 's'} to My Singers.`);
+    onShowToast(
+      tr(
+        `Restored ${count} removed singer${count === 1 ? '' : 's'} to My Singers.`,
+        `已恢复 ${count} 位已移除歌手至“我的歌手”。`,
+      ),
+    );
   };
 
   const handleAppendSingers = (rawText: string, clearSource: 'quick' | 'bulk' | 'none' = 'bulk') => {
     const parsed = parseCustomWatchlistInput(rawText);
     if (parsed.length === 0) {
-      onShowToast('Enter a valid singer or band name (at least 2 characters).');
+      onShowToast(
+        tr(
+          'Enter a valid singer or band name (at least 2 characters).',
+          '请输入有效的歌手或乐队名称（至少 2 个字符）。',
+        ),
+      );
       return;
     }
 
@@ -296,8 +322,14 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
     if (toRestoreIds.length === 0 && freshCustom.length === 0) {
       onShowToast(
         parsed.length === 1
-          ? `${parsed[0].displayName} is already in My Singers.`
-          : 'All entered singers are already in My Singers.',
+          ? tr(
+              `${parsed[0].displayName} is already in My Singers.`,
+              `${parsed[0].displayName} 已在“我的歌手”清单中。`,
+            )
+          : tr(
+              'All entered singers are already in My Singers.',
+              '输入的歌手均已在“我的歌手”清单中。',
+            ),
       );
       return;
     }
@@ -325,11 +357,22 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
         parsed[0].displayName;
       onShowToast(
         toRestoreIds.length === 1
-          ? `Restored ${onlyName} to My Singers.`
-          : `Added ${onlyName} to My Singers.`,
+          ? tr(
+              `Restored ${onlyName} to My Singers.`,
+              `已将 ${onlyName} 恢复至“我的歌手”。`,
+            )
+          : tr(
+              `Added ${onlyName} to My Singers.`,
+              `已将 ${onlyName} 加入“我的歌手”。`,
+            ),
       );
     } else {
-      onShowToast(`Added ${totalAdded} singers to My Singers.`);
+      onShowToast(
+        tr(
+          `Added ${totalAdded} singers to My Singers.`,
+          `已将 ${totalAdded} 位歌手加入“我的歌手”。`,
+        ),
+      );
     }
   };
 
@@ -337,7 +380,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 256 * 1024) {
-      onShowToast('Upload file must be under 256 KB.');
+      onShowToast(tr('Upload file must be under 256 KB.', '上传文件大小需小于 256 KB。'));
       return;
     }
     const reader = new FileReader();
@@ -550,7 +593,12 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
     }
 
     if (toAdd.length === 0) {
-      onShowToast('All sessions and upcoming concerts for your singer list already have alerts saved!');
+      onShowToast(
+        tr(
+          'All sessions and upcoming concerts for your singer list already have alerts saved!',
+          '您关注歌手的所有开票场次和演出均已设置提醒！',
+        ),
+      );
       return;
     }
     onBulkArmReminders(toAdd);
@@ -600,11 +648,21 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
     }
 
     if (events.length === 0) {
-      onShowToast('No sessions or concerts under the current city filter to export.');
+      onShowToast(
+        tr(
+          'No sessions or concerts under the current city filter to export.',
+          '当前城市筛选下暂无可导出的开票场次或演出。',
+        ),
+      );
       return;
     }
     downloadIcsEvents('my-singer-sessions-melbourne-sydney.ics', events);
-    onShowToast(`Exported ${events.length} session & concert reminder(s) to .ics calendar!`);
+    onShowToast(
+      tr(
+        `Exported ${events.length} session & concert reminder(s) to .ics calendar!`,
+        `已导出 ${events.length} 条开票与演出提醒至 .ics 日历文件！`,
+      ),
+    );
   };
 
   return (
@@ -719,7 +777,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                   id="watchlist-quick-add-input"
                   className="search-input"
                   placeholder={tr(
-                    'Add a singer or band to My Singers (e.g. Taylor Swift, SZA, 周杰倫 — comma-separated supported)…',
+                    'Add a singer or band to My Singers (e.g. Taylor Swift, SZA, 周杰伦 — comma-separated supported)…',
                     '添加新歌手或乐队到“我的歌手”（如：Taylor Swift、周杰伦、SZA — 支持逗号批量输入）…',
                   )}
                   value={addSingerInput}
@@ -812,10 +870,17 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
           <div className="bulk-singer-box watchlist-upload-box">
             <div className="utility-panel-row">
               <div>
-                <h2 className="panel-heading">Upload .txt / .csv List or Paste Additional Singers</h2>
+                <h2 className="panel-heading">
+                  {tr(
+                    'Upload .txt / .csv List or Paste Additional Singers',
+                    '上传 .txt / .csv 歌单文件或批量粘贴歌手',
+                  )}
+                </h2>
                 <p className="panel-subtext">
-                  New singers are merged cleanly into your A–Z &amp; Chinese Artists sections without
-                  duplicating existing entries or translating non-Chinese names.
+                  {tr(
+                    'New singers are merged cleanly into your A–Z & Chinese Artists sections without duplicating existing entries or translating non-Chinese names.',
+                    '新歌手会自动归类到欧美 A–Z 与华语歌手分组，自动去重，并保留原始英文/中文艺名。',
+                  )}
                 </p>
               </div>
               <div>
@@ -832,7 +897,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload size={14} />
-                  <span>Choose .txt / .csv File</span>
+                  <span>{tr('Choose .txt / .csv File', '选择 .txt / .csv 文件')}</span>
                 </button>
               </div>
             </div>
@@ -840,7 +905,10 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
             <textarea
               className="announcement-textarea"
               rows={3}
-              placeholder="Paste one singer per line or comma-separated…"
+              placeholder={tr(
+                'Paste one singer per line or comma-separated…',
+                '每行粘贴一位歌手，或用逗号分隔…',
+              )}
               value={pasteInput}
               onChange={(e) => setPasteInput(e.target.value)}
             />
@@ -851,7 +919,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                 onClick={() => handleAppendSingers(pasteInput)}
               >
                 <Sparkles size={14} />
-                <span>Add to My Dedicated Watchlist</span>
+                <span>{tr('Add to My Singers', '批量添加到“我的歌手”')}</span>
               </button>
             </div>
           </div>
@@ -950,7 +1018,9 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                     >
                       {armed15 ? <Check size={13} /> : <BellPlus size={13} />}
                       <span>
-                        {armed15 ? tr('T-15m On', '15分已开') : tr('Notify T-15m', '提前15分提醒')}
+                        {armed15
+                          ? tr('T-15m On', '开票前15分已开')
+                          : tr('Notify T-15m', '开票前15分提醒')}
                       </span>
                     </button>
 
@@ -959,7 +1029,9 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       className={`btn-ghost-xs ${armed60 ? 'is-armed-btn' : ''}`}
                       onClick={() => onAddOrToggleReminder(concert, 60, drop)}
                     >
-                      <span>{armed60 ? tr('T-1h On', '1h已开') : tr('+1h Alert', '+1小时提醒')}</span>
+                      <span>
+                        {armed60 ? tr('T-1h On', '提前1小时已开') : tr('+1h Alert', '+提前1小时')}
+                      </span>
                     </button>
 
                     <a
@@ -994,33 +1066,38 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
         <div className="section-header-row">
           <div>
             <span className="eyebrow-kicker">
-              02 · Confirmed Live Concerts · Melbourne Prioritized First
+              {tr(
+                '02 · Confirmed Live Concerts · Melbourne Prioritized First',
+                '02 · 已官宣近期演唱会 · 墨尔本优先排序',
+              )}
             </span>
             <h2 id="watchlist-concerts-heading" className="section-heading">
-              Upcoming{' '}
-              {cityFilter === 'melbourne'
-                ? 'Melbourne'
-                : cityFilter === 'sydney'
-                  ? 'Sydney'
-                  : 'Melbourne & Sydney'}{' '}
-              Concerts From Your List ({matchedWatchlistConcerts.length})
+              {isZh
+                ? `您关注歌手的近期${cityLabel(cityFilter)}演唱会 (${matchedWatchlistConcerts.length})`
+                : `Upcoming ${cityFilter === 'melbourne' ? 'Melbourne' : cityFilter === 'sydney' ? 'Sydney' : 'Melbourne & Sydney'} Concerts From Your List (${matchedWatchlistConcerts.length})`}
             </h2>
           </div>
           <span className="sync-caption">
-            {activeSingersCount} singer{activeSingersCount === 1 ? '' : 's'} from your list currently
-            on the 2026–2027 AU slate
+            {isZh
+              ? `名单中有 ${activeSingersCount} 位歌手在 2026–2027 澳洲演出档期内`
+              : `${activeSingersCount} singer${activeSingersCount === 1 ? '' : 's'} from your list currently on the 2026–2027 AU slate`}
           </span>
         </div>
 
         {matchedWatchlistConcerts.length === 0 ? (
           <div className="empty-box">
             <Ticket size={22} />
-            <p className="empty-title">No confirmed concerts match the selected city filter</p>
+            <p className="empty-title">
+              {tr(
+                'No confirmed concerts match the selected city filter',
+                '当前城市筛选下暂无已官宣演唱会',
+              )}
+            </p>
           </div>
         ) : (
           <div className="gig-grid">
             {matchedWatchlistConcerts.map(({ concert, matchedSingers }) => {
-              const dateParts = formatConcertDate(concert.dateIso, concert.timeZone);
+              const dateParts = formatConcertDate(concert.dateIso, concert.timeZone, locale);
               const resaleGuard = computeResaleGuard(concert, nowMs);
               const doorsRule60 = `${concert.id}::doors::60`;
               const showDayRule = `${concert.id}::doors::1440`;
@@ -1037,20 +1114,20 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                   <div className="gig-card-header">
                     <div className="gig-badge-group">
                       <span className={`city-pill city-pill--${concert.city}`}>
-                        {concert.city === 'melbourne' ? 'MELBOURNE · VIC' : 'SYDNEY · NSW'}
+                        {cityLabel(concert.city, 'state').toUpperCase()}
                       </span>
                       <span className={`status-pill status-pill--${concert.status}`}>
                         {concert.status === 'presale-live'
-                          ? 'Session Live'
+                          ? tr('Session Live', '预售进行中')
                           : concert.status === 'presale-soon'
-                            ? 'Session Upcoming'
+                            ? tr('Session Upcoming', '即将预售')
                             : concert.status === 'selling-fast'
-                              ? 'Selling Fast'
-                              : 'On Sale'}
+                              ? tr('Selling Fast', '余票紧张')
+                              : tr('On Sale', '公开售票中')}
                       </span>
                     </div>
                     <span className="interstate-excl-pill">
-                      Matched: {matchedSingers.join(', ')}
+                      {tr('Matched:', '命中歌手:')} {matchedSingers.join(', ')}
                     </span>
                   </div>
 
@@ -1067,19 +1144,20 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                         <strong className="logistics-primary">{dateParts.fullLabel}</strong>
                         {concert.additionalDates && concert.additionalDates.length > 0 && (
                           <span className="multi-night-badge">
-                            +{concert.additionalDates.length} more session
-                            {concert.additionalDates.length === 1 ? '' : 's'} (
-                            {concert.additionalDates.join(', ')})
+                            {isZh
+                              ? `+${concert.additionalDates.length} 场加演 (${concert.additionalDates.join(', ')})`
+                              : `+${concert.additionalDates.length} more session${concert.additionalDates.length === 1 ? '' : 's'} (${concert.additionalDates.join(', ')})`}
                           </span>
                         )}
                         <div className="logistics-sub">
-                          <Clock size={12} /> Doors{' '}
+                          <Clock size={12} /> {tr('Doors', '入场')}{' '}
                           {formatAuTime24To12(
                             concert.doorsTimeLocal,
                             concert.dateIso,
                             concert.timeZone,
+                            locale,
                           )}{' '}
-                          · Main Set {concert.setTimeLocal}
+                          · {tr('Main Set', '主秀')} {concert.setTimeLocal}
                         </div>
                       </div>
                     </div>
@@ -1143,7 +1221,9 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       className={`mini-arm-btn ${isShowDayArmed ? 'is-armed' : ''}`}
                       onClick={() => onAddOrToggleReminder(concert, 1440)}
                     >
-                      {isShowDayArmed ? '✓ 24h Show Alert' : '+24h Show Alert'}
+                      {isShowDayArmed
+                        ? tr('✓ 24h Show Alert', '✓ 演出前24小时已开')
+                        : tr('+24h Show Alert', '+演出前24小时提醒')}
                     </button>
 
                     <button
@@ -1151,7 +1231,9 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       className={`mini-arm-btn ${isDoors60Armed ? 'is-armed' : ''}`}
                       onClick={() => onAddOrToggleReminder(concert, 60)}
                     >
-                      {isDoors60Armed ? '✓ 1h Doors Alert' : '+1h Doors Alert'}
+                      {isDoors60Armed
+                        ? tr('✓ 1h Doors Alert', '✓ 入场前1小时已开')
+                        : tr('+1h Doors Alert', '+入场前1小时提醒')}
                     </button>
 
                     {resaleGuard.productionHoldFuture && (
@@ -1168,7 +1250,9 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                           })
                         }
                       >
-                        {isProdArmed ? '✓ T-48h Sniper' : '+T-48h Hold Sniper'}
+                        {isProdArmed
+                          ? tr('✓ T-48h Sniper', '✓ 48h加放票已开')
+                          : tr('+T-48h Hold Sniper', '+48h蹲加放票')}
                       </button>
                     )}
 
@@ -1178,7 +1262,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       rel="noopener noreferrer"
                       className="mini-arm-btn"
                     >
-                      +Google Cal ↗
+                      {tr('+Google Cal ↗', '+加入 Google 日历 ↗')}
                     </a>
                   </div>
 
@@ -1187,7 +1271,9 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       <span className="price-aud">
                         {formatAudRange(concert.priceMinAud, concert.priceMaxAud)}
                       </span>
-                      <span className="agency-caption">via {concert.agency}</span>
+                      <span className="agency-caption">
+                        {tr(`via ${concert.agency}`, `官方票务: ${concert.agency}`)}
+                      </span>
                     </div>
 
                     {concert.resaleUrl && concert.status === 'waitlist-resale' ? (
@@ -1198,7 +1284,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                         className="btn-primary-sm"
                       >
                         <Ticket size={14} />
-                        <span>Official Resale</span>
+                        <span>{tr('Official Resale', '官方转售')}</span>
                         <ExternalLink size={12} />
                       </a>
                     ) : (
@@ -1452,7 +1538,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                   <div className="watchlist-tile-header">
                     <ArtistAvatar name={singer.displayName} size="lg" shape="rounded" />
                     <div className="watchlist-title-col">
-                      <span className="watchlist-group-tag">{singer.group}</span>
+                      <span className="watchlist-group-tag">{genreLabel(singer.group)}</span>
                       <h3 className="watchlist-singer-name" title={singer.displayName}>
                         {singer.displayName}
                       </h3>
@@ -1466,10 +1552,12 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                         }`}
                       >
                         {isTouring
-                          ? `Confirmed (${matchedShows.length + festStopsCount} ${cityBadgeCode})`
+                          ? isZh
+                            ? `已官宣 (${matchedShows.length + festStopsCount} 场${cityLabel(cityFilter, 'short')})`
+                            : `Confirmed (${matchedShows.length + festStopsCount} ${cityBadgeCode})`
                           : isMuted
-                            ? 'Alert Muted'
-                            : 'Watching 2027'}
+                            ? tr('Alert Muted', '提醒已静音')
+                            : tr('Watching 2027', '持续监控 2027 巡演')}
                       </span>
                     </div>
 
@@ -1480,8 +1568,14 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                         onClick={() => toggleMuteSinger(singer)}
                         title={
                           isMuted
-                            ? 'Click to enable session & tour drop alerts'
-                            : 'Session & tour drop alert on (click to mute)'
+                            ? tr(
+                                'Click to enable session & tour drop alerts',
+                                '点击开启开票与巡演提醒',
+                              )
+                            : tr(
+                                'Session & tour drop alert on (click to mute)',
+                                '开票与巡演提醒已开启（点击静音）',
+                              )
                         }
                         aria-label={`Toggle alert for ${singer.displayName}`}
                       >
@@ -1491,7 +1585,10 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                         type="button"
                         className="icon-btn icon-btn--danger"
                         onClick={() => handleRemoveSinger(singer)}
-                        title={`Remove ${singer.displayName} from My Singers`}
+                        title={tr(
+                          `Remove ${singer.displayName} from My Singers`,
+                          `从“我的歌手”移除 ${singer.displayName}`,
+                        )}
                         aria-label={`Remove ${singer.displayName} from My Singers`}
                       >
                         <Trash2 size={14} />
@@ -1504,7 +1601,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       {matchedShows.map((sh) => (
                         <div key={sh.id} className="monitored-match-line">
                           <span className={`city-pill city-pill--${sh.city}`}>
-                            {sh.city === 'melbourne' ? 'MEL' : 'SYD'}
+                            {cityLabel(sh.city, 'short')}
                           </span>
                           <span>
                             {sh.venueName} · {sh.dateIso}
@@ -1518,7 +1615,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                           .map((st) => (
                             <div key={`${fe.id}-${st.city}`} className="monitored-match-line">
                               <span className={`city-pill city-pill--${st.city}`}>
-                                {st.city === 'melbourne' ? 'MEL' : 'SYD'}
+                                {cityLabel(st.city, 'short')}
                               </span>
                               <span>
                                 {fe.name} · {st.dateIso}
@@ -1540,7 +1637,7 @@ export const DedicatedWatchlistPage: React.FC<DedicatedWatchlistPageProps> = ({
                       rel="noopener noreferrer"
                       className="platform-mini-link"
                     >
-                      {isTouring ? 'Show Page' : 'Ticketek'} <ExternalLink size={10} />
+                      {isTouring ? tr('Show Page', '演出详情') : 'Ticketek'} <ExternalLink size={10} />
                     </a>
                     <a
                       href={`https://www.ticketmaster.com.au/search?q=${qEnc}`}

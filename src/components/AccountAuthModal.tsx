@@ -59,7 +59,7 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
   onLoggedOut,
   onShowToast,
 }) => {
-  const { intlLocale, tr } = useLocale();
+  const { intlLocale, isZh, tr } = useLocale();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -95,7 +95,12 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
     if (!firebaseConfig) return;
     const cleanEmail = email.trim();
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail)) {
-      setErrorMsg('Enter your email address above first, then click Forgot Password.');
+      setErrorMsg(
+        tr(
+          'Enter your email address above first, then click Forgot Password.',
+          '请先在上方填写您的电子邮箱，再点击“忘记密码？”。',
+        ),
+      );
       return;
     }
     setErrorMsg(null);
@@ -104,7 +109,12 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
     try {
       const fb = await import('../services/firebaseClient');
       await fb.firebaseSendPasswordReset(firebaseConfig, cleanEmail);
-      setInfoMsg('Password reset email sent! Check your inbox (and spam folder).');
+      setInfoMsg(
+        tr(
+          'Password reset email sent! Check your inbox (and spam folder).',
+          '密码重置邮件已发送！请检查收件箱（以及垃圾邮件文件夹）。',
+        ),
+      );
     } catch (err) {
       const fb = await import('../services/firebaseClient');
       setErrorMsg(fb.mapFirebaseAuthError(err));
@@ -118,17 +128,32 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
     setErrorMsg(null);
     setInfoMsg(null);
     if (authUnavailable) {
-      setErrorMsg('Email sign-in requires Firebase config or the live OZ Amp server.');
+      setErrorMsg(
+        tr(
+          'Email sign-in requires Firebase config or the live OZ Amp server.',
+          '邮箱登录需要配置 Firebase 或连接实时 OZ Amp 服务器。',
+        ),
+      );
       return;
     }
 
     const cleanEmail = email.trim();
     if (!cleanEmail || !password) {
-      setErrorMsg('Please enter both your email address and password.');
+      setErrorMsg(
+        tr(
+          'Please enter both your email address and password.',
+          '请输入电子邮箱和密码。',
+        ),
+      );
       return;
     }
     if (mode === 'register' && password.length < 8) {
-      setErrorMsg('Password must be at least 8 characters long (12+ recommended).');
+      setErrorMsg(
+        tr(
+          'Password must be at least 8 characters long (12+ recommended).',
+          '密码长度至少需 8 位字符（建议 12 位以上）。',
+        ),
+      );
       return;
     }
 
@@ -181,7 +206,13 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data.error || 'Authentication failed. Please check your details and retry.');
+        setErrorMsg(
+          data.error ||
+            tr(
+              'Authentication failed. Please check your details and retry.',
+              '验证失败，请核对邮箱与密码后重试。',
+            ),
+        );
         return;
       }
 
@@ -197,7 +228,12 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
         const fb = await import('../services/firebaseClient');
         setErrorMsg(fb.mapFirebaseAuthError(err));
       } else {
-        setErrorMsg('Unable to reach the OZ Amp server right now. Please try again in a moment.');
+        setErrorMsg(
+          tr(
+            'Unable to reach the OZ Amp server right now. Please try again in a moment.',
+            '暂时无法连接 OZ Amp 服务器，请稍后重试。',
+          ),
+        );
       }
     } finally {
       setSubmitting(false);
@@ -221,10 +257,15 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
           body: '{}',
         });
       }
-      onShowToast('Signed out cleanly.');
+      onShowToast(tr('Signed out cleanly.', '已安全退出登录。'));
       onLoggedOut();
     } catch {
-      setErrorMsg('Could not sign out right now. Please refresh and retry.');
+      setErrorMsg(
+        tr(
+          'Could not sign out right now. Please refresh and retry.',
+          '暂时无法退出登录，请刷新页面后重试。',
+        ),
+      );
       setSubmitting(false);
     }
   };
@@ -274,11 +315,13 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
             <div className="cloud-guide-card">
               <div className="cloud-guide-title">
                 <Info size={16} />
-                <strong>Static Preview Mode</strong>
+                <strong>{tr('Static Preview Mode', '静态预览模式')}</strong>
               </div>
               <p className="sync-helper-copy">
-                This static preview saves your choices automatically in this browser’s local storage.
-                For cloud email &amp; Google sign-in, configure Firebase or open the live Render app.
+                {tr(
+                  'This static preview saves your choices automatically in this browser’s local storage. For cloud email & Google sign-in, configure Firebase or open the live Render app.',
+                  '当前静态预览模式会将您的选择自动保存在浏览器本地。如需使用邮箱或 Google 云端登录，请配置 Firebase 或访问实时部署版本。',
+                )}
               </p>
             </div>
           ) : user ? (
@@ -348,11 +391,19 @@ export const AccountAuthModal: React.FC<AccountAuthModalProps> = ({
                 <div className="auth-storage-notice">
                   <Info size={14} />
                   <span>
-                    <strong>Permanent Cloud Persistence (\$0 on Render):</strong> Add your free
-                    Firebase Web App env vars (<code>FIREBASE_API_KEY</code>,{' '}
-                    <code>FIREBASE_AUTH_DOMAIN</code>, <code>FIREBASE_PROJECT_ID</code>,{' '}
-                    <code>FIREBASE_APP_ID</code>) in Render → Environment to enable permanent Cloud
-                    Firestore sync + Google Sign-In &amp; Password Reset emails.
+                    {isZh ? (
+                      <>
+                        <strong>云端永久同步（Render 免费配置）：</strong>在 Render → Environment 中添加免费的 Firebase Web 应用环境变量（<code>FIREBASE_API_KEY</code>、<code>FIREBASE_AUTH_DOMAIN</code>、<code>FIREBASE_PROJECT_ID</code>、<code>FIREBASE_APP_ID</code>），即可启用永久 Cloud Firestore 同步、Google 一键登录与密码重置邮件。
+                      </>
+                    ) : (
+                      <>
+                        <strong>Permanent Cloud Persistence ($0 on Render):</strong> Add your free
+                        Firebase Web App env vars (<code>FIREBASE_API_KEY</code>,{' '}
+                        <code>FIREBASE_AUTH_DOMAIN</code>, <code>FIREBASE_PROJECT_ID</code>,{' '}
+                        <code>FIREBASE_APP_ID</code>) in Render → Environment to enable permanent Cloud
+                        Firestore sync + Google Sign-In &amp; Password Reset emails.
+                      </>
+                    )}
                   </span>
                 </div>
               )}

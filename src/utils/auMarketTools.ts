@@ -5,6 +5,7 @@ import type {
   VenueInfo,
 } from '../types/gig';
 import { formatAudPrice } from './formatters';
+import { getActiveLocale } from '../i18n/LocaleContext';
 
 // ── 1. RESALE GUARD (+10% NSW/VIC STATUTORY CAP) & PRODUCTION-HOLD SNIPER ──
 
@@ -39,9 +40,16 @@ export function computeResaleGuard(concert: ConcertEvent, nowMs: number): Resale
   const offset = m >= 4 && m <= 9 ? '+10:00' : '+11:00';
   const productionHoldIso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T10:00:00${offset}`;
 
+  const isZh = getActiveLocale() === 'zh';
   return {
     statutoryLawLabel:
-      concert.city === 'sydney' ? 'NSW +10% Legal Resale Cap' : 'VIC +10% Legal Resale Cap',
+      concert.city === 'sydney'
+        ? isZh
+          ? '新州法定转售 +10% 上限'
+          : 'NSW +10% Legal Resale Cap'
+        : isZh
+          ? '维州法定转售 +10% 上限'
+          : 'VIC +10% Legal Resale Cap',
     maxLegalMinAud: formatAudPrice(capMin),
     maxLegalMaxAud: formatAudPrice(capMax),
     tixelUrl,
@@ -78,6 +86,7 @@ export function analyzeFestivalDecision(
   selectedArtists: string[],
   targetCity: CityId,
 ): FestivalDecisionAnalysis {
+  const isZh = getActiveLocale() === 'zh';
   const selectedLower = new Set(selectedArtists.map((a) => a.toLowerCase()));
   const activeSlots = festival.slots.filter((s) => selectedLower.has(s.artist.toLowerCase()));
 
@@ -99,12 +108,16 @@ export function analyzeFestivalDecision(
       if (overlap > 0) {
         clashes.push({
           type: 'overlap',
-          summary: `Clash (${overlap}m overlap): ${s1.artist} (${s1.stage} ${s1.start}–${s1.end}) vs. ${s2.artist} (${s2.stage} ${s2.start}–${s2.end})`,
+          summary: isZh
+            ? `时间冲突（重叠 ${overlap} 分钟）：${s1.artist}（${s1.stage} ${s1.start}–${s1.end}）与 ${s2.artist}（${s2.stage} ${s2.start}–${s2.end}）`
+            : `Clash (${overlap}m overlap): ${s1.artist} (${s1.stage} ${s1.start}–${s1.end}) vs. ${s2.artist} (${s2.stage} ${s2.start}–${s2.end})`,
         });
       } else if (overlap >= -10 && s1.stage !== s2.stage) {
         clashes.push({
           type: 'tight-walk',
-          summary: `Tight Stage Sprint (${Math.abs(overlap)}m gap): ${s1.artist} (${s1.stage}) → ${s2.artist} (${s2.stage})`,
+          summary: isZh
+            ? `赶场紧凑（间隔仅 ${Math.abs(overlap)} 分钟）：${s1.artist}（${s1.stage}）→ ${s2.artist}（${s2.stage}）`
+            : `Tight Stage Sprint (${Math.abs(overlap)}m gap): ${s1.artist} (${s1.stage}) → ${s2.artist} (${s2.stage})`,
         });
       }
     }
@@ -134,21 +147,33 @@ export function analyzeFestivalDecision(
 
   const savingsWithFestivalAud = Math.round((sideshowTotalAud - festival.festivalPassAud) * 100) / 100;
 
-  let verdictBadge = 'Select bands above to compare';
-  let verdictExplanation =
-    'Toggle the artists on this bill that you want to see in Sydney or Melbourne.';
+  let verdictBadge = isZh ? '请在上方勾选想看的艺人进行对比' : 'Select bands above to compare';
+  let verdictExplanation = isZh
+    ? '勾选阵容中您想在墨尔本或悉尼观看的艺人，立即计算性价比与舞台时间冲突。'
+    : 'Toggle the artists on this bill that you want to see in Sydney or Melbourne.';
 
   if (selectedArtists.length > 0) {
+    const cityZh = targetCity === 'sydney' ? '悉尼' : '墨尔本';
     if (festivalOnlyActs.length > 0) {
-      verdictBadge = `Buy ${festival.name} Pass`;
-      verdictExplanation = `${festivalOnlyActs.join(' & ')} ${festivalOnlyActs.length === 1 ? 'is a' : 'are'} festival exclusive${festivalOnlyActs.length === 1 ? '' : 's'} in ${targetCity === 'sydney' ? 'Sydney' : 'Melbourne'} (no standalone sideshow).`;
+      verdictBadge = isZh ? `推荐购买 ${festival.name} 通票` : `Buy ${festival.name} Pass`;
+      verdictExplanation = isZh
+        ? `${festivalOnlyActs.join('、')} 为${cityZh}音乐节限定演出（无单独剧场专场）。`
+        : `${festivalOnlyActs.join(' & ')} ${festivalOnlyActs.length === 1 ? 'is a' : 'are'} festival exclusive${festivalOnlyActs.length === 1 ? '' : 's'} in ${targetCity === 'sydney' ? 'Sydney' : 'Melbourne'} (no standalone sideshow).`;
     } else if (savingsWithFestivalAud >= 15) {
-      verdictBadge = `Festival Pass Wins (Saves ${formatAudPrice(savingsWithFestivalAud)})`;
-      verdictExplanation = `Buying ${selectedArtists.length} separate sideshows costs ${formatAudPrice(sideshowTotalAud)} vs. ${formatAudPrice(festival.festivalPassAud)} for the full festival.`;
+      verdictBadge = isZh
+        ? `音乐节通票更划算（省 ${formatAudPrice(savingsWithFestivalAud)}）`
+        : `Festival Pass Wins (Saves ${formatAudPrice(savingsWithFestivalAud)})`;
+      verdictExplanation = isZh
+        ? `单独购买 ${selectedArtists.length} 场专场共需 ${formatAudPrice(sideshowTotalAud)}，而音乐节通票仅需 ${formatAudPrice(festival.festivalPassAud)}。`
+        : `Buying ${selectedArtists.length} separate sideshows costs ${formatAudPrice(sideshowTotalAud)} vs. ${formatAudPrice(festival.festivalPassAud)} for the full festival.`;
     } else {
       const saveSideshow = Math.max(0, Math.round((festival.festivalPassAud - sideshowTotalAud) * 100) / 100);
-      verdictBadge = `Buy Headline Sideshow${selectedArtists.length > 1 ? 's' : ''} (Saves ${formatAudPrice(saveSideshow)})`;
-      verdictExplanation = `You get full 90-minute indoor theatre sets (${formatAudPrice(sideshowTotalAud)} total) instead of 45-minute outdoor festival slots.`;
+      verdictBadge = isZh
+        ? `推荐单买剧场专场（省 ${formatAudPrice(saveSideshow)}）`
+        : `Buy Headline Sideshow${selectedArtists.length > 1 ? 's' : ''} (Saves ${formatAudPrice(saveSideshow)})`;
+      verdictExplanation = isZh
+        ? `单买专场共 ${formatAudPrice(sideshowTotalAud)}，可享受完整 90 分钟室内剧场演出（而非 45 分钟户外音乐节短场）。`
+        : `You get full 90-minute indoor theatre sets (${formatAudPrice(sideshowTotalAud)} total) instead of 45-minute outdoor festival slots.`;
     }
   }
 
@@ -188,13 +213,24 @@ export function computeInterstateTripPlan(
       other.artist.toLowerCase() === concert.artist.toLowerCase(),
   );
 
+  const isZh = getActiveLocale() === 'zh';
   const routeLabel =
-    homeCity === 'sydney' ? 'SYD ✈ MEL (1h 25m)' : 'MEL ✈ SYD (1h 25m)';
+    homeCity === 'sydney'
+      ? isZh
+        ? '悉尼 ✈ 墨尔本（约 1 小时 25 分）'
+        : 'SYD ✈ MEL (1h 25m)'
+      : isZh
+        ? '墨尔本 ✈ 悉尼（约 1 小时 25 分）'
+        : 'MEL ✈ SYD (1h 25m)';
 
   const isDaytimeFestival = Number(concert.doorsTimeLocal.slice(0, 2)) < 14;
   const flightTimingTip = isDaytimeFestival
-    ? 'Doors open before 2 PM — fly in the evening before & book 2 nights.'
-    : 'Evening doors — morning Qantas/Virgin/Jetstar flight works; return next morning.';
+    ? isZh
+      ? '下午 2 点前入场 — 建议前一晚抵达并预订 2 晚酒店。'
+      : 'Doors open before 2 PM — fly in the evening before & book 2 nights.'
+    : isZh
+      ? '晚场演出 — 可当天上午乘 Qantas/Virgin/Jetstar 航班前往，次日早晨返程。'
+      : 'Evening doors — morning Qantas/Virgin/Jetstar flight works; return next morning.';
 
   // Lock free-cancellation hotel 24h before earliest presale (or tomorrow 10am if already on sale)
   let hotelLockDeadlineIso: string;
@@ -215,7 +251,13 @@ export function computeInterstateTripPlan(
     flightTimingTip,
     hotelAreaTip:
       venue?.hotelAreaTip ||
-      (concert.city === 'sydney' ? 'Sydney CBD / Olympic Park' : 'Melbourne CBD / Southbank'),
+      (concert.city === 'sydney'
+        ? isZh
+          ? '悉尼市中心 / 奥林匹克公园'
+          : 'Sydney CBD / Olympic Park'
+        : isZh
+          ? '墨尔本市中心 / Southbank'
+          : 'Melbourne CBD / Southbank'),
     hotelLockDeadlineIso,
   };
 }
