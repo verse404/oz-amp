@@ -1,6 +1,6 @@
 {
-  "syncedAtIso": "2026-11-27T03:08:44.978Z",
-  "liveSyncSource": "Verified Sydney & Melbourne Slate + Live AU Tour Press (16 dispatches)",
+  "syncedAtIso": "2026-11-28T02:54:36.109Z",
+  "liveSyncSource": "Verified Sydney & Melbourne Slate + Live AU Tour Press (15 dispatches)",
   "ticketmasterConfigured": false,
   "venues": [
     {
@@ -453,35 +453,6 @@
         }
       ],
       "editorialNote": "Four-night Docklands stadium residency spanning late November into early December."
-    },
-    {
-      "id": "sisters-of-mercy-syd-2026",
-      "artist": "The Sisters of Mercy",
-      "supportActs": [
-        "Buzz Kull"
-      ],
-      "tourTitle": "Australian Tour 2026",
-      "city": "sydney",
-      "venueId": "syd-metro",
-      "venueName": "Metro Theatre",
-      "suburb": "Sydney CBD",
-      "venueTier": "club",
-      "dateIso": "2026-11-27",
-      "doorsTimeLocal": "19:30",
-      "setTimeLocal": "21:00",
-      "timeZone": "Australia/Sydney",
-      "genres": [
-        "Rock & Alternative",
-        "Indie"
-      ],
-      "promoter": "Destroy All Lines",
-      "agency": "Ticketek",
-      "status": "selling-fast",
-      "priceMinAud": 109.9,
-      "priceMaxAud": 119.9,
-      "ticketUrl": "https://premier.ticketek.com.au/shows/Show.aspx?sh=TSISOM26",
-      "ticketDrops": [],
-      "editorialNote": "Andrew Eldritch brings gothic post-punk fog and strobes to George Street’s Metro Theatre."
     },
     {
       "id": "dmas-mel-2026",
